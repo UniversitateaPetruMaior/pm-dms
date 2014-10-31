@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<project name="OkmCommunity" default="all">
+	<description>
+		OpenKM Community 
+		This is an Ant script altered by MACosmin for building the OpenKM war
+		It has no system-dependent properties
+		It is recommended to use maven (directly) to build the project
+	</description>
+	
+	<target name="all" depends="build">
+	</target>
+	
+	<target name="build">
+		<exec dir="." executable="cmd.exe">
+			
+			<arg line="/k mvn -Dmaven.test.skip=true clean gwt:compile -Dgwt.extrajvmArgs=-Xmx1024m -Dgwt.module=com.openkm.frontend.Main install"/>
+		
+		</exec>
+	</target>
+</project>

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<project name="OkmCommunity" default="all">
+	<description>
+		OpenKM Community - This is an Ant script altered by MACosmin for building and deploying the OpenKM war
+		The defined properties are system dependent
+	</description>
+	
+	<property name="tomcat.dir" value="d:/java/openkm-6.2.5-community/tomcat"/>
+	<property name="deploy.dir" value="${tomcat.dir}/webapps"/>
+	
+	<target name="all" depends="deploy.war">
+	</target>
+	
+	<target name="build">
+		<exec dir="." executable="cmd.exe">
+			<arg line="/k mvn -Dmaven.test.skip=true clean gwt:compile -Dgwt.extrajvmArgs=-Xmx1024m -Dgwt.module=com.openkm.frontend.Main install"/>
+		</exec>
+	</target>
+
+	<target name="deploy.war">
+		<copy file="target/OpenKM.war" tofile="${deploy.dir}/OpenKM.war"/>
+		<antcall target="deploy.ext.files"/>
+		<antcall target="clean.tomcat.work.dir"/>
+		<antcall target="clean.webapps.dir"/>
+	</target>
+	
+	<target name="deploy.ext.files">
+		<!--<copy todir="${deploy.dir}" file="target/OpenKM*.jar"/> -->
+	</target>
+	
+	<target name="clean.tomcat.work.dir">
+		<delete dir="${tomcat.dir}/work/Catalina"/>
+		<!-- <delete dir="${tomcat.dir}/work/Catalina/localhost/OpenKM"/>
+			<delete dir="${tomcat.dir}/work/Catalina/localhost/_/com"/>
+			<delete dir="${tomcat.dir}/work/Catalina/localhost/_/net"/>
+			<delete dir="${tomcat.dir}/work/Catalina/localhost/_/org"/> -->
+	</target>
+	
+	<target name="clean.webapps.dir">
+			<delete dir="${tomcat.dir}/webapps/OpenKM"/>
+	</target>
+</project>
