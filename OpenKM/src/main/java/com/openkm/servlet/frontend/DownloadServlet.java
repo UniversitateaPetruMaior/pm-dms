@@ -43,8 +43,10 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.api.OKMDocument;
 import com.openkm.api.OKMRepository;
+import com.openkm.api.OKMSignature;
 import com.openkm.bean.Document;
 import com.openkm.core.AccessDeniedException;
+import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.MimeTypeConfig;
 import com.openkm.core.NoSuchGroupException;
@@ -78,8 +80,11 @@ public class DownloadServlet extends OKMHttpServlet {
 		String[] pathList = request.getParameterValues("pathList");
 		String checkout = request.getParameter("checkout");
 		String ver = request.getParameter("ver");
+		String signFileName = request.getParameter("signFileName");
 		boolean export = request.getParameter("export") != null;
 		boolean inline = request.getParameter("inline") != null;
+		boolean signOnly = request.getParameter("signOnly") != null;
+		boolean signTool = request.getParameter("signTool") != null;
 		File tmp = File.createTempFile("okm", ".tmp");
 		Document doc = null;
 		InputStream is = null;
@@ -143,6 +148,11 @@ public class DownloadServlet extends OKMHttpServlet {
 					WebUtils.sendFile(request, response, fileName, "application/x-java-archive", inline, is);
 					
 				}
+			} else if (signOnly) {
+				OKMSignature okmSign = OKMSignature.getInstance();
+				is = okmSign.getContent(null, path);
+			} else if (signTool) {
+				is = new FileInputStream(Config.SIGN_TOOL_LOCATION);
 			} else {
 				// Get document
 				doc = OKMDocument.getInstance().getProperties(null, path);

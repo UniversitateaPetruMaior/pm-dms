@@ -26,7 +26,7 @@ import java.util.Collection;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.i18n.client.DateTimeFormat;
-import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.rpc.AsyncCallback;import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HTML;
@@ -35,10 +35,13 @@ import com.google.gwt.user.client.ui.HasAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.Image;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTDocument;
 import com.openkm.frontend.client.bean.GWTFolder;
 import com.openkm.frontend.client.bean.GWTPermission;
+import com.openkm.frontend.client.bean.GWTSignature;
 import com.openkm.frontend.client.bean.GWTUser;
 import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
 import com.openkm.frontend.client.service.OKMDocumentService;
@@ -47,7 +50,8 @@ import com.openkm.frontend.client.util.Util;
 import com.openkm.frontend.client.widget.properties.CategoryManager.CategoryToRemove;
 import com.openkm.frontend.client.widget.properties.KeywordManager.KeywordToRemove;
 import com.openkm.frontend.client.widget.thesaurus.ThesaurusSelectPopup;
-
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.openkm.frontend.client.util.OKMBundleResources;
 /**
  * Document
  * 
@@ -58,6 +62,7 @@ public class Document extends Composite {
 	private final OKMDocumentServiceAsync documentService = (OKMDocumentServiceAsync) GWT.create(OKMDocumentService.class);
 	
 	private FlexTable tableProperties;
+	private FlexTable signaturesAppliedTable;
 	private FlexTable tableSubscribedUsers;
 	private FlexTable table;
 	private GWTDocument document;
@@ -68,6 +73,7 @@ public class Document extends Composite {
 	private ScrollPanel scrollPanel;
 	private boolean remove = true;
 	private boolean visible = true;
+	private HTML signaturesAppliedText;
 	
 	/**
 	 * Document
@@ -78,6 +84,7 @@ public class Document extends Composite {
 		document = new GWTDocument();
 		table = new FlexTable();
 		tableProperties = new FlexTable();
+		signaturesAppliedTable = new FlexTable();
 		tableSubscribedUsers = new FlexTable();
 		scrollPanel = new ScrollPanel(table);
 		
@@ -114,7 +121,7 @@ public class Document extends Composite {
 		keywordManager.getKeywordCloud().setWidth("350");
 		
 		VerticalPanel vPanel2 = new VerticalPanel();
-		
+		signaturesAppliedText = new HTML("<b>"+Main.i18n("document.signatures.applied")+"<b>");
 		hPanelSubscribedUsers = new HorizontalPanel();
 		subcribedUsersText = new HTML("<b>"+Main.i18n("document.subscribed.users")+"<b>");
 		hPanelSubscribedUsers.add(subcribedUsersText);
@@ -132,8 +139,14 @@ public class Document extends Composite {
 		vPanel2.add(categoryManager.getPanelCategories());
 		vPanel2.add(categoryManager.getSubscribedCategoriesTable());
 		
+		HTML space4 = new HTML("");
+		vPanel2.add(space4);
+		vPanel2.add(signaturesAppliedText);
+		vPanel2.add(signaturesAppliedTable);
+		
 		vPanel2.setCellHeight(space2, "10");
 		vPanel2.setCellHeight(space3, "10");
+		vPanel2.setCellHeight(space4, "10");
 		
 		table.setWidget(0, 0, tableProperties);
 		table.setHTML(0, 1, "");
@@ -149,10 +162,12 @@ public class Document extends Composite {
 		for (int i=0; i<11; i++) {
 			setRowWordWarp(i, 0, true, tableProperties);
 		}
-
+		
+		setRowWordWarp(0, 0, true, signaturesAppliedTable);
 		setRowWordWarp(0, 0, true, tableSubscribedUsers);
 		
 		tableProperties.setStyleName("okm-DisableSelect");
+		signaturesAppliedTable.setStyleName("okm-DisableSelect");
 		tableSubscribedUsers.setStyleName("okm-DisableSelect");
 		
 		initWidget(scrollPanel);
@@ -251,6 +266,10 @@ public class Document extends Composite {
 		// Remove all table rows
 		tableSubscribedUsers.removeAllRows();
 		
+		while (signaturesAppliedTable.getRowCount()>0) {
+			signaturesAppliedTable.removeRow(0);
+		}
+		
 		// Sets the document subscribers
 		for (GWTUser subscriptor : doc.getSubscriptors() ) {
 			tableSubscribedUsers.setHTML(tableSubscribedUsers.getRowCount(), 0, subscriptor.getUsername());
@@ -286,6 +305,17 @@ public class Document extends Composite {
 		keywordManager.setObject(doc, remove);
 		keywordManager.drawAll();
 		
+		// Set the docuemnt signitures
+		final String docName = doc.getName();
+		for (final GWTSignature signature: doc.getSignatures()) {
+			int rowCount = signaturesAppliedTable.getRowCount();
+			signaturesAppliedTable.setHTML(rowCount, 0, (signature.getUser()!=null ? signature.getUser() : ""));
+			signaturesAppliedTable.setHTML(rowCount, 1, dtf.format(signature.getDate()) );
+			signaturesAppliedTable.setHTML(rowCount, 2, Util.imageItemHTML("img/icon/security/" + (signature.isValid() ? "yes" : "no") + ".gif"));
+			signaturesAppliedTable.setWidget(rowCount, 3, createSignDownloadWidget(docName, dtf.format(signature.getDate()), signature));
+			setRowWordWarp(rowCount-1, 0, true, signaturesAppliedTable);
+		}
+		
 		// Categories
 		categoryManager.removeAllRows();
 		categoryManager.setObject(doc, remove);
@@ -310,6 +340,7 @@ public class Document extends Composite {
 		tableProperties.setHTML(11, 0, "<b>"+Main.i18n("document.url")+"</b>");
 		tableProperties.setHTML(12, 0, "<b>"+Main.i18n("document.webdav")+"</b>");
 		subcribedUsersText.setHTML("<b>"+Main.i18n("document.subscribed.users")+"<b>");
+		signaturesAppliedText.setHTML("<b>"+Main.i18n("document.signatures.applied")+"<b>");
 		keywordManager.langRefresh();
 		categoryManager.langRefresh();
 		
@@ -488,5 +519,21 @@ public class Document extends Composite {
 	 */
 	public void showRemoveKeyword() {
 		keywordManager.showRemoveKeyword();
+	}
+	
+	private Widget createSignDownloadWidget(final String docName, final String signedOn, final GWTSignature signature){
+		int ext_sep = docName.lastIndexOf(".");
+		final StringBuffer sb = new StringBuffer();
+		sb.append( (ext_sep > 0 && ext_sep < docName.length()) ? docName.substring(0, ext_sep-1) : docName);
+		sb.append(" sign_by ").append(signature.getUser()).append(" sign_on ").append(signedOn);
+		final String signName = sb.toString().replaceAll("^[.\\\\/:*?\"<>|]?[\\\\/:*?\"<>|]*", " ");
+		Image downloadSign = new Image(OKMBundleResources.INSTANCE.download());
+		downloadSign.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				Util.downloadFileSignature( signature.getPath(), signName);
+			}
+		});
+		return downloadSign;
 	}
 }

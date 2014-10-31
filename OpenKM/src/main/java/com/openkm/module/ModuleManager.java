@@ -45,6 +45,7 @@ public class ModuleManager {
 	private static MailModule mailModule = null;
 	private static PropertyModule propertyModule = null;
 	private static UserConfigModule userConfigModule = null;
+	private static SignatureModule signatureModule = null;
 	
 	/**
 	 * 
@@ -284,5 +285,16 @@ public class ModuleManager {
 		}
 		
 		return userConfigModule;
+	}
+
+	/**
+	 * 
+	 */
+	public static synchronized SignatureModule getSignatureModule() {
+		if (signatureModule == null) {
+			signatureModule = new com.openkm.module.jcr.JcrSignatureModule();
+		}
+		
+		return signatureModule;
 	}
 }

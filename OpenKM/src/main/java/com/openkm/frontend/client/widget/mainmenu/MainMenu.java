@@ -142,6 +142,7 @@ public class MainMenu extends Composite {
 	private MenuItem debugConsole;
 	public MenuItem administration;
 	private MenuItem preferences;
+	private MenuItem signTool;
 	private MenuBar subMenuPreferences;
 	private MenuItem userPreferences;
 	private MenuItem menuBookmark;
@@ -439,6 +440,10 @@ public class MainMenu extends Composite {
 		userPreferences.addStyleName("okm-MainMenuItem");
 		subMenuPreferences.addItem(userPreferences);
 		
+		// Sign tool menu
+		signTool = new MenuItem(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.sign.tool")), true, downloadSignTool);
+		signTool.addStyleName("okm-MainMenuItem");
+		
 		// Submenu preferences
 		preferences = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif",
 				Main.i18n("general.menu.tools.preferences")), true, subMenuPreferences);
@@ -453,6 +458,7 @@ public class MainMenu extends Composite {
 		subMenuTools.addItem(debugConsole);
 		subMenuTools.addItem(administration);
 		subMenuTools.addItem(preferences);
+		subMenuTools.addItem(signTool);
 		
 		// Menu tools
 		menuTools = new MenuItem(Main.i18n("general.menu.tools"), subMenuTools);
@@ -672,6 +678,7 @@ public class MainMenu extends Composite {
 				.setHTML(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.tools.preferences")));
 		userPreferences.setHTML(Util.menuHTML("img/icon/menu/user_preferences.gif",
 				Main.i18n("general.menu.tools.user.preferences")));
+		signTool.setHTML(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.sign.tool")));
 		menuBookmark.setText(Main.i18n("general.menu.bookmark"));
 		home.setHTML(Util.menuHTML("img/icon/actions/bookmark_go.gif", Main.i18n("general.menu.bookmark.home")));
 		defaultHome.setHTML(Util.menuHTML("img/icon/actions/bookmark.gif",
@@ -1454,6 +1461,13 @@ public class MainMenu extends Composite {
 			if (mainMenuOption.homeOption) {
 				manageBookmarkPopup.showPopup();
 			}
+		}
+	};
+	
+	// Command download sign tool that executes void
+	Command downloadSignTool = new Command() {
+		public void execute() {
+			Util.downloadFile("", "signTool");
 		}
 	};
 	

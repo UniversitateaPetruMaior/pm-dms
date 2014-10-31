@@ -68,6 +68,7 @@ public class Document implements Serializable {
 	private Set<String> keywords = new HashSet<String>();
 	private Set<Folder> categories = new HashSet<Folder>();
 	private List<Note> notes = new ArrayList<Note>();
+	private List<Signature> signatures = new ArrayList<Signature>();
 
 	public LockInfo getLockInfo() {
 		return lockInfo;
@@ -237,6 +238,14 @@ public class Document implements Serializable {
 		this.notes = notes;
 	}
 	
+	public List<Signature> getSignatures() {
+		return signatures;
+	}
+
+	public void setSignatures(List<Signature> signatures) {
+		this.signatures = signatures;
+	}
+	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
@@ -259,6 +268,7 @@ public class Document implements Serializable {
 		sb.append(", convertibleToPdf=").append(convertibleToPdf);
 		sb.append(", convertibleToSwf=").append(convertibleToSwf);
 		sb.append(", notes=").append(notes);
+		sb.append(", signatures=").append(signatures);
 		sb.append("}");
 		return sb.toString();
 	}

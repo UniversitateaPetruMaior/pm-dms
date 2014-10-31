@@ -247,6 +247,9 @@ public class Config {
 	
 	// Hibernate Search indexes
 	public static String PROPERTY_HIBERNATE_SEARCH_INDEX_HOME = "hibernate.search.index.home";
+	
+	// Sign tool
+	public static final String PROPERTY_SIGN_TOOL_LOCATION= "signtool.location.path";	
 		
 	/**
 	 *  Default values
@@ -442,6 +445,9 @@ public class Config {
 	public static int SESSION_EXPIRATION = 1800; // 30 mins (session.getMaxInactiveInterval())
 	public static String LIST_SEPARATOR = ";";
 	
+	//Signing tool location
+	public static String SIGN_TOOL_LOCATION = HOME_DIR+File.separator+"signtool"+File.separator+"signtool.exe";
+	
 	/**
 	 * Get url base
 	 */
@@ -497,6 +503,11 @@ public class Config {
 			if (config.getProperty(PROPERTY_REPOSITORY_NATIVE) != null) {
 				REPOSITORY_NATIVE = "on".equalsIgnoreCase(config.getProperty(PROPERTY_REPOSITORY_NATIVE, "off"));
 			}
+			
+			//sign tool location
+			SIGN_TOOL_LOCATION = config.getProperty(PROPERTY_SIGN_TOOL_LOCATION, SIGN_TOOL_LOCATION);
+			values.put(PROPERTY_SIGN_TOOL_LOCATION, SIGN_TOOL_LOCATION);
+
 			
 			values.put(PROPERTY_REPOSITORY_NATIVE, Boolean.toString(REPOSITORY_NATIVE));
 			INSTANCE_HOME = HOME_DIR;

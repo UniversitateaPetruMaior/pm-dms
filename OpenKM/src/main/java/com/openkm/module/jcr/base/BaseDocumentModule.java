@@ -23,6 +23,7 @@ package com.openkm.module.jcr.base;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -56,6 +57,7 @@ import com.openkm.bean.Notification;
 import com.openkm.bean.Permission;
 import com.openkm.bean.Property;
 import com.openkm.bean.Version;
+import com.openkm.bean.Signature;
 import com.openkm.cache.UserItemsManager;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
@@ -68,7 +70,9 @@ import com.openkm.extractor.RegisteredExtractors;
 import com.openkm.module.common.CommonGeneralModule;
 import com.openkm.module.jcr.stuff.JCRUtils;
 import com.openkm.util.DocConverter;
+import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
+
 
 public class BaseDocumentModule {
 	private static Logger log = LoggerFactory.getLogger(BaseDocumentModule.class);
@@ -312,6 +316,38 @@ public class BaseDocumentModule {
 			
 			doc.setNotes(notes);
 		}
+
+		// Get signatures
+		if (docNode.isNodeType(Signature.MIX_TYPE)) {
+			try {
+				// load sigantures node
+				List<Signature> signatures = new ArrayList<Signature>();
+				Node signaturesNode = docNode.getNode(Signature.LIST);
+				if (signaturesNode.hasNodes()) {
+					// load file content digest value
+					InputStream docInputStream = contentNode.getProperty(JcrConstants.JCR_DATA).getStream();
+					byte[] docInBytes = IOUtils.toByteArray(docInputStream);
+					MessageDigest md1 = MessageDigest.getInstance("SHA1");
+					md1.update(docInBytes);
+					final String digestValue = SecureStore.b64Encode(md1.digest());
+					// init and add sigantures
+					for (NodeIterator nit = signaturesNode.getNodes(); nit.hasNext();) {
+						Node signatureNode = nit.nextNode();
+						Signature signature = new Signature();
+						signature.setDate(signatureNode.getProperty(Signature.DATE).getDate());
+						signature.setUser(signatureNode.getProperty(Signature.USER).getString());
+						signature.setSignDigest(signatureNode.getProperty(Signature.SIGN_DIGEST).getString());
+						signature.setSignSHA1(signatureNode.getProperty(Signature.SIGN_SHA1).getString());
+						signature.setPath(signatureNode.getPath());
+						signature.setValid(digestValue.equals(signature.getSignDigest()));
+						signatures.add(signature);
+					}
+				}
+				doc.setSignatures(signatures);
+			} catch (Exception e) {
+			}
+		}
+
 		
 		log.debug("Permisos: {} => {}", docNode.getPath(), doc.getPermissions());
 		log.debug("getProperties[session]: {}", doc);

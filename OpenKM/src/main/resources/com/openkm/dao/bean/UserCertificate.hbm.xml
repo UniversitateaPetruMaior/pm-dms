@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" 
+                                   "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+  <class name="com.openkm.dao.bean.UserCertificate" table="OKM_USER_CERTIFICATE">
+    <id name="id" column="UC_ID"><generator class="native"/></id>
+    <property name="user" column="UC_USER" not-null="true" length="127"/>
+    <property name="certHash" column="UC_HASH" not-null="true" length="127"/>
+    <property name="certData" column="UC_DATA" not-null="true"/>
+  </class>
+</hibernate-mapping>

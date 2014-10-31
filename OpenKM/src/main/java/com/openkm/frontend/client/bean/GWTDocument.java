@@ -21,6 +21,7 @@
 
 package com.openkm.frontend.client.bean;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -60,6 +61,7 @@ public class GWTDocument implements IsSerializable {
 	private Set<GWTFolder> categories;
 	private Set<String> keywords;
 	private GWTUser user;
+	private List<GWTSignature> signatures = new ArrayList<GWTSignature>();
 	
 	public String getParentPath() {
 		return parentPath;
@@ -260,6 +262,16 @@ public class GWTDocument implements IsSerializable {
 	public void setUser(GWTUser user) {
 		this.user = user;
 	}
+
+	public List<GWTSignature> getSignatures() {
+		return signatures;
+	}
+
+	public void setSignatures(List<GWTSignature> signatures) {
+		this.signatures = signatures;
+	}
+	
+
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

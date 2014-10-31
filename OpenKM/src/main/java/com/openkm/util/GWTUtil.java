@@ -110,6 +110,7 @@ import com.openkm.frontend.client.bean.GWTPropertyParams;
 import com.openkm.frontend.client.bean.GWTQueryParams;
 import com.openkm.frontend.client.bean.GWTQueryResult;
 import com.openkm.frontend.client.bean.GWTReport;
+import com.openkm.frontend.client.bean.GWTSignature;
 import com.openkm.frontend.client.bean.GWTTaskInstance;
 import com.openkm.frontend.client.bean.GWTToken;
 import com.openkm.frontend.client.bean.GWTTransition;
@@ -234,6 +235,15 @@ public class GWTUtil {
 		}
 		
 		doc.setCategories(categories);
+
+		// from Util.java in OpenKM 5.0
+		List<GWTSignature> signatures = new ArrayList<GWTSignature>();
+		
+		for (Iterator<GWTSignature> it = gWTDoc.getSignatures().iterator(); it.hasNext();) {
+			signatures.add(copy(it.next()));
+		}
+		gWTDoc.setSignatures(signatures);
+		
 		gWTDoc.setActualVersion(copy(doc.getActualVersion()));
 		
 		log.debug("copy: {}", gWTDoc);
@@ -312,6 +322,27 @@ public class GWTUtil {
 		
 		log.debug("copy: {}", folder);
 		return folder;
+	}
+	
+	/**
+	 * Copy the GWTFolder data to Folder data.
+	 * 
+	 * @param doc The original GWTFolder object.
+	 * @return A Folder object with the data from the original Document.
+	 */
+	public static GWTSignature copy(GWTSignature sig) {
+		log.debug("copy({})", sig);
+		GWTSignature signature = new GWTSignature();
+		
+		signature.setDate(sig.getDate());
+		signature.setUser(sig.getUser());
+		signature.setPath(sig.getPath());
+		signature.setSha1(sig.getSha1());
+		signature.setValid(sig.isValid());
+		
+		
+		log.debug("copy: {}", signature);
+		return signature;
 	}
 	
 	/**

@@ -236,6 +236,7 @@
     <mapping resource="com/openkm/dao/bean/Language.hbm.xml"/>
     <mapping resource="com/openkm/dao/bean/Translation.hbm.xml"/>
     <mapping resource="com/openkm/extension/dao/bean/Extension.hbm.xml"/>
+    <mapping resource="com/openkm/dao/bean/UserCertificate.hbm.xml"/>
 	
     <!-- ################################### -->
     <!-- # cache settings                  # -->

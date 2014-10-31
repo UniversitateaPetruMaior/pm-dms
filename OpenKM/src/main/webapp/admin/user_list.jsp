@@ -93,7 +93,7 @@
         <thead>
           <tr>
             <th>#</th><th>Id</th><th>Name</th><th>Mail</th><th>Roles</th><th>Profile</th><th width="25px">Active</th><th width="25px">Chat</th>
-            <th width="130px">
+            <th width="170px">
               <c:url value="Auth" var="urlCreate">
                 <c:param name="action" value="userCreate"/>
               </c:url>
@@ -133,6 +133,9 @@
             </c:url>
             <c:url value="TwitterAccount" var="urlTwitter">
               <c:param name="ta_user" value="${user.id}"/>
+            </c:url>
+            <c:url value="UserCertificates" var="urlUserCertificates">
+             <c:param name="uc_user" value="${user.id}"/>
             </c:url>
             <tr class="${row.index % 2 == 0 ? 'even' : 'odd'}">
               <td width="20px">${row.index + 1}</td><td>${user.id}</td><td>${user.name}</td><td>${user.email}</td>
@@ -181,6 +184,8 @@
                 <a href="${urlMail}"><img src="img/action/email.png" alt="Mail accounts" title="Mail accounts"/></a>
                 &nbsp;
                 <a href="${urlTwitter}"><img src="img/action/twitter.png" alt="Twitter accounts" title="Twitter accounts"/></a>
+                 &nbsp;
+                <a href="${urlUserCertificates}"><img src="img/action/certificate.png" alt="User Certificates" title="User Certificates"/></a>
               </td>
             </tr>
           </c:forEach>
