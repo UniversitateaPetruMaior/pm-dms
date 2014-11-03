@@ -20,16 +20,7 @@ import com.openkm.core.SignatureException;
 import com.openkm.module.ModuleManager;
 import com.openkm.module.SignatureModule;
 
-/**
- * Servlet Class
- * 
- * @web.servlet name="OKMSignature"
- * @web.servlet-mapping url-pattern="/OKMSignature"
- */
-
-@WebService
-@SOAPBinding(style = SOAPBinding.Style.RPC)
-
+@WebService(name = "OKMSignature", serviceName = "OKMSignature", targetNamespace = "http://ws.openkm.com")
 public class OKMSignature {
 
 	private static Logger log = LoggerFactory.getLogger(OKMSignature.class);

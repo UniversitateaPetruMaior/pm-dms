@@ -66,6 +66,7 @@
             </jaxws:inInterceptors>
         -->
     </jaxws:endpoint>
+    <jaxws:endpoint id="signService" implementor="com.openkm.ws.endpoint.OKMSignature" address="/OKMSignature"/>
     
     <security:global-method-security secured-annotations="enabled"/>
     

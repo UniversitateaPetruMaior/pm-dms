@@ -7,9 +7,9 @@
 	
 	<property name="tomcat.dir" value="d:/java/openkm-6.2.5-community/tomcat"/>
 	<property name="deploy.dir" value="${tomcat.dir}/webapps"/>
-	
-	<target name="all" depends="build,deploy.war">
-	</target>
+	<property name="signapp.dir" value="d:/java/nb-woks/sign4openkm"/>
+		
+	<target name="all" depends="build,deploy.war" />
 	
 	<target name="build">
 		<exec dir="." executable="cmd.exe">
@@ -26,6 +26,11 @@
 	
 	<target name="deploy.ext.files">
 		<!--<copy todir="${deploy.dir}" file="target/OpenKM*.jar"/> -->
+	</target>
+	
+	<target name="deploy.exe.tool">
+		<mkdir dir="${tomcat.dir}/signtool"/>
+		<copy file="${signapp.dir}/install/sign4OpenKM-setup.exe" tofile="${tomcat.dir}/signtool/signtool.exe"/>		
 	</target>
 	
 	<target name="clean.tomcat.work.dir">

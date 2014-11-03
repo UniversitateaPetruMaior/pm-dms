@@ -151,8 +151,11 @@ public class DownloadServlet extends OKMHttpServlet {
 			} else if (signOnly) {
 				OKMSignature okmSign = OKMSignature.getInstance();
 				is = okmSign.getContent(null, path);
+				WebUtils.sendFile(request, response, signFileName + "sig.xml", "application/xml", inline, is);
+				is.close();
 			} else if (signTool) {
 				is = new FileInputStream(Config.SIGN_TOOL_LOCATION);
+				WebUtils.sendFile(request, response, "signtool.exe", "application/exe", inline, is);
 			} else {
 				// Get document
 				doc = OKMDocument.getInstance().getProperties(null, path);

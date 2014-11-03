@@ -1,0 +1,1 @@
+copy the Signing Tool executable file to the tomcat/signtool/signtool.exe
