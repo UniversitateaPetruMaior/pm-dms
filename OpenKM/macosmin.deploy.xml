@@ -8,7 +8,7 @@
 	<property name="tomcat.dir" value="d:/java/openkm-6.2.5-community/tomcat"/>
 	<property name="deploy.dir" value="${tomcat.dir}/webapps"/>
 	
-	<target name="all" depends="deploy.war">
+	<target name="all" depends="build,deploy.war">
 	</target>
 	
 	<target name="build">

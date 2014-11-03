@@ -10,6 +10,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -22,16 +23,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.core.DatabaseException;
+import com.openkm.core.MimeTypeConfig;
+import com.openkm.dao.ReportDAO;
 import com.openkm.dao.UserCertificateDAO;
+import com.openkm.dao.bean.Report;
 import com.openkm.dao.bean.UserCertificate;
 import com.openkm.util.CertificateUtil;
 import com.openkm.module.jcr.stuff.JCRUtils;
+import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
 import com.openkm.util.WebUtils;
 
@@ -47,7 +56,7 @@ public class UserCertificateServlet extends BaseServlet {
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		log.debug("doGet({}, {})", request, response);
+		log.debug("doPost({}, {})", request, response);
 		request.setCharacterEncoding("UTF-8");
 		
 		// Disable browser cache
@@ -58,7 +67,7 @@ public class UserCertificateServlet extends BaseServlet {
 		
 		postParam = new HashMap<String, String>();
 		postFiles = new ArrayList<FileItem>();
-		if (isMultipartRequest(request)) {
+		if (ServletFileUpload.isMultipartContent(request)) {
 			initPostParameters(request);
 		}
 		String action = getStringParameter(request, "action");
@@ -99,7 +108,9 @@ public class UserCertificateServlet extends BaseServlet {
 		try {
 			postParam.clear();
 			postFiles.clear();
-			List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(request);
+			FileItemFactory factory = new DiskFileItemFactory();
+			ServletFileUpload upload = new ServletFileUpload(factory);
+			List<FileItem> items = upload.parseRequest(request);
 			for (FileItem item : items) {
 				if (item.isFormField()) {
 					postParam.put(item.getFieldName(), item.getString("UTF-8"));
@@ -115,18 +126,14 @@ public class UserCertificateServlet extends BaseServlet {
 	private void create(Session session, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DatabaseException, NoSuchAlgorithmException, CertificateException{
 		log.info("create({}, {}, {})", new Object[] { session, request, response });
 		if (getBooleanParameter(request, "persist")) {
+			String fileContent = "";
 			// read certificate content from file
 			InputStream is = postFiles.get(0).getInputStream();
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-			StringBuilder sb = new StringBuilder();
-			String line;
-			while ((line = br.readLine()) != null) {
-				sb.append(line);
-			}
-			br.close();
+			fileContent = SecureStore.b64Encode(IOUtils.toByteArray(is));
+			is.close();
 
 			// initialize the certificate and validate
-			X509Certificate x509Certificate = CertificateUtil.getX509Certificate(sb.toString());
+			X509Certificate x509Certificate = CertificateUtil.getX509Certificate(fileContent);
 			x509Certificate.checkValidity();
 			
 			// make sure certificate not exists
@@ -141,7 +148,7 @@ public class UserCertificateServlet extends BaseServlet {
 			UserCertificate uc = new UserCertificate();
 			uc.setUser(usrId);
 			uc.setCertHash(sha1);
-			uc.setCertData(sb.toString());
+			uc.setCertData(fileContent);
 			UserCertificateDAO.create(uc);
 			
 			// log user activity

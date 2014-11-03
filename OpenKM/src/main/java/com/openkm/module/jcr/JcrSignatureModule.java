@@ -1,4 +1,4 @@
-package com.openkm.module.direct;
+package com.openkm.module.jcr;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,24 +46,32 @@ import com.openkm.core.SignatureException;
 import com.openkm.dao.UserCertificateDAO;
 import com.openkm.dao.bean.UserCertificate;
 import com.openkm.module.SignatureModule;
+import com.openkm.module.jcr.base.BaseNotificationModule;
+import com.openkm.module.jcr.stuff.JCRUtils;
+import com.openkm.module.jcr.stuff.JcrSessionManager;
 import com.openkm.util.CertificateUtil;
 import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
+
 
 public class JcrSignatureModule implements SignatureModule {
 
 	private static Logger log = LoggerFactory.getLogger(JcrSignatureModule.class);
 
 	@Override
-	public void add(String token, String nodePath, byte[] signContent) throws IOException, LockException, PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException, SignatureException {
-		log.debug("add({}, {})", new Object[] { token, nodePath});
+	public void add(String token, String nodePath, byte[] signContent)
+			throws IOException, LockException, PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException,
+			SignatureException {
+		log.debug("add({}, {})", new Object[] { token, nodePath });
+		
 		Session session = null;
 		Node jcrNode = null;
-
+		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -71,14 +79,14 @@ public class JcrSignatureModule implements SignatureModule {
 				// we changed all "Direct" into "Jcr"
 				session = JcrSessionManager.getInstance().get(token);
 			}
-
+			
 			// read signature content
 			ByteArrayInputStream bais = new ByteArrayInputStream(signContent);
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 	        dbf.setNamespaceAware(true);
 	        org.w3c.dom.Document xmlSignatureDoc = dbf.newDocumentBuilder().parse(bais);
 			bais.close();
-			
+
 			// Find and validate certificate from signature file
 			NodeList certXMLNodeList = xmlSignatureDoc.getElementsByTagName("ds:X509Certificate");
 			if (certXMLNodeList.getLength() == 0) {
@@ -86,29 +94,28 @@ public class JcrSignatureModule implements SignatureModule {
 			}
 			X509Certificate x509Certificate = CertificateUtil.getX509Certificate(certXMLNodeList.item(0).getFirstChild().getNodeValue());
 			x509Certificate.checkValidity();
-
+			
 			// Load user certificates and validate signature certificate
 			String sha1 = CertificateUtil.getCertificateSHA1(x509Certificate);
 			UserCertificate userAttachedCertificates = UserCertificateDAO.findByUser(session.getUserID(), sha1);
 			if (userAttachedCertificates == null) {
 				throw new SignatureException("Signature is not belong to logged user");
 			}
-
+			
 			// Find Signature element
 			NodeList signatureXMLNodeList = xmlSignatureDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
 			if (signatureXMLNodeList.getLength() == 0) {
 				throw new SignatureException("Cannot find Signature element");
 			}
-
+			
 			// Create a DOM XMLSignatureFactory that will be used to unmarshal
-			// the
-			// document containing the XMLSignature
+			// the document containing the XMLSignature
 			XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
 
 			// Create a DOMValidateContext and specify a KeyValue KeySelector
 			// and document context
 			DOMValidateContext valContext = new DOMValidateContext(x509Certificate.getPublicKey(), signatureXMLNodeList.item(0));
-
+			
 			// unmarshal the XMLSignature
 			XMLSignature signature = fac.unmarshalXMLSignature(valContext);
 			if (!signature.validate(valContext)) {
@@ -126,7 +133,7 @@ public class JcrSignatureModule implements SignatureModule {
 				}
 				digestValues.add(SecureStore.b64Encode(reference.getDigestValue()));
 			}
-
+			
 			// load jcr node content and init digest message
 			jcrNode = session.getRootNode().getNode(nodePath.substring(1));
 			Node contentNode = jcrNode.getNode(Document.CONTENT);
@@ -192,11 +199,11 @@ public class JcrSignatureModule implements SignatureModule {
 			}
 
 			// Check subscriptions
-			JcrNotificationModule.checkSubscriptions(jcrNode, session.getUserID(), "SAVE_SIGNATURE", nodePath);
+			BaseNotificationModule.checkSubscriptions(jcrNode, session.getUserID(), "SAVE_SIGNATURE", nodePath);
 
 			// Activity log
-			UserActivity.log(session.getUserID(), "SAVE_SIGNATURE", nodePath, sha1);
-
+			UserActivity.log(session.getUserID(), "SAVE_SIGNATURE", jcrNode.getUUID(), nodePath, sha1);
+			
 		} catch (IOException e) {
 			log.warn(e.getMessage(), e);
 			JCRUtils.discardsPendingChanges(jcrNode);
@@ -244,12 +251,13 @@ public class JcrSignatureModule implements SignatureModule {
 		} finally {
 			if (token == null)
 				JCRUtils.logout(session);
-		}
-
+		}		
 	}
 
 	@Override
-	public boolean canSign(String token, String certSHA1) throws  AccessDeniedException, DatabaseException, RepositoryException, LoginException, SignatureException {
+	public boolean canSign(String token, String certSHA1)
+			throws AccessDeniedException, DatabaseException,
+			RepositoryException, LoginException, SignatureException {
 		log.debug("canSign({}, {})", new Object[] { token, certSHA1});
 		Session session = null;
 		
@@ -271,7 +279,7 @@ public class JcrSignatureModule implements SignatureModule {
 			}
 			
 			// Activity log
-			UserActivity.log(session.getUserID(), "HAS_SIGNATURE", session.getUserID(), certSHA1);
+			UserActivity.log(session.getUserID(), "HAS_SIGNATURE", session.getUserID(), token, certSHA1);
 			return true;
 		} catch (DatabaseException e) {
 			log.warn(e.getMessage(), e);
@@ -292,7 +300,9 @@ public class JcrSignatureModule implements SignatureModule {
 	}
 
 	@Override
-	public InputStream getContent(String token, String certPath) throws PathNotFoundException, RepositoryException, IOException, DatabaseException, SignatureException {
+	public InputStream getContent(String token, String certPath)
+			throws PathNotFoundException, RepositoryException, IOException,
+			DatabaseException, SignatureException {
 		log.debug("getContent({}, {})", new Object[] { token, certPath });
 		InputStream is = null;
 		Session session = null;
@@ -312,7 +322,7 @@ public class JcrSignatureModule implements SignatureModule {
 			}
 
 			// Activity log
-			UserActivity.log(session.getUserID(), "GET_DOCUMENT_SIGNATURE_CONTENT", certPath, "" + is.available());
+			UserActivity.log(session.getUserID(), "GET_DOCUMENT_SIGNATURE_CONTENT", token,  certPath, "" + is.available());
 		} catch (javax.jcr.PathNotFoundException e) {
 			log.warn(e.getMessage(), e);
 			throw new PathNotFoundException(e.getMessage(), e);
@@ -330,5 +340,7 @@ public class JcrSignatureModule implements SignatureModule {
 		log.debug("getContent: {}", is);
 		return is;
 	}
+
+	
 	
 }
