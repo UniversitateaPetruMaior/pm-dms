@@ -31,9 +31,11 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.openkm.bean.AppVersion;
 import com.openkm.bean.Document;
 import com.openkm.bean.Signature;
 import com.openkm.core.AccessDeniedException;
@@ -45,13 +47,17 @@ import com.openkm.core.RepositoryException;
 import com.openkm.core.SignatureException;
 import com.openkm.dao.UserCertificateDAO;
 import com.openkm.dao.bean.UserCertificate;
+import com.openkm.module.ModuleManager;
+import com.openkm.module.RepositoryModule;
 import com.openkm.module.SignatureModule;
 import com.openkm.module.jcr.base.BaseNotificationModule;
 import com.openkm.module.jcr.stuff.JCRUtils;
 import com.openkm.module.jcr.stuff.JcrSessionManager;
+import com.openkm.spring.PrincipalUtils;
 import com.openkm.util.CertificateUtil;
 import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
+import com.openkm.util.WarUtils;
 
 
 public class JcrSignatureModule implements SignatureModule {
@@ -271,15 +277,27 @@ public class JcrSignatureModule implements SignatureModule {
 			} else {
 				session = JcrSessionManager.getInstance().get(token);
 			}
-
+			String userId = null;
+			if (session == null) {
+				Authentication auth = null, oldAuth = null;
+				try {
+					oldAuth = PrincipalUtils.getAuthentication();
+					auth = PrincipalUtils.getAuthenticationByToken(token);
+					userId = auth.getName();
+				} finally {
+					PrincipalUtils.setAuthentication(oldAuth);
+				}
+			} else {
+				userId = session.getUserID();
+			}
 			
-			UserCertificate userAttachedCertificates = UserCertificateDAO.findByUser(session.getUserID(), certSHA1);
+			UserCertificate userAttachedCertificates = UserCertificateDAO.findByUser(userId, certSHA1);
 			if (userAttachedCertificates == null) {
 				throw new SignatureException("Signature is not belong to logged user");
 			}
 			
 			// Activity log
-			UserActivity.log(session.getUserID(), "HAS_SIGNATURE", session.getUserID(), token, certSHA1);
+			UserActivity.log(userId, "HAS_SIGNATURE", session == null ? "Authentication" : "JcrSession", "", certSHA1);
 			return true;
 		} catch (DatabaseException e) {
 			log.warn(e.getMessage(), e);

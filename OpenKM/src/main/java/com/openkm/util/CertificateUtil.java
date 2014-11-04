@@ -13,6 +13,7 @@ public class CertificateUtil {
 
 	public static X509Certificate getX509Certificate(String content) throws CertificateException {
 		content = content.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\r", "");
+		
 		Pattern patternBegin = Pattern.compile("-+BEGIN*CERTIFICATE-+\\r?\\n?");
 		Matcher matcherBegin = patternBegin.matcher(content);
 		if (matcherBegin.find()) {
@@ -23,12 +24,14 @@ public class CertificateUtil {
 		if (matcherEnd.find()) {
 			content = content.substring(0, matcherEnd.start());
 		}
-		StringBuffer certContent = new StringBuffer();
+		StringBuilder certContent = new StringBuilder();
 		certContent.append("-----BEGIN CERTIFICATE-----");
 		certContent.append("\n").append(content).append("\n");
 		certContent.append("-----END CERTIFICATE-----");
+		
 		ByteArrayInputStream ksbufin = new ByteArrayInputStream(certContent.toString().getBytes());
-		return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(ksbufin);
+		CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+		return (X509Certificate) certFactory.generateCertificate(ksbufin);
 	}
 
 	public static String getCertificateSHA1(X509Certificate x509Certificate) throws NoSuchAlgorithmException {

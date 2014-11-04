@@ -129,7 +129,10 @@ public class UserCertificateServlet extends BaseServlet {
 			String fileContent = "";
 			// read certificate content from file
 			InputStream is = postFiles.get(0).getInputStream();
-			fileContent = SecureStore.b64Encode(IOUtils.toByteArray(is));
+			//fileContent = SecureStore.b64Encode(IOUtils.toByteArray(is));
+			fileContent = new String(IOUtils.toByteArray(is));
+			//System.out.println(fileContent);
+			log.debug("Certificate file " + postFiles.get(0).getName() + " has the content:\n" + fileContent + "\n========END==");
 			is.close();
 
 			// initialize the certificate and validate

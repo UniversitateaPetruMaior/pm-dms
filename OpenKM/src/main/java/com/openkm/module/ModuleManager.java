@@ -292,9 +292,13 @@ public class ModuleManager {
 	 */
 	public static synchronized SignatureModule getSignatureModule() {
 		if (signatureModule == null) {
-			signatureModule = new com.openkm.module.jcr.JcrSignatureModule();
+			if (Config.REPOSITORY_NATIVE) {
+				signatureModule = new com.openkm.module.db.DbSignatureModule();
+			} else {
+				signatureModule = new com.openkm.module.jcr.JcrSignatureModule();
+			}
 		}
-		
+
 		return signatureModule;
 	}
 }
