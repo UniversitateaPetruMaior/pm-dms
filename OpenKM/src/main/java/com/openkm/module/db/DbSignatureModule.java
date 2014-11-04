@@ -51,6 +51,7 @@ import com.openkm.dao.UserCertificateDAO;
 import com.openkm.dao.bean.NodeBase;
 import com.openkm.dao.bean.NodeNote;
 import com.openkm.dao.bean.UserCertificate;
+import com.openkm.frontend.client.OKMException;
 import com.openkm.module.DocumentModule;
 import com.openkm.module.ModuleManager;
 import com.openkm.module.NoteModule;
@@ -176,8 +177,10 @@ public class DbSignatureModule implements SignatureModule {
 				}
 			}
 			if (!digestValueMatch) {
-				throw new SignatureException("Invalid signature !");
+				throw new OKMException("custom", "digestValueMatch");
 			}
+			
+			log.info("Signature is valid (by '" + userId + "' on node '" + nodePath + "' )");
 
 			// TODO: CHANGE FOR DB
 			/*
@@ -260,6 +263,10 @@ public class DbSignatureModule implements SignatureModule {
 			throw new SignatureException(e.getMessage(), e);
 		} catch (ParserConfigurationException e) {
 			log.error(e.getMessage(), e);
+			JCRUtils.discardsPendingChanges(jcrNode);
+			throw new SignatureException(e.getMessage(), e);
+		} catch (OKMException e) {
+			log.warn(e.getMessage(), e);
 			JCRUtils.discardsPendingChanges(jcrNode);
 			throw new SignatureException(e.getMessage(), e);
 		} catch (DatabaseException e) {
