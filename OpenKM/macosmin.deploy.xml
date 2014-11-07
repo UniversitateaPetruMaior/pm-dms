@@ -38,7 +38,7 @@
 	
 	<target name="deploy.exe.tool">
 		<mkdir dir="${tomcat.dir}/signtool"/>
-		<copy file="${signapp.dir}/install/sign4OpenKM-setup.exe" tofile="${tomcat.dir}/signtool/signtool.exe"/>		
+		<copy file="${signapp.dir}/install/signtool.exe" tofile="${tomcat.dir}/signtool/signtool.exe"/>		
 	</target>
 	
 	<target name="clean.tomcat.work.dir">
