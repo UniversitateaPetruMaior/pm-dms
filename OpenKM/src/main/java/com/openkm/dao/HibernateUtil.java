@@ -75,6 +75,7 @@ import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeLock;
 import com.openkm.dao.bean.NodeMail;
 import com.openkm.dao.bean.NodeNote;
+import com.openkm.dao.bean.NodeSignature;
 import com.openkm.dao.bean.NodeProperty;
 import com.openkm.dao.bean.RegisteredPropertyGroup;
 import com.openkm.dao.bean.Omr;
@@ -150,6 +151,7 @@ public class HibernateUtil {
 		cfg.addAnnotatedClass(NodeFolder.class);
 		cfg.addAnnotatedClass(NodeMail.class);
 		cfg.addAnnotatedClass(NodeNote.class);
+		cfg.addAnnotatedClass(NodeSignature.class);
 		cfg.addAnnotatedClass(NodeLock.class);
 		cfg.addAnnotatedClass(NodeProperty.class);
 		cfg.addAnnotatedClass(RegisteredPropertyGroup.class);

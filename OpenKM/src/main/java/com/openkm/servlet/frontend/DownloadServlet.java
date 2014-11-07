@@ -81,6 +81,7 @@ public class DownloadServlet extends OKMHttpServlet {
 		String checkout = request.getParameter("checkout");
 		String ver = request.getParameter("ver");
 		String signFileName = request.getParameter("signFileName");
+		String signUuid = request.getParameter("signUuid");
 		boolean export = request.getParameter("export") != null;
 		boolean inline = request.getParameter("inline") != null;
 		boolean signOnly = request.getParameter("signOnly") != null;
@@ -150,8 +151,8 @@ public class DownloadServlet extends OKMHttpServlet {
 				}
 			} else if (signOnly) {
 				OKMSignature okmSign = OKMSignature.getInstance();
-				is = okmSign.getContent(null, path);
-				WebUtils.sendFile(request, response, signFileName + "sig.xml", "application/xml", inline, is);
+				is = okmSign.getContent(null, signUuid);
+				WebUtils.sendFile(request, response, signFileName + ".sig.xml", "application/xml", inline, is);
 				is.close();
 			} else if (signTool) {
 				is = new FileInputStream(Config.SIGN_TOOL_LOCATION);

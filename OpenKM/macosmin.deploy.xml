@@ -8,12 +8,20 @@
 	<property name="tomcat.dir" value="d:/java/openkm-6.2.5-community/tomcat"/>
 	<property name="deploy.dir" value="${tomcat.dir}/webapps"/>
 	<property name="signapp.dir" value="d:/java/nb-woks/sign4openkm"/>
+	<property name="MessageScript.dir" value="d:/"/>
+	<property name="WindowsMessageScript" value="MessageBox.vbs"/>
 		
 	<target name="all" depends="build,deploy.war" />
 	
 	<target name="build">
 		<exec dir="." executable="cmd.exe">
 			<arg line="/k mvn -Dmaven.test.skip=true clean gwt:compile -Dgwt.extrajvmArgs=-Xmx1024m -Dgwt.module=com.openkm.frontend.Main install"/>
+		</exec>
+	</target>
+
+	<target name="build.simple">
+		<exec dir="." executable="cmd.exe">
+			<arg line="/k mvn -Dmaven.test.skip=true -Dgwt.extrajvmArgs=-Xmx1024m -Dgwt.module=com.openkm.frontend.Main install"/>
 		</exec>
 	</target>
 
@@ -44,4 +52,11 @@
 	<target name="clean.webapps.dir">
 			<delete dir="${tomcat.dir}/webapps/OpenKM"/>
 	</target>
+	
+	<target name="start.local.tomcat">
+		<exec dir="${MessageScript.dir}" executable="cmd.exe">
+		  <arg line="/k cscript ${WindowsMessageScript} &quot;Start the Tomcat server.&quot;"/>
+		</exec>
+	</target>
+
 </project>

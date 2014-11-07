@@ -224,7 +224,7 @@ public class Document extends Composite {
 		tableProperties.setHTML(1, 1, doc.getName());
 		tableProperties.setHTML(2, 1, doc.getParentPath());
 		tableProperties.setHTML(3, 1, Util.formatSize(doc.getActualVersion().getSize()));
-		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
+		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));		
 		tableProperties.setHTML(4, 1, dtf.format(doc.getCreated())+" "+Main.i18n("document.by")+" " + doc.getUser().getUsername());
 		tableProperties.setHTML(5, 1, dtf.format(doc.getLastModified())+" "+Main.i18n("document.by")+" " + doc.getActualVersion().getUser().getUsername());
 		tableProperties.setHTML(6, 1, doc.getMimeType());
@@ -276,7 +276,7 @@ public class Document extends Composite {
 			setRowWordWarp(tableSubscribedUsers.getRowCount()-1, 0, true, tableSubscribedUsers);
 		}
 		
-		// Some preoperties only must be visible on taxonomy or trash view
+		// Some properties only must be visible on taxonomy or trash view
 		int actualView = Main.get().mainPanel.desktop.navigator.getStackIndex();
 		
 		if (actualView == UIDesktopConstants.NAVIGATOR_TRASH) {
@@ -305,14 +305,15 @@ public class Document extends Composite {
 		keywordManager.setObject(doc, remove);
 		keywordManager.drawAll();
 		
-		// Set the docuemnt signitures
+		// Set the document signatures
 		final String docName = doc.getName();
+		DateTimeFormat dtf4File = DateTimeFormat.getFormat("yyMMdd-HHmmss");
 		for (final GWTSignature signature: doc.getSignatures()) {
 			int rowCount = signaturesAppliedTable.getRowCount();
 			signaturesAppliedTable.setHTML(rowCount, 0, (signature.getUser()!=null ? signature.getUser() : ""));
 			signaturesAppliedTable.setHTML(rowCount, 1, dtf.format(signature.getDate()) );
-			signaturesAppliedTable.setHTML(rowCount, 2, Util.imageItemHTML("img/icon/security/" + (signature.isValid() ? "yes" : "no") + ".gif"));
-			signaturesAppliedTable.setWidget(rowCount, 3, createSignDownloadWidget(docName, dtf.format(signature.getDate()), signature));
+			signaturesAppliedTable.setHTML(rowCount, 2, Util.imageHTML("img/icon/security/" + (signature.isValid() ? "yes" : "no") + ".gif", signature.isValid() ? "valid" : "invalid"));
+			signaturesAppliedTable.setWidget(rowCount, 3, createSignDownloadWidget(docName, dtf4File.format(signature.getDate()), signature));
 			setRowWordWarp(rowCount-1, 0, true, signaturesAppliedTable);
 		}
 		
@@ -522,12 +523,15 @@ public class Document extends Composite {
 	}
 	
 	private Widget createSignDownloadWidget(final String docName, final String signedOn, final GWTSignature signature){
-		int ext_sep = docName.lastIndexOf(".");
-		final StringBuffer sb = new StringBuffer();
-		sb.append( (ext_sep > 0 && ext_sep < docName.length()) ? docName.substring(0, ext_sep-1) : docName);
-		sb.append(" sign_by ").append(signature.getUser()).append(" sign_on ").append(signedOn);
+		//int ext_sep = docName.lastIndexOf(".");
+		final StringBuilder sb = new StringBuilder();
+		//sb.append( (ext_sep > 0 && ext_sep < docName.length()) ? docName.substring(0, ext_sep-1) : docName);
+		sb.append(docName.length() > 64 ? docName.substring(0, 64) : docName);
+		sb.append(" signature by ").append(signature.getUser()).append(" on ").append(signedOn);
 		final String signName = sb.toString().replaceAll("^[.\\\\/:*?\"<>|]?[\\\\/:*?\"<>|]*", " ");
 		Image downloadSign = new Image(OKMBundleResources.INSTANCE.download());
+		downloadSign.setAltText(Main.i18n("filebrowser.menu.download"));
+		downloadSign.setTitle(Main.i18n("filebrowser.menu.download"));
 		downloadSign.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {

@@ -52,6 +52,7 @@ import com.openkm.bean.Mail;
 import com.openkm.bean.Note;
 import com.openkm.bean.PropertyGroup;
 import com.openkm.bean.QueryResult;
+import com.openkm.bean.Signature;
 import com.openkm.bean.Version;
 import com.openkm.bean.form.Button;
 import com.openkm.bean.form.CheckBox;
@@ -237,12 +238,12 @@ public class GWTUtil {
 		doc.setCategories(categories);
 
 		// from Util.java in OpenKM 5.0
-		List<GWTSignature> signatures = new ArrayList<GWTSignature>();
+		List<Signature> signatures = new ArrayList<Signature>();
 		
 		for (Iterator<GWTSignature> it = gWTDoc.getSignatures().iterator(); it.hasNext();) {
 			signatures.add(copy(it.next()));
 		}
-		gWTDoc.setSignatures(signatures);
+		doc.setSignatures(signatures);
 		
 		gWTDoc.setActualVersion(copy(doc.getActualVersion()));
 		
@@ -330,14 +331,15 @@ public class GWTUtil {
 	 * @param doc The original GWTFolder object.
 	 * @return A Folder object with the data from the original Document.
 	 */
-	public static GWTSignature copy(GWTSignature sig) {
+	public static Signature copy(GWTSignature sig) {
 		log.debug("copy({})", sig);
-		GWTSignature signature = new GWTSignature();
-		
-		signature.setDate(sig.getDate());
+		Signature signature = new Signature();
+		Calendar created = Calendar.getInstance();
+		created.setTimeInMillis(sig.getDate().getTime());
+		signature.setDate(created);
 		signature.setUser(sig.getUser());
 		signature.setPath(sig.getPath());
-		signature.setSha1(sig.getSha1());
+		signature.setSignSHA1(sig.getSha1());
 		signature.setValid(sig.isValid());
 		
 		

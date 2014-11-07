@@ -15,8 +15,6 @@ import java.util.List;
 
 import javax.jcr.LoginException;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.Session;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureException;
@@ -26,7 +24,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.JcrConstants;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.slf4j.Logger;
@@ -35,8 +32,6 @@ import org.springframework.security.core.Authentication;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.openkm.bean.Document;
-import com.openkm.bean.Note;
 import com.openkm.bean.Signature;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
@@ -46,30 +41,29 @@ import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
 import com.openkm.core.SignatureException;
 import com.openkm.dao.NodeBaseDAO;
-import com.openkm.dao.NodeNoteDAO;
+import com.openkm.dao.NodeSignatureDAO;
 import com.openkm.dao.UserCertificateDAO;
 import com.openkm.dao.bean.NodeBase;
-import com.openkm.dao.bean.NodeNote;
+import com.openkm.dao.bean.NodeSignature;
 import com.openkm.dao.bean.UserCertificate;
 import com.openkm.frontend.client.OKMException;
 import com.openkm.module.DocumentModule;
 import com.openkm.module.ModuleManager;
-import com.openkm.module.NoteModule;
 import com.openkm.module.SignatureModule;
-import com.openkm.module.db.base.BaseNoteModule;
 import com.openkm.module.db.base.BaseNotificationModule;
+import com.openkm.module.db.base.BaseSignatureModule;
 import com.openkm.module.jcr.stuff.JCRUtils;
-import com.openkm.module.jcr.stuff.JcrSessionManager;
 import com.openkm.spring.PrincipalUtils;
 import com.openkm.util.CertificateUtil;
-import com.openkm.util.FormatUtil;
 import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
 
+@SuppressWarnings("deprecation")
 public class DbSignatureModule implements SignatureModule {
 	private static Logger log = LoggerFactory.getLogger(DbSignatureModule.class);
 	
 	
+	@SuppressWarnings({ "unused", "rawtypes" })
 	@Override
 	public void add(String token, String nodePath, byte[] signContent)
 			throws IOException, LockException, PathNotFoundException,
@@ -160,10 +154,7 @@ public class DbSignatureModule implements SignatureModule {
 			DocumentModule dm = ModuleManager.getDocumentModule();
 			InputStream docInputStream = dm.getContent(token, nodePath, false);
 			byte[] docInBytes = IOUtils.toByteArray(docInputStream);
-			String fileContent = null;
-			if (docInBytes.length < 1024) {
-				fileContent = new String(docInBytes);
-			}
+			
 			MessageDigest md1 = MessageDigest.getInstance("SHA1");
 			md1.update(docInBytes);
 			final String digestValue = SecureStore.b64Encode(md1.digest());
@@ -180,20 +171,8 @@ public class DbSignatureModule implements SignatureModule {
 				throw new OKMException("custom", "digestValueMatch");
 			}
 			
-			log.info("Signature is valid (by '" + userId + "' on node '" + nodePath + "' )");
-
-			// TODO: CHANGE FOR DB
-			/*
-			// save signature
-			if (!jcrNode.isNodeType(Signature.MIX_TYPE)) {
-				log.debug("Adding mixing '{}' to {}", Signature.MIX_TYPE, jcrNode.getPath());
-				jcrNode.addMixin(Signature.MIX_TYPE);
-				jcrNode.save();
-			}
-			Node signaturesJCRNode = jcrNode.getNode(Signature.LIST);
-			
-			 
-			
+			String infoMessage = "Signature is valid (by '" + userId + "' on node '" + nodePath + "')"; 
+			log.info(infoMessage);
 
 			// prepare signature values 
 			Calendar cal = Calendar.getInstance();
@@ -201,42 +180,49 @@ public class DbSignatureModule implements SignatureModule {
 			OutputFormat outputFormat = new OutputFormat(xmlSignatureDoc);
 			XMLSerializer serializer = new XMLSerializer(outputStream, outputFormat);
 			serializer.serialize(xmlSignatureDoc);
-			InputStream inputStream = (InputStream) new ByteArrayInputStream(outputStream.toByteArray());
+			String signContentToSave = new String(outputStream.toByteArray());
 			
-			// find and update signature if exists
+			// prepare to save the signature
+			NodeSignature nSavedSignature = null;
+						
+			// get existing signatures
+			List<NodeSignature> nSignatureList = NodeSignatureDAO.getInstance().findByParent(nodeUuid);
+			
+			// find and update signature if exists			
 			boolean jcrSignatureExists = false;
-			for (NodeIterator nit = signaturesJCRNode.getNodes(); nit.hasNext();) {
-				Node signatureJRCNode = nit.nextNode();
-				String nodeSHA1 = signatureJRCNode.getProperty(Signature.SIGN_SHA1).getString();
+			for (NodeSignature nSignature : nSignatureList) {
+				Signature savedS = BaseSignatureModule.getProperties(nSignature, nSignature.getUuid());
+				String nodeSHA1 = savedS.getSignSHA1();
 				if (sha1.equals(nodeSHA1)) {
-					signatureJRCNode.setProperty(Signature.DATE, cal);
-					signatureJRCNode.setProperty(Signature.SIGN_DIGEST, digestValue);
-					signatureJRCNode.setProperty(Signature.SIGN_SIZE, inputStream.available());
-					signatureJRCNode.setProperty(Signature.SIGN_CONTENT, inputStream);
-					signatureJRCNode.save();
+					nSignature.setCreated(cal);
+					nSignature.setSignDigest(digestValue);
+					nSignature.setSignSize(signContentToSave.length());
+					nSignature.setSignContent(signContentToSave);
+					NodeSignatureDAO.getInstance().update(nSignature);					
 					jcrSignatureExists = true;
+					nSavedSignature = nSignature;
 					break;
 				}
 			}
-			// save as new node
+			// create new signature if it didn't existed
 			if (!jcrSignatureExists) {
-				Node signatureJRCNode = signaturesJCRNode.addNode(cal.getTimeInMillis() + "", Signature.TYPE);
-				signatureJRCNode.setProperty(Signature.DATE, cal);
-				signatureJRCNode.setProperty(Signature.USER, userId);
-				signatureJRCNode.setProperty(Signature.SIGN_SHA1, sha1);
-				signatureJRCNode.setProperty(Signature.SIGN_DIGEST, digestValue);
-				signatureJRCNode.setProperty(Signature.SIGN_SIZE, inputStream.available());
-				signatureJRCNode.setProperty(Signature.SIGN_CONTENT, inputStream);
-				signaturesJCRNode.save();
+				nSavedSignature = BaseSignatureModule.create(nodeUuid, auth.getName(), signContentToSave, digestValue, sha1, signContentToSave.length());
+				infoMessage = "Signature is valid (by '" + userId + "' on node '" + nodePath + "' signUuid '" + nSavedSignature.getUuid() + "')";
+				
+				// Check subscriptions
+				BaseNotificationModule.checkSubscriptions(node, auth.getName(), "ADD_SIGNATURE", infoMessage);
+
+				// Activity log
+				UserActivity.log(auth.getName(), "ADD_SIGNATURE", nodeUuid, nodePath, infoMessage);
+			} else {
+				infoMessage = "Signature is valid (by '" + userId + "' on node '" + nodePath + "' signUuid '" + nSavedSignature.getUuid() + "')";
+				
+				// Check subscriptions
+				BaseNotificationModule.checkSubscriptions(node, userId, "SAVE_SIGNATURE", nodePath);
+
+				// Activity log
+				UserActivity.log(userId, "SAVE_SIGNATURE", nodeUuid, nodePath, sha1);
 			}
-			*/
-
-			// Check subscriptions
-			BaseNotificationModule.checkSubscriptions(node, userId, "SAVE_SIGNATURE", nodePath);
-
-			// Activity log
-			UserActivity.log(userId, "SAVE_SIGNATURE", nodeUuid, nodePath, sha1);
-			
 		} catch (IOException e) {
 			log.warn(e.getMessage(), e);
 			JCRUtils.discardsPendingChanges(jcrNode);
@@ -283,7 +269,6 @@ public class DbSignatureModule implements SignatureModule {
 			throws AccessDeniedException, DatabaseException,
 			RepositoryException, LoginException, SignatureException {
 		log.debug("canSign({}, {})", new Object[] { token, certSHA1});
-		Session session = null;
 		Authentication auth = null, oldAuth = null;
 		
 		if (Config.SYSTEM_READONLY) {
@@ -321,22 +306,54 @@ public class DbSignatureModule implements SignatureModule {
 	}
 
 	@Override
-	public InputStream getContent(String token, String certPath)
+	public InputStream getContent(String token, String nodeUuid)
 			throws PathNotFoundException, RepositoryException, IOException,
-			DatabaseException, SignatureException {
-		log.debug("getContent({}, {})", new Object[] { token, certPath });
+			DatabaseException, SignatureException, AccessDeniedException {
+		log.info("getContent({}, {})", new Object[] { token, nodeUuid });
 		
-		// implementation specific for signature not ready yet => TODO
+		String failMessage = "Signature Node Uuid parameter was null"; 
+		String signContent = failMessage;
 		
-		// get the content of the node
-		DocumentModule dm = ModuleManager.getDocumentModule();
-		InputStream docInputStream = null;
-		try {
-			docInputStream = dm.getContent(token, certPath, false);
-		} catch (AccessDeniedException e) {
-			log.error(e.getMessage(), e);
+		Authentication auth = null, oldAuth = null;
+		
+		if (nodeUuid == null) {
+			log.warn(failMessage);
+			throw new SignatureException(failMessage);
 		}
-		return docInputStream;
+
+		if (Config.SYSTEM_READONLY) {
+			throw new AccessDeniedException("System is in read-only mode");
+		}		
+
+		try {
+			String userId = null;
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			userId = auth.getName();			
+			// get the signature node
+			NodeSignature node = NodeSignatureDAO.getInstance().findByPk(nodeUuid);
+			
+			// get the content of the node
+			signContent = node.getSignContent();
+			
+			// Activity log
+			UserActivity.log(userId, "GET_DOCUMENT_SIGNATURE_CONTENT", token,  nodeUuid, "" + signContent.length());
+
+		} catch (DatabaseException e) {
+			log.warn(e.getMessage(), e);
+			throw new DatabaseException(e);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}		
+
+		InputStream signatureInputStream = (InputStream) new ByteArrayInputStream(signContent.getBytes());
+		return signatureInputStream;
 
 //		InputStream is = null;
 //		Session session = null;

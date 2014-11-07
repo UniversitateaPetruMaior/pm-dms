@@ -52,6 +52,7 @@ import com.openkm.dao.bean.NodeDocumentVersion;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeMail;
 import com.openkm.dao.bean.NodeNote;
+import com.openkm.dao.bean.NodeSignature;
 import com.openkm.dao.bean.NodeProperty;
 import com.openkm.module.db.stuff.FsDataStore;
 import com.openkm.spring.PrincipalUtils;
@@ -223,6 +224,19 @@ public class DbMetadataAdapter extends MetadataAdapter {
 					session.save(nNote);
 				}
 			}
+
+			// TODO Signatures
+//			if (!dmd.getNotes().isEmpty()) {
+//				for (NoteMetadata nmd : dmd.getNotes()) {
+//					NodeNote nNote = new NodeNote();
+//					nNote.setUuid(UUID.randomUUID().toString());
+//					nNote.setParent(nDoc.getUuid());
+//					nNote.setAuthor(nmd.getUser());
+//					nNote.setCreated(nmd.getDate());
+//					nNote.setText(nmd.getText());
+//					session.save(nNote);
+//				}
+//			}
 			
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
@@ -418,6 +432,19 @@ public class DbMetadataAdapter extends MetadataAdapter {
 				}
 			}
 			
+			// TODO Signatures
+//			if (!fmd.getNotes().isEmpty()) {
+//				for (NoteMetadata nmd : fmd.getNotes()) {
+//					NodeNote nNote = new NodeNote();
+//					nNote.setUuid(UUID.randomUUID().toString());
+//					nNote.setParent(nFld.getUuid());
+//					nNote.setAuthor(nmd.getUser());
+//					nNote.setCreated(nmd.getDate());
+//					nNote.setText(nmd.getText());
+//					session.save(nNote);
+//				}
+//			}
+			
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);
@@ -533,6 +560,19 @@ public class DbMetadataAdapter extends MetadataAdapter {
 					session.save(nNote);
 				}
 			}
+			
+			// TODO Signatures
+//			if (!mmd.getNotes().isEmpty()) {
+//				for (NoteMetadata nmd : mmd.getNotes()) {
+//					NodeNote nNote = new NodeNote();
+//					nNote.setUuid(UUID.randomUUID().toString());
+//					nNote.setParent(nMail.getUuid());
+//					nNote.setAuthor(nmd.getUser());
+//					nNote.setCreated(nmd.getDate());
+//					nNote.setText(nmd.getText());
+//					session.save(nNote);
+//				}
+//			}
 			
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {

@@ -96,7 +96,20 @@ public class Signature implements Serializable {
 	public void setSignDigest(String signDigest) {
 		this.signDigest = signDigest;
 	}
-	
-	
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("date="); sb.append(date==null?null:date.getTime());
+		sb.append(", user=").append(user);
+		sb.append(", signContent=").append(signContent==null?null:signContent.length()>10 ? signContent.substring(0, 10) + "...[" + signContent.length() + "]" : signContent);
+		sb.append(", signDigest=").append(signDigest);
+		sb.append(", signSHA1=").append(signSHA1);
+		sb.append(", signSize=").append(signSize);
+		sb.append(", valid=").append(valid);
+		sb.append(", path="); sb.append(path);
+		sb.append("}");
+		return sb.toString();
+	}
 	
 }

@@ -255,9 +255,9 @@ public class Util {
 	 * @param path
 	 * @param params
 	 */
-	public static void downloadFileSignature(String signPath, String signName) {
+	public static void downloadFileSignature(String signUuid, String signName) {
 		final Element downloadIframe = RootPanel.get("__download").getElement(); 
-		String url = RPCService.DownloadServlet + "?signOnly=true&id=" + URL.encodeComponent(signPath) + "&signFileName=" + URL.encodeComponent(signName);
+		String url = RPCService.DownloadServlet + "?signOnly=true&signUuid=" + URL.encodeQueryString(signUuid) + "&signFileName=" + URL.encodeQueryString(signName);
 		DOM.setElementAttribute(downloadIframe, "src", url); 
 	}
 	

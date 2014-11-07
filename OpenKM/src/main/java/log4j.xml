@@ -38,6 +38,11 @@
 		<level value="warn"/>
 	</logger>
 
+    <!-- while in development -->
+    <logger name="com.openkm">
+		<level value="debug"/>
+	</logger>
+
 	<!-- Ignore activity warning due to no database found -->	
 	<logger name="com.openkm.core.dao">
 		<level value="error"/>

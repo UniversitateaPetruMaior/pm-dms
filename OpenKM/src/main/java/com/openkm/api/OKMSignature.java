@@ -42,7 +42,7 @@ public class OKMSignature implements SignatureModule {
 	}
 
 	@Override
-	public InputStream getContent(String token, String certPath) throws PathNotFoundException, RepositoryException, IOException, DatabaseException, SignatureException {
+	public InputStream getContent(String token, String certPath) throws PathNotFoundException, RepositoryException, IOException, DatabaseException, SignatureException, AccessDeniedException {
 		log.debug("canSign({}, {})", new Object[] { token, certPath });
 		return ModuleManager.getSignatureModule().getContent(token, certPath);
 	}	

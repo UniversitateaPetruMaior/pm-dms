@@ -30,5 +30,5 @@ public interface SignatureModule {
 	
 	public boolean canSign(String token, String certSHA1) throws  AccessDeniedException, DatabaseException, RepositoryException, LoginException, SignatureException;
 	
-	public InputStream getContent(String token, String certPath) throws PathNotFoundException, RepositoryException, IOException, DatabaseException, SignatureException;
+	public InputStream getContent(String token, String certPath) throws PathNotFoundException, RepositoryException, IOException, DatabaseException, SignatureException, AccessDeniedException;
 }
