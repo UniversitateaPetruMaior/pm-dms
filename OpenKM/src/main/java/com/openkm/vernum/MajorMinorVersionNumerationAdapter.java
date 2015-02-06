@@ -31,14 +31,15 @@ import com.openkm.dao.bean.NodeDocumentVersion;
  * @author pavila
  */
 public class MajorMinorVersionNumerationAdapter implements VersionNumerationAdapter {
-
+	public static final int MAJOR = 1;
+	
 	@Override
 	public String getInitialVersionNumber() {
 		return "1.0";
 	}
 
 	@Override
-	public String getNextVersionNumber(Session session, NodeDocument nDoc, NodeDocumentVersion nDocVer) {
+	public String getNextVersionNumber(Session session, NodeDocument nDoc, NodeDocumentVersion nDocVer, int increment) {
 		String versionNumber = nDocVer.getName();
 		String ver[] = versionNumber.split("\\.");
 		int major = Integer.parseInt(ver[0]);
@@ -47,7 +48,13 @@ public class MajorMinorVersionNumerationAdapter implements VersionNumerationAdap
 		NodeDocumentVersion ndv = null;
 		
 		do {
-			minor++;
+			if (increment == MAJOR) {
+				major++;
+				minor = 0;
+			} else {
+				minor++;
+			}
+			
 			q.setString("parent", nDoc.getUuid());
 			q.setString("name", major + "." + minor);
 			ndv = (NodeDocumentVersion) q.setMaxResults(1).uniqueResult();

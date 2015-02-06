@@ -30,6 +30,7 @@ import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTUINotification;
 import com.openkm.frontend.client.bean.GWTUser;
 import com.openkm.frontend.client.bean.GWTWorkspace;
+import com.openkm.frontend.client.constants.ui.UIDockPanelConstants;
 import com.openkm.frontend.client.service.OKMUINotificationService;
 import com.openkm.frontend.client.service.OKMUINotificationServiceAsync;
 import com.openkm.frontend.client.service.OKMWorkspaceService;
@@ -40,7 +41,6 @@ import com.openkm.frontend.client.widget.startup.StartUp;
  * Workspace user properties
  * 
  * @author jllort
- * 
  */
 public class WorkspaceUserProperties {
 	private final OKMWorkspaceServiceAsync workspaceService = (OKMWorkspaceServiceAsync) GWT
@@ -73,6 +73,18 @@ public class WorkspaceUserProperties {
 			workspace = result;
 			user = result.getUser();
 			applicationURL = result.getApplicationURL();
+			
+			// Disable options which need java
+			if (!Util.isJREInstalled()) {
+				if (workspace.getProfileToolbar().isScannerVisible()) {
+					workspace.getProfileToolbar().setScannerVisible(false);
+					CommonUI.disableExtension("Scanner");
+				}
+				if (workspace.getProfileToolbar().isUploaderVisible()) {
+					workspace.getProfileToolbar().setUploaderVisible(false);
+					CommonUI.disableExtension("Uploader");
+				}
+		  	}
 			
 			// Changing the web skin
 			Util.changeCss(workspace.getWebSkin());
@@ -107,6 +119,14 @@ public class WorkspaceUserProperties {
 				Main.get().fileUpload.enableAdvancedFilter();
 				Main.get().notifyPopup.enableAdvancedFilter();
 			}
+			// Enabling notify to external users
+			if (workspace.isNotifyExternalUsers()) {
+				Main.get().notifyPopup.enableNotifyExternalUsers();
+				Main.get().fileUpload.enableNotifyExternalUsers();
+			}
+			
+			// Enable increment version
+			Main.get().fileUpload.setIncreaseVersion(workspace.getIncreaseVersion());
 			
 			// Enabling security mode multiple
 			if (workspace.isSecurityModeMultiple()) {
@@ -128,6 +148,12 @@ public class WorkspaceUserProperties {
 			
 			// Enabling / disabling some actions
 			Main.get().mainPanel.topPanel.toolBar.setAvailableOption(workspace.getProfileToolbar());
+			
+			// Extended security
+			Main.get().mainPanel.desktop.browser.tabMultiple.tabDocument.initSecurity();
+			Main.get().mainPanel.desktop.browser.tabMultiple.tabFolder.initSecurity();
+			Main.get().mainPanel.desktop.browser.tabMultiple.tabMail.initSecurity();
+			Main.get().securityPopup.initSecurity();
 			
 			// Add note
 			if (workspace.getAvailableOption().isAddNoteOption()) {
@@ -198,6 +224,10 @@ public class WorkspaceUserProperties {
 			}
 			if (workspace.isStackCategoriesVisible()) {
 				Main.get().mainPanel.desktop.navigator.showCategories();
+				refreshStack = true;
+			}
+			if (workspace.isStackMetadataVisible()) {
+				Main.get().mainPanel.desktop.navigator.showMetadata();
 				refreshStack = true;
 			}
 			if (workspace.isStackThesaurusVisible()) {
@@ -332,20 +362,33 @@ public class WorkspaceUserProperties {
 			// Refreshing dashboard values
 			Main.get().fileUpload.setUploadNotifyUsers(workspace.isUploadNotifyUsers());
 			Main.get().mainPanel.dashboard.init();
-			Main.get().mainPanel.dashboard.refreshAll(); // Refreshing dashboard values
+			Main.get().mainPanel.dashboard.refreshAll(); // Refreshing dashboard
+															// values
 			
 			// Minimun search characters
-			Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.setMinSearchCharacters(workspace.getMinSearchCharacters());
+			Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.setMinSearchCharacters(workspace
+					.getMinSearchCharacters());
 			
 			// Filebrowser profile
-			Main.get().mainPanel.desktop.browser.fileBrowser.setProfileFileBrowser(workspace.getProfileFileBrowser(),
-																				   workspace.getProfileExplorer());
+			Main.get().mainPanel.desktop.browser.fileBrowser.setProfileFileBrowser(workspace.getProfileFileBrowser(), workspace.getProfilePagination());
+			Main.get().mainPanel.search.searchBrowser.searchResult.searchCompactResult.setProfileFileBrowser(workspace.getProfileFileBrowser());
+			
+			// Mime types
+			Main.get().mainPanel.search.searchBrowser.searchIn.searchAdvanced.setMimeTypes(workspace.getMimeTypes());
+			
+			// Show default tab
+			if (workspace.getDefaultTab().equals("search") && workspace.isTabSearchVisible()) {
+				Main.get().mainPanel.topPanel.tabWorkspace.changeSelectedTab(UIDockPanelConstants.SEARCH);
+			} else if (workspace.getDefaultTab().equals("dashboard") && workspace.isTabDashboardVisible()) {
+				Main.get().mainPanel.topPanel.tabWorkspace.changeSelectedTab(UIDockPanelConstants.DASHBOARD);
+			} else if (workspace.getDefaultTab().equals("administration") && result.isTabAdminVisible()) {
+				Main.get().mainPanel.topPanel.tabWorkspace.changeSelectedTab(UIDockPanelConstants.ADMINISTRATION);
+			}
 			
 			Main.get().startUp.nextStatus(StartUp.STARTUP_GET_TAXONOMY_ROOT);
 			
 			// Getting ui messages
-			getUINotificationMessages(new Long(
-					Main.get().workspaceUserProperties.workspace.getUINotificationSchedule() / 2).intValue());
+			getUINotificationMessages(new Long(Main.get().workspaceUserProperties.workspace.getUINotificationSchedule() / 2).intValue());
 		}
 		
 		public void onFailure(Throwable caught) {
@@ -373,7 +416,7 @@ public class WorkspaceUserProperties {
 		uINotificationService.get(new AsyncCallback<List<GWTUINotification>>() {
 			@Override
 			public void onSuccess(List<GWTUINotification> result) {
-				Main.get().mainPanel.bottomPanel.userInfo.reset();
+				//Main.get().mainPanel.bottomPanel.userInfo.reset();
 				boolean schedule = true;
 				
 				if (!result.isEmpty()) {
@@ -384,7 +427,7 @@ public class WorkspaceUserProperties {
 							schedule = false;
 						}
 					}
-					Main.get().mainPanel.bottomPanel.userInfo.setLastUIId(result.get(result.size()-1).getId());
+					Main.get().mainPanel.bottomPanel.userInfo.setLastUIId(result.get(result.size() - 1).getId());
 				}
 				
 				if (schedule) {
@@ -466,15 +509,20 @@ public class WorkspaceUserProperties {
 	}
 	
 	/**
-	 * setAvailableAction
-	 * 
-	 * Some actions must be enabled at ends because some objects are not created since end startp up
+	 * setAvailableAction Some actions must be enabled at ends because some
+	 * objects are not created since end startp up
 	 */
 	public void setAvailableAction() {
 		if (Main.get().workspaceUserProperties.getWorkspace().isStackTaxonomy()) {
 			Main.get().mainPanel.desktop.navigator.taxonomyTree.menuPopup.menu.setAvailableOption(workspace
 					.getAvailableOption());
 			Main.get().mainPanel.desktop.browser.fileBrowser.taxonomyMenuPopup.menu.setAvailableOption(workspace
+					.getAvailableOption());
+		}
+		if (Main.get().workspaceUserProperties.getWorkspace().isStackMetadataVisible()) {
+			Main.get().mainPanel.desktop.navigator.metadataTree.menuPopup.menu.setAvailableOption(workspace
+					.getAvailableOption());
+			Main.get().mainPanel.desktop.browser.fileBrowser.metadataMenuPopup.menu.setAvailableOption(workspace
 					.getAvailableOption());
 		}
 		if (Main.get().workspaceUserProperties.getWorkspace().isStackCategoriesVisible()) {

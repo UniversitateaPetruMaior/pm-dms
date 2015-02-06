@@ -41,6 +41,8 @@ public class GWTSelect extends GWTFormElement implements IsSerializable {
 	private String type = TYPE_SIMPLE;
 	private String data = "";
 	private String optionsData = "";
+	private String suggestion = "";
+	private String className = "";
 	private boolean readonly = false;
 
 	public Collection<GWTOption> getOptions() {
@@ -91,6 +93,22 @@ public class GWTSelect extends GWTFormElement implements IsSerializable {
 		this.optionsData = optionsData;
 	}
 	
+	public String getSuggestion() {
+		return suggestion;
+	}
+
+	public void setSuggestion(String suggestion) {
+		this.suggestion = suggestion;
+	}
+
+	public String getClassName() {
+		return className;
+	}
+
+	public void setClassName(String className) {
+		this.className = className;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
@@ -103,6 +121,7 @@ public class GWTSelect extends GWTFormElement implements IsSerializable {
 		sb.append(", options="); sb.append(options);
 		sb.append(", validators="); sb.append(validators);
 		sb.append(", data="); sb.append(data);
+		sb.append(", suggestion="); sb.append(suggestion);
 		sb.append("}");
 		return sb.toString();
 	}

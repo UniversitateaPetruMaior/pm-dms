@@ -21,6 +21,8 @@
 
 package com.openkm.frontend.client.widget.searchin;
 
+import java.util.List;
+
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -37,6 +39,7 @@ import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.HTMLTable.CellFormatter;
 import com.openkm.frontend.client.Main;
+import com.openkm.frontend.client.bean.GWTMimeType;
 import com.openkm.frontend.client.util.OKMBundleResources;
 
 /**
@@ -44,7 +47,6 @@ import com.openkm.frontend.client.util.OKMBundleResources;
  *
  */
 public class SearchAdvanced extends Composite {
-	
 	private ScrollPanel scrollPanel;
 	private FlexTable table;
 	public HorizontalPanel pathExplorerPanel;
@@ -122,6 +124,7 @@ public class SearchAdvanced extends Composite {
 		typeFolder.setValue(false);
 		typeMail = new CheckBox(Main.i18n("search.type.mail"));
 		typeMail.setValue(false);
+		
 		typeMail.addClickHandler(new ClickHandler() { 
 			@Override
 			public void onClick(ClickEvent event) {
@@ -134,7 +137,7 @@ public class SearchAdvanced extends Composite {
 				}
 			}
 		});
-				
+		
 		typePanel.add(typeDocument);
 		typePanel.add(new HTML("&nbsp;"));
 		typePanel.add(typeFolder);
@@ -145,19 +148,6 @@ public class SearchAdvanced extends Composite {
 		// Sets mime types values
 		mimeTypes = new ListBox();
 		mimeTypes.addItem(" ", "");
-		mimeTypes.addItem("HTML", "text/html");
-		mimeTypes.addItem("MS Excel", "application/vnd.ms-excel");
-		mimeTypes.addItem("MS PowerPoint", "application/vnd.ms-powerpoint");
-		mimeTypes.addItem("MS Word", "application/msword");
-		mimeTypes.addItem("OpenOffice.org Database", "application/vnd.oasis.opendocument.database");
-		mimeTypes.addItem("OpenOffice.org Draw", "application/vnd.oasis.opendocument.graphics");
-		mimeTypes.addItem("OpenOffice.org Presentation", "application/vnd.oasis.opendocument.presentation");
-		mimeTypes.addItem("OpenOffice.org Spreadsheet", "application/vnd.oasis.opendocument.spreadsheet");
-		mimeTypes.addItem("OpenOffice.org Word Processor", "application/vnd.oasis.opendocument.text");
-		mimeTypes.addItem("PDF", "application/pdf");
-		mimeTypes.addItem("RTF", "application/rtf");
-		mimeTypes.addItem("TXT", "text/plain");
-		mimeTypes.addItem("XML", "text/xml");
 		
 		mimeTypes.addChangeHandler(new ChangeHandler() {
 			@Override
@@ -165,6 +155,7 @@ public class SearchAdvanced extends Composite {
 				Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.evaluateSearchButtonVisible();							
 			}
 		});
+		
 		mailText = new HTML(Main.i18n("search.type.mail"));
 		mailText.setVisible(false);
 		table.setHTML(1, 0, Main.i18n("search.folder"));
@@ -230,9 +221,9 @@ public class SearchAdvanced extends Composite {
 		tableMail.setHTML(1, 0, Main.i18n("mail.to"));
 		tableMail.setHTML(2, 0, Main.i18n("mail.subject"));
 		
-		typeDocument.setHTML(Main.i18n("search.type.document"));
-		typeFolder.setHTML(Main.i18n("search.type.folder"));
-		typeMail.setHTML(Main.i18n("search.type.mail"));
+		typeDocument.setText(Main.i18n("search.type.document"));
+		typeFolder.setText(Main.i18n("search.type.folder"));
+		typeMail.setText(Main.i18n("search.type.mail"));
 		
 		folderSelectPopup.langRefresh();
 	}
@@ -246,8 +237,18 @@ public class SearchAdvanced extends Composite {
 	 */
 	private void setRowWordWarp(FlexTable table, int row, int columns, boolean wrap) {
 		CellFormatter cellFormatter = table.getCellFormatter();
+		
 		for (int i=0; i<columns; i++) {
 			cellFormatter.setWordWrap(row, i, wrap);
+		}
+	}
+	
+	/**
+	 * setMimeTypes
+	 */
+	public void setMimeTypes(List<GWTMimeType> mimeTypesList) {
+		for (GWTMimeType mt : mimeTypesList) {
+			mimeTypes.addItem(mt.getDescription(), mt.getName());
 		}
 	}
 }

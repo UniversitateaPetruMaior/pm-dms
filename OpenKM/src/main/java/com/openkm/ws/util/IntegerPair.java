@@ -46,4 +46,13 @@ public class IntegerPair implements Serializable {
 	public void setValue(Integer value) {
 		this.value = value;
 	}
+	
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("key=").append(key);
+		sb.append(", value=").append(value);
+		sb.append("}");
+		return sb.toString();
+	}
 }

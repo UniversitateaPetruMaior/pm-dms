@@ -1,30 +1,32 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
 <%@ page import="java.io.FileNotFoundException"%>
 <%@ page import="java.io.IOException"%>
-<%@ page import="java.io.File" %>
-<%@ page import="com.openkm.core.Config" %>
-<%@ page import="com.openkm.servlet.admin.BaseServlet" %>
-<%@ page import="com.openkm.bean.ContentInfo" %>
-<%@ page import="com.openkm.api.OKMFolder" %>
+<%@ page import="java.io.File"%>
+<%@ page import="java.util.concurrent.TimeUnit"%>
+<%@ page import="com.openkm.core.Config"%>
+<%@ page import="com.openkm.servlet.admin.BaseServlet"%>
+<%@ page import="com.openkm.bean.ContentInfo"%>
+<%@ page import="com.openkm.api.OKMFolder"%>
 <%@ page import="com.openkm.util.WebUtils"%>
-<%@ page import="com.openkm.util.FormatUtil" %>
-<%@ page import="com.openkm.util.impexp.RepositoryExporter" %>
-<%@ page import="com.openkm.util.impexp.HTMLInfoDecorator" %>
+<%@ page import="com.openkm.util.FormatUtil"%>
+<%@ page import="com.openkm.util.impexp.RepositoryExporter"%>
+<%@ page import="com.openkm.util.impexp.HTMLInfoDecorator"%>
 <%@ page import="com.openkm.util.impexp.ImpExpStats"%>
 <%@ page import="com.openkm.bean.Repository"%>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <link rel="Shortcut icon" href="favicon.ico" />
-  <link rel="stylesheet" type="text/css" href="css/style.css" />
-  <script type="text/javascript" src="../js/jquery-1.7.1.min.js"></script>
-  <script type="text/javascript" src="js/jquery.DOMWindow.js"></script>
-  <script type="text/javascript">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="Shortcut icon" href="favicon.ico" />
+<link rel="stylesheet" type="text/css" href="css/style.css" />
+<script type="text/javascript" src="../js/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="js/jquery.DOMWindow.js"></script>
+<script type="text/javascript">
     $(document).ready(function() {
 		$dm = $('.ds').openDOMWindow({
-			height:200, width:300,
+			height:300, width:400,
 			eventType:'click',
 			overlayOpacity:'57',
 			windowSource:'iframe', windowPadding:0
@@ -34,11 +36,17 @@
     function dialogClose() {
 		$dm.closeDOMWindow();
     }
+    
+    function keepSessionAlive() {
+    	$.ajax({ type:'GET', url:'../SessionKeepAlive', cache:false, async:false });
+    }
+    
+	window.setInterval('keepSessionAlive()', <%=TimeUnit.MINUTES.toMillis(Config.KEEP_SESSION_ALIVE_INTERVAL)%>);
   </script>
-  <title>Repository Export</title>
+<title>Repository Export</title>
 </head>
 <body>
-<%
+	<%
 	if (BaseServlet.isAdmin(request)) {
 		request.setCharacterEncoding("UTF-8");
 		String repoPath = WebUtils.getString(request, "repoPath", "/" + Repository.ROOT);
@@ -65,7 +73,8 @@
 		out.println("<tr><td>Metadata</td><td><input type=\"checkbox\" name=\"metadata\" " + (metadata?"checked":"") + "/></td></tr>");
 		out.println("<tr><td>History</td><td><input type=\"checkbox\" name=\"history\" " + (history?"checked":"") + "/></td></tr>");
 		out.println("<tr><td colspan=\"3\" align=\"right\">");
-		out.println("<input type=\"submit\" value=\"Send\">");
+		out.println("<input type=\"button\" onclick=\"javascript:window.history.back()\" value=\"Cancel\" class=\"noButton\"/>");
+		out.println("<input type=\"submit\" value=\"Export\" class=\"yesButton\">");
 		out.println("</td></tr>");
 		out.println("</table>");
 		out.println("</form>");

@@ -168,9 +168,9 @@ public class AutomationManager {
 			} catch (NumberFormatException e) {
 				log.warn("Error parsing Integer for Parameter 1: {}", params.get(1));
 			}
-		} else if (AutomationMetadata.TYPE_BOOLEAN.equals(amd.getType00())) {
+		} else if (AutomationMetadata.TYPE_BOOLEAN.equals(amd.getType01())) {
 			try {
-				retParams.add(Boolean.valueOf(params.get(0)));
+				retParams.add(Boolean.valueOf(params.get(1)));
 			} catch (NumberFormatException e) {
 				log.warn("Error parsing Integer for Parameter 1: {}", params.get(1));
 			}

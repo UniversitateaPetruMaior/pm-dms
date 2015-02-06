@@ -69,12 +69,12 @@ public class Activity implements Serializable {
 	private String item;
 	
 	@Column(name="ACT_PATH")
-	@Lob @Type(type = "org.hibernate.type.TextType")
+	@Lob @Type(type = "org.hibernate.type.StringClobType")
 	private String path;
 	
 	@Column(name="ACT_PARAMS", length=MAX_LENGTH)
 	// Changed to VARCHAR(4000) for Oracle compatibility
-	// @Lob @Type(type = "org.hibernate.type.TextType")
+	// @Lob @Type(type = "org.hibernate.type.StringClobType")
 	private String params;
 	
 	public long getId() {

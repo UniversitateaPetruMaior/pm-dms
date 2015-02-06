@@ -90,6 +90,7 @@ public class CheckTextExtractionServlet extends BaseServlet {
 				String docUuid = null;
 				String repoPath = null;
 				String text = null;
+				String error = null;
 				String mimeType = null;
 				String extractor = null;
 				
@@ -133,8 +134,12 @@ public class CheckTextExtractionServlet extends BaseServlet {
 						TextExtractor extClass = RegisteredExtractors.getTextExtractor(mimeType);
 						
 						if (extClass != null) {
-							extractor = extClass.getClass().getCanonicalName();
-							text = RegisteredExtractors.getText(mimeType, null, is);
+							try {
+								extractor = extClass.getClass().getCanonicalName();
+								text = RegisteredExtractors.getText(mimeType, null, is);
+							} catch (Exception e) {
+								error = e.getMessage();
+							}
 						} else {
 							extractor = "Undefined text extractor";
 						}
@@ -147,6 +152,7 @@ public class CheckTextExtractionServlet extends BaseServlet {
 				sc.setAttribute("text", text);
 				sc.setAttribute("time", System.currentTimeMillis() - begin);
 				sc.setAttribute("mimeType", mimeType);
+				sc.setAttribute("error", error);
 				sc.setAttribute("extractor", extractor);
 				sc.getRequestDispatcher("/admin/check_text_extraction.jsp").forward(request, response);
 			}

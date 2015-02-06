@@ -29,14 +29,14 @@ import com.google.gwt.user.client.rpc.IsSerializable;
  * @author jllort
  */
 public class GWTConverterStatus implements IsSerializable {
-	public static final int STATUS_LOADING = 1;
-	public static final int STATUS_CONVERTING_TO_DXF = 2;
-	public static final int STATUS_CONVERTING_TO_DXF_FINISHED = 3;
-	public static final int STATUS_CONVERTING_TO_PDF = 4;
-	public static final int STATUS_CONVERTING_TO_PDF_FINISHED = 5;
-	public static final int STATUS_CONVERTING_TO_SWF = 6;
-	public static final int STATUS_CONVERTING_TO_SWF_FINISHED = 7;
-	public static final int STATUS_SENDING_FILE = 8;
+	public static final int STATUS_LOADING 						= 1;
+	public static final int STATUS_CONVERTING_TO_DXF 			= 2;
+	public static final int STATUS_CONVERTING_TO_DXF_FINISHED 	= 3;
+	public static final int STATUS_CONVERTING_TO_PDF 			= 4;
+	public static final int STATUS_CONVERTING_TO_PDF_FINISHED 	= 5;
+	public static final int STATUS_CONVERTING_TO_SWF 			= 6;
+	public static final int STATUS_CONVERTING_TO_SWF_FINISHED 	= 7;
+	public static final int STATUS_SENDING_FILE 				= 8;
 	
 	private int status = STATUS_LOADING;
 	private String error;
@@ -45,23 +45,23 @@ public class GWTConverterStatus implements IsSerializable {
 	public String getError() {
 		return error;
 	}
-	
+
 	public void setError(String error) {
 		this.error = error;
 	}
-	
+
 	public int getStatus() {
 		return status;
 	}
-	
+
 	public void setStatus(int status) {
 		this.status = status;
 	}
-	
+
 	public boolean isConversionFinish() {
 		return conversionFinish;
 	}
-	
+
 	public void setConversionFinish(boolean conversionFinish) {
 		this.conversionFinish = conversionFinish;
 	}

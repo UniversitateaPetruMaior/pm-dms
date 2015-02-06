@@ -27,15 +27,14 @@ import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HTMLTable.CellFormatter;
 import com.google.gwt.user.client.ui.HasAlignment;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.HTMLTable.CellFormatter;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTFolder;
 import com.openkm.frontend.client.bean.GWTMail;
 import com.openkm.frontend.client.bean.GWTPermission;
-import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
 import com.openkm.frontend.client.util.Util;
 import com.openkm.frontend.client.widget.properties.CategoryManager.CategoryToRemove;
 import com.openkm.frontend.client.widget.properties.KeywordManager.KeywordToRemove;
@@ -55,7 +54,6 @@ public class Mail extends Composite {
 	private CategoryManager categoryManager;
 	private KeywordManager keywordManager;
 	private boolean remove = true;
-	private boolean visible = true;
 	
 	/**
 	 * Mail
@@ -86,10 +84,12 @@ public class Mail extends Composite {
 		tableProperties.setWidget(8, 1, new HTML(""));
 		tableProperties.setHTML(9, 0, "<b>"+Main.i18n("mail.webdav")+"</b>");
 		tableProperties.setWidget(9, 1, new HTML(""));
+		
 		// Sets wordWrap for al rows
 		for (int i=0; i<10; i++) {
 			setRowWordWarp(i, 0, true, tableProperties);
 		}
+		
 		tableProperties.getCellFormatter().setVerticalAlignment(7, 0, HasAlignment.ALIGN_TOP);
 		tableProperties.setStyleName("okm-DisableSelect");
 		
@@ -136,26 +136,29 @@ public class Mail extends Composite {
 		// URL clipboard button
 		String url = Main.get().workspaceUserProperties.getApplicationURL();
 		url += "?uuid=" + URL.encodeQueryString(URL.encodeQueryString(mail.getUuid()));
-		tableProperties.setWidget(8, 1, new HTML("<div id=\"urlclipboardcontainer\"></div>\n"));
-		Util.createURLClipboardButton(url);
+		tableProperties.setWidget(8, 1, new HTML("<div id=\"urlClipboard\"></div>\n"));
+		Util.createClipboardButton("urlClipboard", url);
 		
 		// Webdav button
 		String webdavUrl = Main.get().workspaceUserProperties.getApplicationURL();
 		String webdavPath = mail.getPath();
 		
 		// Replace only in case webdav fix is enabled
-		if (Main.get().workspaceUserProperties.getWorkspace().isWebdavFix()) {
+		if (Main.get().workspaceUserProperties.getWorkspace() != null && Main.get().workspaceUserProperties.getWorkspace().isWebdavFix()) {
 			webdavPath = webdavPath.replace("okm:", "okm_");
 		}
 		
 		// Login case write empty folder
-		if (!webdavUrl.equals("")) {
-			// webdavPath = Util.encodePathElements(webdavPath);
+		if (!webdavUrl.isEmpty()) {
+			webdavPath = Util.encodePathElements(webdavPath);
 			webdavUrl = webdavUrl.substring(0, webdavUrl.lastIndexOf('/')) + "/webdav" + webdavPath;	
 		}
 		
-		tableProperties.setWidget(9, 1, new HTML("<div id=\"webdavclipboardcontainer\"></div>\n"));
-		Util.createWebDavClipboardButton(webdavUrl);
+		tableProperties.setWidget(0, 1, new HTML(" <div id=\"uuidClipboard\"></div> " + mail.getUuid() +"\n"));
+		Util.createClipboardButton("uuidClipboard", mail.getUuid());
+		
+		tableProperties.setWidget(9, 1, new HTML("<div id=\"webdavClipboard\"></div>\n"));
+		Util.createClipboardButton("webdavClipboard", webdavUrl);
 		
 		tableProperties.setHTML(0, 1, mail.getUuid());
 		tableProperties.setHTML(1, 1, mail.getSubject());
@@ -166,7 +169,12 @@ public class Mail extends Composite {
 		tableProperties.setHTML(6, 1, mail.getMimeType());
 		tableProperties.setWidget(7, 1, keywordManager.getKeywordPanel());
 		
-		remove = ((mail.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE && visible);
+		// Enable select
+		tableProperties.getFlexCellFormatter().setStyleName(0, 1, "okm-EnableSelect");
+		tableProperties.getFlexCellFormatter().setStyleName(1, 1, "okm-EnableSelect");
+		tableProperties.getFlexCellFormatter().setStyleName(2, 1, "okm-EnableSelect");
+		
+		remove = ((mail.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE);
 		
 		// Enables or disables change keywords with user permissions and document is not check-out or locked
 		if (remove)  {
@@ -180,17 +188,6 @@ public class Mail extends Composite {
 		// Sets wordWrap for al rows
 		for (int i=0; i<8; i++) {
 			setRowWordWarp(i, 1, true, tableProperties);
-		}
-		
-		// Some preoperties only must be visible on taxonomy or trash view
-		int actualView = Main.get().mainPanel.desktop.navigator.getStackIndex();
-		
-		if (actualView == UIDesktopConstants.NAVIGATOR_TRASH) {
-			tableProperties.getCellFormatter().setVisible(7,0,false);
-			tableProperties.getCellFormatter().setVisible(7,1,false);
-		} else {
-			tableProperties.getCellFormatter().setVisible(7,0,true);
-			tableProperties.getCellFormatter().setVisible(7,1,true);
 		}
 		
 		// keywords
@@ -273,7 +270,6 @@ public class Mail extends Composite {
 	 * @param visible The visible value
 	 */
 	public void setVisibleButtons(boolean visible) {
-		this.visible = visible;
 		keywordManager.setVisible(visible);
 		categoryManager.setVisible(visible);
 	}

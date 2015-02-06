@@ -2,6 +2,7 @@ package com.openkm.servlet.admin;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -9,8 +10,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.HttpSessionManager;
+import com.openkm.util.UserActivity;
 
 public class BaseServlet extends HttpServlet  {
 	private static final long serialVersionUID = 1L;
@@ -50,6 +53,35 @@ public class BaseServlet extends HttpServlet  {
 	}
 	
 	/**
+	 * Test if an user can access to administration when configured as SaaS: An user can
+	 * access if:
+	 * 
+	 * - Multiple Instances is active AND user id okmAdmin
+	 * - Multiple Instances is inactive AND user has AdminRole role
+	 */
+	public static boolean isMultipleInstancesAdmin(HttpServletRequest request) {
+		return (Config.SYSTEM_MULTIPLE_INSTANCES) && request.getRemoteUser().equals(Config.ADMIN_USER) ||
+			!(Config.SYSTEM_MULTIPLE_INSTANCES) && request.isUserInRole(Config.DEFAULT_ADMIN_ROLE);
+	}
+	
+	/**
+	 * Check for forbidden access 
+	 */
+	public boolean checkMultipleInstancesAccess(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		if (!isMultipleInstancesAdmin(request)) {
+			// Activity log
+			UserActivity.log(request.getRemoteUser(), "ADMIN_ACCESS_DENIED", request.getRequestURI(), null, request.getQueryString());
+			
+			AccessDeniedException ade = new AccessDeniedException("You should not access this resource");
+			sendErrorRedirect(request, response, ade);
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
+	/**
 	 * Print HTML page header
 	 */
 	public void header(PrintWriter out, String title, String[][] breadcrumb) {
@@ -69,8 +101,8 @@ public class BaseServlet extends HttpServlet  {
 		out.println("height:200, width:300, eventType:'click', overlayOpacity:'57', windowSource:'iframe', windowPadding:0");
 		out.println("})});");
 		out.println("function dialogClose() { $dm.closeDOMWindow(); }");
-		out.println("function keepSessionAlive() { $.ajax({ type:'GET', url:'ping.html', cache:false, async:false }); }");
-		out.println("window.setInterval('keepSessionAlive()', 60000);");
+		out.println("function keepSessionAlive() { $.ajax({ type:'GET', url:'../SessionKeepAlive', cache:false, async:false }); }");
+		out.println("window.setInterval('keepSessionAlive()', " + TimeUnit.MINUTES.toMillis(Config.KEEP_SESSION_ALIVE_INTERVAL) + ");");
 		out.println("</script>");
 		out.println("<title>" + title + "</title>");
 		out.println("</head>");

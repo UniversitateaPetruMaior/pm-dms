@@ -93,6 +93,7 @@ public class UserNews extends Composite {
 	public void showMenu() {
 		// The browser menu depends on actual view
 		// Must substract top position from Y Screen Position
+		menuPopup.evaluateMenuOptions();
 		menuPopup.setPopupPosition(table.getMouseX(), table.getMouseY());
 		menuPopup.show();		
 	}
@@ -170,8 +171,8 @@ public class UserNews extends Composite {
 		int rows = table.getRowCount();
 		
 		data.put(dataIndexValue, search);
-		
 		table.setHTML(rows, 0, "&nbsp;");
+		
 		table.setHTML(rows, 1, search.getQueryName());
 		table.setHTML(rows, 2, ""+dataIndexValue++);
 		table.setHTML(rows, 3, "");

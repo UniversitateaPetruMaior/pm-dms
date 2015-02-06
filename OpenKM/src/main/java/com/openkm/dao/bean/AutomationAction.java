@@ -59,10 +59,10 @@ public class AutomationAction implements Serializable {
 	@Column(name = "AAP_PARAM")
 	@OrderColumn(name = "AAP_ORDER")
 	@CollectionTable(name = "OKM_AUTO_ACTION_PARAMS", joinColumns = { @JoinColumn(name = "AAP_VALIDATION") })
-	@Lob @Type(type = "org.hibernate.type.TextType")
+	@Lob @Type(type = "org.hibernate.type.StringClobType")
 	private List<String> params = new ArrayList<String>();
 	
-	@Column(name = "AAC_ACTIVE")
+	@Column(name = "AAC_ACTIVE", nullable = false)
 	@Type(type = "true_false")
 	private boolean active;
 

@@ -34,10 +34,13 @@ import com.openkm.frontend.client.bean.GWTDocument;
 import com.openkm.frontend.client.bean.GWTFolder;
 import com.openkm.frontend.client.bean.GWTMail;
 import com.openkm.frontend.client.bean.GWTPermission;
+import com.openkm.frontend.client.bean.GWTProfileFileBrowser;
 import com.openkm.frontend.client.bean.GWTPropertyGroup;
+import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
 import com.openkm.frontend.client.extension.event.handler.PropertyGroupHandlerExtension;
 import com.openkm.frontend.client.extension.event.hashandler.HasPropertyGroupHandlerExtension;
 import com.openkm.frontend.client.widget.ConfirmPopup;
+import com.openkm.frontend.client.widget.filebrowser.FileBrowser;
 import com.openkm.frontend.client.widget.propertygroup.PropertyGroupWidget;
 import com.openkm.frontend.client.widget.propertygroup.PropertyGroupWidgetToFire;
 
@@ -45,7 +48,6 @@ import com.openkm.frontend.client.widget.propertygroup.PropertyGroupWidgetToFire
  * PropertyGroup
  * 
  * @author jllort
- *
  */
 public class PropertyGroup extends Composite implements HasPropertyGroupHandlerExtension {
 	private ScrollPanel scrollPanel;
@@ -56,11 +58,13 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 	private boolean editValues = false;
 	private FiredHorizontalPanel hPanelFired;
 	private GWTPropertyGroup propertyGroup;
-
+	private Object node;
+	
 	/**
 	 * PropertyGroup
 	 */
 	public PropertyGroup(GWTPropertyGroup propertyGroup, Object node, GWTFolder parentFolder, boolean visible, boolean readOnly) {
+		this.node = node;
 		String path = "";
 		int permissions = 0;
 		
@@ -131,10 +135,16 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 		if (!visible) {
 			changeButton.setVisible(visible);
 			removeButton.setVisible(visible);
+		} else if ((Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_THESAURUS
+				|| Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_CATEGORIES 
+				|| Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_METADATA) 
+					&& ((permissions & GWTPermission.WRITE) == GWTPermission.WRITE)) {
+			changeButton.setVisible(!readOnly);
+	 		removeButton.setVisible(true);
 		} else if (((permissions & GWTPermission.WRITE) == GWTPermission.WRITE) &&
 			       ((parentFolder.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE))  {
-	    	 		changeButton.setVisible(!readOnly);
-	    	 		removeButton.setVisible(true);
+	    	changeButton.setVisible(!readOnly);
+	    	removeButton.setVisible(true);
 		} else {
 			changeButton.setVisible(false);
 			removeButton.setVisible(false);
@@ -156,7 +166,7 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 		removeButton.setStyleName("okm-DeleteButton");
 		cancelButton.setStyleName("okm-NoButton");
 
-		getProperties();
+		getProperties(false);
 		initWidget(scrollPanel);
 	}
 	
@@ -168,20 +178,27 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 	}
 	
 	/**
+	 * @return
+	 */
+	public boolean isUpdatePropertyGrouupEnabled() {
+		return changeButton.isEnabled() && changeButton.isVisible();
+	}
+	
+	/**
 	 * Lang refresh
 	 */
 	public void langRefresh() {
 		changeButton.setHTML(Main.i18n("button.change"));
-		removeButton.setHTML(Main.i18n("button.delete"));		
-	}	
+		removeButton.setHTML(Main.i18n("button.delete"));
+	}
 	
 	/**
-	 * Gets all group properties 
+	 * Gets all group properties
 	 */
-	private void getProperties() {
-		propertyGroupWidget.getProperties();
+	private void getProperties(boolean suggestion) {
+		propertyGroupWidget.getProperties(suggestion);
 	}
-
+	
 	/**
 	 * Remove the document property group
 	 */
@@ -216,7 +233,7 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 	 * 
 	 * @return The group name
 	 */
-	public String getGrpName(){
+	public String getGrpName() {
 		return propertyGroup.getName();
 	}
 	
@@ -225,7 +242,7 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 	 * 
 	 * @return The group label
 	 */
-	public String getGrpLabel(){
+	public String getGrpLabel() {
 		return propertyGroup.getLabel();
 	}
 	
@@ -233,7 +250,6 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 	 * FiredHorizontalPanel
 	 * 
 	 * @author jllort
-	 *
 	 */
 	private class FiredHorizontalPanel extends Composite implements PropertyGroupWidgetToFire {
 		private HorizontalPanel hPanel;
@@ -249,11 +265,25 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 		
 		@Override
 		public void finishedSetProperties() {
+			if (Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_THESAURUS
+					|| Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_CATEGORIES 
+					|| Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_METADATA) {
+				Main.get().activeFolderTree.refresh(true); 
+			} else {
+				refreshingActualNode();
+			}
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.unsetGroupProperties();
 		}
 		
 		@Override
 		public void finishedRemoveGroup() {
+			if (Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_THESAURUS
+					|| Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_CATEGORIES 
+					|| Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_METADATA) {
+				Main.get().activeFolderTree.refresh(true);
+			} else {
+				refreshingActualNode();
+			}
 		}
 		
 		/**
@@ -264,8 +294,29 @@ public class PropertyGroup extends Composite implements HasPropertyGroupHandlerE
 		public void add(Widget widget) {
 			hPanel.add(widget);
 		}
+		
+		/**
+		 * Used when properties are changed and filebrowser has extra columns
+		 * refreshingActualNode
+		 */
+		private void refreshingActualNode() {
+			GWTProfileFileBrowser pfb = Main.get().workspaceUserProperties.getWorkspace().getProfileFileBrowser();
+			if (pfb.isExtraColumns() && Main.get().mainPanel.desktop.browser.fileBrowser.isPanelSelected()) {
+				if (node instanceof GWTDocument) {
+					Main.get().mainPanel.desktop.browser.fileBrowser
+							.setFileBrowserAction(FileBrowser.ACTION_PROPERTY_GROUP_REFRESH_DOCUMENT);
+					Main.get().mainPanel.desktop.browser.fileBrowser.refreshDocumentValues();
+				} else if (node instanceof GWTFolder) {
+					Main.get().mainPanel.desktop.browser.fileBrowser.setFileBrowserAction(FileBrowser.ACTION_PROPERTY_GROUP_REFRESH_FOLDER);
+					Main.get().mainPanel.desktop.browser.fileBrowser.refreshFolderValues();
+				} else if (node instanceof GWTMail) {
+					Main.get().mainPanel.desktop.browser.fileBrowser.setFileBrowserAction(FileBrowser.ACTION_PROPERTY_GROUP_REFRESH_MAIL);
+					Main.get().mainPanel.desktop.browser.fileBrowser.refreshMailValues();
+				}
+			}
+		}
 	}
-
+	
 	@Override
 	public void addPropertyGroupHandlerExtension(PropertyGroupHandlerExtension handlerExtension) {
 		propertyGroupWidget.addPropertyGroupHandlerExtension(handlerExtension);

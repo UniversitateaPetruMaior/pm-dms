@@ -44,6 +44,12 @@ public class SecurityHelper {
 		if (DbSimpleAccessManager.NAME.equals(Config.SECURITY_ACCESS_MANAGER)) {
 			log.info("Configuring AccessManager with {}", DbSimpleAccessManager.class.getCanonicalName());
 			accessManager = new DbSimpleAccessManager();
+		} else if (DbRecursiveAccessManager.NAME.equals(Config.SECURITY_ACCESS_MANAGER)) {
+			log.info("Configuring AccessManager with {}", DbRecursiveAccessManager.class.getCanonicalName());
+			accessManager = new DbRecursiveAccessManager();
+		} else if (DbReadRecursiveAccessManager.NAME.equals(Config.SECURITY_ACCESS_MANAGER)) {
+			log.info("Configuring AccessManager with {}", DbReadRecursiveAccessManager.class.getCanonicalName());
+			accessManager = new DbReadRecursiveAccessManager();
 		}
 	}
 	

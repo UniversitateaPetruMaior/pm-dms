@@ -71,6 +71,7 @@ public class NodeBase implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public static final String PARENT_FIELD = "parent";
 	public static final String NAME_FIELD = "name";
+	public static final String UUID_FIELD = "uuid";
 	
 	@Id
 	@DocumentId
@@ -87,12 +88,9 @@ public class NodeBase implements Serializable {
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
 	protected String context;
 	
-	// @ElementCollection
-	// @Column(name = "NPT_PATH")
-	// @CollectionTable(name = "OKM_NODE_PATH", joinColumns = { @JoinColumn(name = "NPT_NODE") })
-	// @Field(index = Index.UN_TOKENIZED, store = Store.YES)
-	// @FieldBridge(impl = SetFieldBridge.class)
-	// Set<String> path = new HashSet<String>();
+	@Column(name = "NBS_PATH", length = 1024)
+	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
+	protected String path;
 	
 	@Column(name = "NBS_AUTHOR", length = 64)
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
@@ -108,7 +106,7 @@ public class NodeBase implements Serializable {
 	@FieldBridge(impl = LowerCaseFieldBridge.class)
 	protected String name;
 	
-	@Column(name = "NDC_SCRIPTING")
+	@Column(name = "NDC_SCRIPTING", nullable = false)
 	@Type(type = "true_false")
 	protected boolean scripting;
 	
@@ -171,6 +169,14 @@ public class NodeBase implements Serializable {
 
 	public void setContext(String context) {
 		this.context = context;
+	}
+	
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
 	}
 	
 	public String getParent() {
@@ -274,6 +280,7 @@ public class NodeBase implements Serializable {
 		sb.append("{");
 		sb.append("uuid=").append(uuid);
 		sb.append(", context=").append(context);
+		sb.append(", path=").append(path);
 		sb.append(", parent=").append(parent);
 		sb.append(", author=").append(author);
 		sb.append(", name=").append(name);

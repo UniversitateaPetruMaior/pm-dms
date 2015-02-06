@@ -49,6 +49,7 @@ import com.openkm.extension.frontend.client.service.OKMDropboxService;
 import com.openkm.extension.frontend.client.service.OKMDropboxServiceAsync;
 import com.openkm.extension.frontend.client.widget.base.ColoredFlexTable;
 import com.openkm.frontend.client.bean.GWTFolder;
+import com.openkm.frontend.client.bean.GWTPermission;
 import com.openkm.frontend.client.extension.comunicator.GeneralComunicator;
 import com.openkm.frontend.client.extension.comunicator.NavigatorComunicator;
 import com.openkm.frontend.client.extension.comunicator.UtilComunicator;
@@ -123,7 +124,7 @@ public class SearchPopup extends DialogBox {
 		name.addKeyUpHandler(new KeyUpHandler() {
 			@Override
 			public void onKeyUp(KeyUpEvent event) {
-				executeSearch();
+				executeSearch(event);
 			}
 		});
 		name.setWidth("540px");
@@ -136,7 +137,7 @@ public class SearchPopup extends DialogBox {
 		typeList.addChangeHandler(new ChangeHandler() {
 			@Override
 			public void onChange(ChangeEvent event) {
-				executeSearch();
+				executeSearch(null);
 			}
 		});
 		typeList.setStyleName("okm-Input");
@@ -186,56 +187,57 @@ public class SearchPopup extends DialogBox {
 	/**
 	 * executeSearch
 	 */
-	private void executeSearch() {
+	private void executeSearch(KeyUpEvent event) {
 		if (name.getText().length() >= 3) {
-			String category = "";
-			
-			if (typeList.getSelectedIndex() > 0) {
-				category = typeList.getValue(typeList.getSelectedIndex());
-			}
-			
-			String query = name.getText();
-			Dropbox.get().status.setSearch();
-			dropboxService.search(query, category, new AsyncCallback<List<GWTDropboxEntry>>() {
-				@Override
-				public void onSuccess(List<GWTDropboxEntry> result) {
-					importButton.setEnabled(false);
-					table.removeAllRows();
-					data = new HashMap<String, GWTDropboxEntry>();
-					
-					for (GWTDropboxEntry gwtDropboxEntry : result) {
-						int row = table.getRowCount();
-						
-						if (gwtDropboxEntry.isDir()) {
-							if (gwtDropboxEntry.isChildren()) {
-								table.setHTML(row, 0, UtilComunicator.imageItemHTML("img/menuitem_childs.gif"));
-							} else {
-								table.setHTML(row, 0, UtilComunicator.imageItemHTML("img/menuitem_empty.gif"));
-							}
-							
-						} else {
-							table.setHTML(row, 0, UtilComunicator.mimeImageHTML(gwtDropboxEntry.getMimeType()));
-						}
-						
-						table.setHTML(row, 1, gwtDropboxEntry.getPath());
-						table.setHTML(row, 2, gwtDropboxEntry.getRev());
-						table.getCellFormatter().setWidth(row, 0, "20");
-						table.getCellFormatter().setWidth(row, 1, "100%");
-						table.getCellFormatter().setHorizontalAlignment(row, 0, HasAlignment.ALIGN_CENTER);
-						table.getCellFormatter().setHorizontalAlignment(row, 1, HasAlignment.ALIGN_LEFT);
-						table.getCellFormatter().setVisible(row, 2, false);
-						data.put(gwtDropboxEntry.getRev(), gwtDropboxEntry);
-					}
-					
-					Dropbox.get().status.unsetSearch();
+			if (UtilComunicator.isSearchableKey(event)) {
+				String category = "";
+				
+				if (typeList.getSelectedIndex() > 0) {
+					category = typeList.getValue(typeList.getSelectedIndex());
 				}
 				
-				@Override
-				public void onFailure(Throwable caught) {
-					GeneralComunicator.showError("search", caught);
-					Dropbox.get().status.unsetSearch();
-				}
-			});
+				String query = name.getText();
+				Dropbox.get().status.setSearch();
+				dropboxService.search(query, category, new AsyncCallback<List<GWTDropboxEntry>>() {
+					@Override
+					public void onSuccess(List<GWTDropboxEntry> result) {
+						importButton.setEnabled(false);
+						table.removeAllRows();
+						data = new HashMap<String, GWTDropboxEntry>();
+						
+						for (GWTDropboxEntry gwtDropboxEntry : result) {
+							int row = table.getRowCount();
+							
+							if (gwtDropboxEntry.isDir()) {
+								GWTFolder folder = new GWTFolder();
+								folder.setPermissions(GWTPermission.READ | GWTPermission.WRITE);
+								folder.setHasChildren(gwtDropboxEntry.isChildren());
+								table.setHTML(row, 0, UtilComunicator.imageItemHTML(GeneralComunicator.getFolderIcon(folder)));
+								
+							} else {
+								table.setHTML(row, 0, UtilComunicator.mimeImageHTML(gwtDropboxEntry.getMimeType()));
+							}
+							
+							table.setHTML(row, 1, gwtDropboxEntry.getPath());
+							table.setHTML(row, 2, gwtDropboxEntry.getRev());
+							table.getCellFormatter().setWidth(row, 0, "20");
+							table.getCellFormatter().setWidth(row, 1, "100%");
+							table.getCellFormatter().setHorizontalAlignment(row, 0, HasAlignment.ALIGN_CENTER);
+							table.getCellFormatter().setHorizontalAlignment(row, 1, HasAlignment.ALIGN_LEFT);
+							table.getCellFormatter().setVisible(row, 2, false);
+							data.put(gwtDropboxEntry.getRev(), gwtDropboxEntry);
+						}
+						
+						Dropbox.get().status.unsetSearch();
+					}
+					
+					@Override
+					public void onFailure(Throwable caught) {
+						GeneralComunicator.showError("search", caught);
+						Dropbox.get().status.unsetSearch();
+					}
+				});
+			}
 		} else {
 			table.removeAllRows();
 			importButton.setEnabled(false);

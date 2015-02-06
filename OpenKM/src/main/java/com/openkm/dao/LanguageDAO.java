@@ -57,9 +57,11 @@ public class LanguageDAO {
 		Session session = null;
 		
 		try {
+			long begin = System.currentTimeMillis();
 			session = HibernateUtil.getSessionFactory().openSession();
 			Language ret = (Language) session.load(Language.class, id);
 			Hibernate.initialize(ret);
+			log.trace("findByPk.Time: {}", System.currentTimeMillis() - begin);
 			log.debug("findByPk: {}", ret);
 			return ret;
 		} catch (HibernateException e) {

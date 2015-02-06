@@ -34,7 +34,6 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HTMLTable.CellFormatter;
 import com.google.gwt.user.client.ui.HasAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTDocument;
@@ -56,8 +55,7 @@ public class MailViewer extends Composite {
 	private HTML attachmentText;
 	private ExtendedFlexTable attachmentsTable;
 	private HorizontalPanel contentPanel;
-	private ScrollPanel scrollPanel;
-	private HTML content;
+	private MailPreview mailPreview;
 	public MenuPopup menuPopup;
 	private Map<Integer, GWTDocument> attachmentsList;
 	private GWTMail mail;
@@ -70,7 +68,6 @@ public class MailViewer extends Composite {
 		dataTable = new FlexTable();
 		attachmentsTable = new ExtendedFlexTable();
 		contentPanel = new HorizontalPanel();
-		scrollPanel = new ScrollPanel(table);
 		menuPopup = new MenuPopup();
 		attachmentsList = new HashMap<Integer, GWTDocument>();
 		
@@ -101,16 +98,8 @@ public class MailViewer extends Composite {
 			setRowWordWarp(i, 2, false, dataTable);
 		}
 		
-		HTML separatorLeft = new HTML("");
-		HTML separatorRight = new HTML("");
-		content = new HTML("");
-		contentPanel.add(separatorLeft);
-		contentPanel.add(content);
-		contentPanel.add(separatorRight);
-		
-		contentPanel.setCellWidth(separatorLeft, "5px");
-		content.setWidth("100%");
-		contentPanel.setCellWidth(separatorRight, "5px");
+		mailPreview = new MailPreview();
+		contentPanel.add(mailPreview);
 		contentPanel.setWidth("100%");
 		
 		attachmentText = new HTML("<b>"+Main.i18n("mail.attachment")+"</b>&nbsp;");
@@ -123,8 +112,7 @@ public class MailViewer extends Composite {
 		
 		table.setWidget(0, 0, dataTable);
 		table.setWidget(0, 1, vRightPanel);
-		table.setHTML(1, 0, "");
-		table.setWidget(2, 0, contentPanel);
+		table.setWidget(1, 0, contentPanel);
 		
 		table.getCellFormatter().setVerticalAlignment(0, 0, HasAlignment.ALIGN_TOP);
 		table.getCellFormatter().setVerticalAlignment(0, 1, HasAlignment.ALIGN_TOP);
@@ -132,9 +120,7 @@ public class MailViewer extends Composite {
 		
 		table.getFlexCellFormatter().setHeight(1,0,"10px");
 		table.getFlexCellFormatter().setColSpan(1, 0, 2);
-		table.getFlexCellFormatter().setColSpan(2, 0, 2);
 		table.getRowFormatter().setStyleName(1, "okm-Mail-White");
-		table.getRowFormatter().setStyleName(2, "okm-Mail-White");
 		table.setWidth("100%");
 		
 		
@@ -143,7 +129,13 @@ public class MailViewer extends Composite {
 		menuPopup.setStyleName("okm-Mail-MenuPopup");
 		attachmentsTable.setStyleName("okm-NoWrap");
 		
-		initWidget(scrollPanel);
+		initWidget(table);
+	}
+	
+	public void setPixelSize(int width, int height) {
+		table.setPixelSize(width, height);
+		contentPanel.setWidth(""+width);
+		mailPreview.setPixelSize(width-2, height-90);
 	}
 	
 	/**
@@ -229,11 +221,13 @@ public class MailViewer extends Composite {
 		dataTable.setWidget(2, 1, toPanel);
 		
 		dataTable.setHTML(3, 1, mail.getSubject());
-		if (mail.getMimeType().equals("text/plain")) {
-			content.setHTML(mail.getContent().replace("\n", "<br/>"));
-		} else {
-			content.setHTML(mail.getContent());
-		}
+		mailPreview.showContent(mail);
+		
+		// Enable select
+		dataTable.getFlexCellFormatter().setStyleName(0, 1, "okm-EnableSelect");
+		dataTable.getFlexCellFormatter().setStyleName(1, 1, "okm-EnableSelect");
+		dataTable.getFlexCellFormatter().setStyleName(2, 1, "okm-EnableSelect");
+		dataTable.getFlexCellFormatter().setStyleName(3, 1, "okm-EnableSelect");
 		
 		attachmentsTable.removeAllRows();
 		attachmentsList = new HashMap<Integer, GWTDocument>();

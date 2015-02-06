@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.util;
@@ -34,11 +34,11 @@ public class PathUtils {
 	public static String getParent(String path) {
 		log.debug("getParent({})", path);
 		int lastSlash = path.lastIndexOf('/');
-		String ret = (lastSlash > 0)?path.substring(0, lastSlash):"/";
+		String ret = (lastSlash > 0) ? path.substring(0, lastSlash) : "/";
 		log.debug("getParent: {}", ret);
-		return ret;	
+		return ret;
 	}
-
+	
 	/**
 	 * Get node name.
 	 */
@@ -50,14 +50,21 @@ public class PathUtils {
 	}
 	
 	/**
-	 * Get path depth 
+	 * Get path depth
 	 */
 	public static int getDepth(String path) {
 		return path.substring(1).split("/").length;
 	}
 	
 	/**
-	 * Get path context
+	 * Get path elements
+	 */
+	public static String[] getElements(String path) {
+		return path.substring(1).split("/");
+	}
+	
+	/**
+	 * Get path context. For example "/okm:root/prueba.txt" -> "/okm:root"
 	 */
 	public static String getContext(String path) {
 		int idx = path.indexOf('/', 1);
@@ -125,5 +132,23 @@ public class PathUtils {
 	 */
 	public static String fixContext(String context) {
 		return context.substring(1).replace(':', '_');
+	}
+	
+	/**
+	 * Test id nodeId is a path or UUID.
+	 */
+	public static boolean isPath(String nodeId) {
+		return nodeId.startsWith("/");
+	}
+	
+	/**
+	 * Test correct path.
+	 */
+	public static boolean checkPath(String path) {
+		if (path == null || path.isEmpty() || !path.startsWith("/okm:")) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 }

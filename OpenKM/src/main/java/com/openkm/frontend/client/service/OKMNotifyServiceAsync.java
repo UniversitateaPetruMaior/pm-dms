@@ -32,6 +32,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 public interface OKMNotifyServiceAsync {
 	public void subscribe( String nodePath, AsyncCallback<?> callback);
 	public void unsubscribe( String nodePath, AsyncCallback<?> callback );
-	public void notify(String docPath, String users, String roles, String message, boolean attachment,
+	public void notify(String docPath, String mails, String users, String roles, String message, boolean attachment,
 			AsyncCallback<?> callback );
 }

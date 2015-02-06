@@ -65,20 +65,6 @@ public class PropertyGroupsServlet extends BaseServlet {
 	private static Logger log = LoggerFactory.getLogger(PropertyGroupsServlet.class);
 	
 	@Override
-	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException,
-			ServletException {
-		String method = request.getMethod();
-		
-		if (isAdmin(request)) {
-			if (method.equals(METHOD_GET)) {
-				doGet(request, response);
-			} else if (method.equals(METHOD_POST)) {
-				doPost(request, response);
-			}
-		}
-	}
-	
-	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException,
 			ServletException {
 		log.debug("doGet({}, {})", request, response);
@@ -228,10 +214,11 @@ public class PropertyGroupsServlet extends BaseServlet {
 			// Activity log
 			UserActivity.log(request.getRemoteUser(), "ADMIN_PROPERTY_GROUP_EDIT", null, null, null);
 		} else {
+			String xml = FileUtils.readFileToString(new File(Config.PROPERTY_GROUPS_XML), "UTF-8");
 			ServletContext sc = getServletContext();
 			sc.setAttribute("persist", true);
 			sc.setAttribute("action", "edit");
-			sc.setAttribute("definition", FileUtils.readFileToString(new File(Config.PROPERTY_GROUPS_XML), "UTF-8"));
+			sc.setAttribute("definition", xml.replace("&", "&amp;"));
 			sc.getRequestDispatcher("/admin/property_groups_edit.jsp").forward(request, response);
 		}
 		

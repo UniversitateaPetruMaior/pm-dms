@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.api.OKMAuth;
 import com.openkm.bean.Permission;
+import com.openkm.bean.Repository;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
@@ -86,8 +87,10 @@ public class AuthServlet extends OKMRemoteServiceServlet implements OKMAuthServi
 		updateSessionManager();
 		
 		try {
-			Map<String, Integer> tmp = OKMAuth.getInstance().getGrantedRoles(null, nodePath);
-			hm = MappingUtils.map(tmp);
+			if (!nodePath.startsWith("/" + Repository.METADATA)) {
+				Map<String, Integer> tmp = OKMAuth.getInstance().getGrantedRoles(null, nodePath);
+				hm = MappingUtils.map(tmp);
+			}
 		} catch (PathNotFoundException e) {
 			log.warn(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMAuthService, ErrorCode.CAUSE_PathNotFound), e.getMessage());
@@ -116,17 +119,19 @@ public class AuthServlet extends OKMRemoteServiceServlet implements OKMAuthServi
 		updateSessionManager();
 		
 		try {
-			Map<String, Integer> tmp = OKMAuth.getInstance().getGrantedUsers(null, nodePath);
-			Map<String, Integer> hm = MappingUtils.map(tmp);
-			
-			for (String userId : hm.keySet()) {
-				GWTGrantedUser gu = new GWTGrantedUser();
-				gu.setPermisions(hm.get(userId));
-				GWTUser user = new GWTUser();
-				user.setId(userId);
-				user.setUsername(OKMAuth.getInstance().getName(null, userId));
-				gu.setUser(user);
-				guList.add(gu);
+			if (!nodePath.startsWith("/" + Repository.METADATA)) {
+				Map<String, Integer> tmp = OKMAuth.getInstance().getGrantedUsers(null, nodePath);
+				Map<String, Integer> hm = MappingUtils.map(tmp);
+				
+				for (String userId : hm.keySet()) {
+					GWTGrantedUser gu = new GWTGrantedUser();
+					gu.setPermisions(hm.get(userId));
+					GWTUser user = new GWTUser();
+					user.setId(userId);
+					user.setUsername(OKMAuth.getInstance().getName(null, userId));
+					gu.setUser(user);
+					guList.add(gu);
+				}
 			}
 			
 			Collections.sort(guList, GWTGrantedUserComparator.getInstance());
@@ -361,7 +366,6 @@ public class AuthServlet extends OKMRemoteServiceServlet implements OKMAuthServi
 		try {
 			OKMAuth oKMAuth = OKMAuth.getInstance();
 			int allGrants = Permission.ALL_GRANTS;
-			
 			oKMAuth.revokeUser(null, path, user, allGrants, recursive);
 		} catch (PathNotFoundException e) {
 			log.warn(e.getMessage(), e);
@@ -445,7 +449,6 @@ public class AuthServlet extends OKMRemoteServiceServlet implements OKMAuthServi
 		try {
 			OKMAuth oKMAuth = OKMAuth.getInstance();
 			int allGrants = Permission.ALL_GRANTS;
-			
 			oKMAuth.revokeRole(null, path, role, allGrants, recursive);
 		} catch (PathNotFoundException e) {
 			log.warn(e.getMessage(), e);

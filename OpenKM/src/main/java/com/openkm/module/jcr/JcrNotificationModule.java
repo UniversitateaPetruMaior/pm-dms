@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.jcr;
@@ -51,8 +51,8 @@ public class JcrNotificationModule implements NotificationModule {
 	private static Logger log = LoggerFactory.getLogger(JcrNotificationModule.class);
 	
 	@Override
-	public synchronized void subscribe(String token, String nodePath) throws PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
+	public synchronized void subscribe(String token, String nodePath) throws PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
 		log.debug("subscribe({}, {})", token, nodePath);
 		Node node = null;
 		Node sNode = null;
@@ -120,16 +120,17 @@ public class JcrNotificationModule implements NotificationModule {
 		} finally {
 			if (lt != null)
 				systemSession.removeLockToken(lt);
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("subscribe: void");
 	}
 	
 	@Override
-	public synchronized void unsubscribe(String token, String nodePath) throws PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
+	public synchronized void unsubscribe(String token, String nodePath) throws PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
 		log.debug("unsubscribe({}, {})", token, nodePath);
 		Node node = null;
 		Node sNode = null;
@@ -168,8 +169,7 @@ public class JcrNotificationModule implements NotificationModule {
 				if (newUsers.isEmpty()) {
 					sNode.removeMixin(Notification.TYPE);
 				} else {
-					sNode.setProperty(Notification.SUBSCRIPTORS,
-							(String[]) newUsers.toArray(new String[newUsers.size()]));
+					sNode.setProperty(Notification.SUBSCRIPTORS, (String[]) newUsers.toArray(new String[newUsers.size()]));
 				}
 			}
 			
@@ -192,16 +192,17 @@ public class JcrNotificationModule implements NotificationModule {
 		} finally {
 			if (lt != null)
 				systemSession.removeLockToken(lt);
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("unsubscribe: void");
 	}
 	
 	@Override
-	public Set<String> getSubscriptors(String token, String nodePath) throws PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
+	public Set<String> getSubscriptors(String token, String nodePath) throws PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
 		log.debug("getSusbcriptions({}, {})", token, nodePath);
 		Set<String> users = new HashSet<String>();
 		Session session = null;
@@ -229,8 +230,9 @@ public class JcrNotificationModule implements NotificationModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getSusbcriptions: {}", users);
@@ -238,9 +240,9 @@ public class JcrNotificationModule implements NotificationModule {
 	}
 	
 	@Override
-	public void notify(String token, String nodePath, List<String> users, String message, boolean attachment)
+	public void notify(String token, String nodePath, List<String> users, List<String> mails, String message, boolean attachment)
 			throws PathNotFoundException, AccessDeniedException, RepositoryException {
-		log.debug("notify({}, {}, {}, {})", new Object[] { token, nodePath, users, message });
+		log.debug("notify({}, {}, {}, {}, {})", new Object[] { token, nodePath, users, mails, message });
 		List<String> to = new ArrayList<String>();
 		Session session = null;
 		
@@ -267,7 +269,9 @@ public class JcrNotificationModule implements NotificationModule {
 				String from = new JcrAuthModule().getMail(token, session.getUserID());
 				
 				if (!to.isEmpty() && from != null && !from.isEmpty()) {
-					CommonNotificationModule.sendNotification(session.getUserID(), nodePath, from, to, message, attachment);
+					Node docNode = session.getRootNode().getNode(nodePath.substring(1));
+					CommonNotificationModule.sendNotification(session.getUserID(), docNode.getUUID(), nodePath, from, to, message,
+							attachment);
 				}
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();

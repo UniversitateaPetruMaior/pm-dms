@@ -23,7 +23,6 @@ package com.openkm.module.jcr.base;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -57,22 +56,17 @@ import com.openkm.bean.Notification;
 import com.openkm.bean.Permission;
 import com.openkm.bean.Property;
 import com.openkm.bean.Version;
-import com.openkm.bean.Signature;
-import com.openkm.cache.UserItemsManager;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.UserQuotaExceededException;
 import com.openkm.dao.UserConfigDAO;
 import com.openkm.dao.bean.ProfileMisc;
 import com.openkm.dao.bean.UserConfig;
-import com.openkm.dao.bean.cache.UserItems;
 import com.openkm.extractor.RegisteredExtractors;
 import com.openkm.module.common.CommonGeneralModule;
 import com.openkm.module.jcr.stuff.JCRUtils;
 import com.openkm.util.DocConverter;
-import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
-
 
 public class BaseDocumentModule {
 	private static Logger log = LoggerFactory.getLogger(BaseDocumentModule.class);
@@ -96,14 +90,7 @@ public class BaseDocumentModule {
 		
 		// System user don't care quotas
 		if (!Config.SYSTEM_USER.equals(session.getUserID()) && pm.getUserQuota() > 0) {
-			long currentQuota = 0;
-			
-			if (Config.USER_ITEM_CACHE) {
-				UserItems ui = UserItemsManager.get(session.getUserID());
-				currentQuota = ui.getSize();
-			} else {
-				currentQuota = JCRUtils.calculateQuota(session);
-			}
+			long currentQuota = JCRUtils.calculateQuota(session);
 			
 			if (currentQuota + size > pm.getUserQuota() * 1024 * 1024) {
 				throw new UserQuotaExceededException(Long.toString(currentQuota + size));
@@ -169,12 +156,6 @@ public class BaseDocumentModule {
 		// Esta línea vale millones!! Resuelve la incidencia del isCkechedOut.
 		// Por lo visto un nuevo nodo se añade con el isCheckedOut a true :/
 		contentNode.checkin();
-		
-		// Update user items size
-		if (Config.USER_ITEM_CACHE) {
-			UserItemsManager.incSize(session.getUserID(), size);
-			UserItemsManager.incDocuments(session.getUserID(), 1);
-		}
 		
 		return documentNode;
 	}
@@ -316,38 +297,6 @@ public class BaseDocumentModule {
 			
 			doc.setNotes(notes);
 		}
-
-		// Get signatures
-		if (docNode.isNodeType(Signature.MIX_TYPE)) {
-			try {
-				// load sigantures node
-				List<Signature> signatures = new ArrayList<Signature>();
-				Node signaturesNode = docNode.getNode(Signature.LIST);
-				if (signaturesNode.hasNodes()) {
-					// load file content digest value
-					InputStream docInputStream = contentNode.getProperty(JcrConstants.JCR_DATA).getStream();
-					byte[] docInBytes = IOUtils.toByteArray(docInputStream);
-					MessageDigest md1 = MessageDigest.getInstance("SHA1");
-					md1.update(docInBytes);
-					final String digestValue = SecureStore.b64Encode(md1.digest());
-					// init and add sigantures
-					for (NodeIterator nit = signaturesNode.getNodes(); nit.hasNext();) {
-						Node signatureNode = nit.nextNode();
-						Signature signature = new Signature();
-						signature.setDate(signatureNode.getProperty(Signature.DATE).getDate());
-						signature.setUser(signatureNode.getProperty(Signature.USER).getString());
-						signature.setSignDigest(signatureNode.getProperty(Signature.SIGN_DIGEST).getString());
-						signature.setSignSHA1(signatureNode.getProperty(Signature.SIGN_SHA1).getString());
-						signature.setPath(signatureNode.getPath());
-						signature.setValid(digestValue.equals(signature.getSignDigest()));
-						signatures.add(signature);
-					}
-				}
-				doc.setSignatures(signatures);
-			} catch (Exception e) {
-			}
-		}
-
 		
 		log.debug("Permisos: {} => {}", docNode.getPath(), doc.getPermissions());
 		log.debug("getProperties[session]: {}", doc);
@@ -438,12 +387,6 @@ public class BaseDocumentModule {
 				log.debug("vh.removeVersion({})", versionName);
 				vh.removeVersion(versionName);
 			}
-		}
-		
-		// Update user items size
-		if (Config.USER_ITEM_CACHE) {
-			UserItemsManager.decSize(author, size);
-			UserItemsManager.decDocuments(author, 1);
 		}
 	}
 	

@@ -177,10 +177,11 @@ public class FileUploadPopup extends DialogBox {
 		if (Main.get().mainPanel.bottomPanel.userInfo.isQuotaExceed()) {
 			Main.get().showError("UserQuotaExceed", new OKMException("OKM-" + ErrorCode.ORIGIN_OKMBrowser + ErrorCode.CAUSE_QuotaExceed, ""));
 		} else {
+			ffUpload.mails.setText(ffUpload.notifyPanel.getExternalMailAddress());;
 			ffUpload.users.setText(ffUpload.notifyPanel.getUsersToNotify());
 			ffUpload.roles.setText(ffUpload.notifyPanel.getRolesToNotify());
 			
-			if (ffUpload.notifyToUser.getValue() && ffUpload.users.getText().equals("") && ffUpload.roles.getText().equals("")) {
+			if (ffUpload.notifyToUser.getValue() && ffUpload.users.getText().equals("") && ffUpload.roles.getText().equals("") && ffUpload.mails.getText().equals("")) {
 				ffUpload.errorNotify.setVisible(true);
 			} else if (ffUpload.getFilename() != null && !ffUpload.getFilename().equals("")) {
 				addButton.setVisible(true);
@@ -269,6 +270,20 @@ public class FileUploadPopup extends DialogBox {
 	 */
 	public void enableAdvancedFilter() {
 		ffUpload.enableAdvancedFilter();
+	}
+	
+	/**
+	 * enableNotifyExternalUsers
+	 */
+	public void enableNotifyExternalUsers() {
+		ffUpload.enableNotifyExternalUsers();
+	}
+	
+	/**
+	 * setIncrementalVersion
+	 */
+	public void setIncreaseVersion(int increaseVersion) {
+		ffUpload.setIncreaseVersion(increaseVersion);
 	}
 	
 	/**

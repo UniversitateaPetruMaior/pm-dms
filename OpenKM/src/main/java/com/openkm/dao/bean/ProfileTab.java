@@ -25,6 +25,7 @@ import java.io.Serializable;
 
 public class ProfileTab implements Serializable {
 	private static final long serialVersionUID = 1L;
+	private String defaultTab;
 	private boolean desktopVisible;
 	private boolean searchVisible;
 	private boolean dashboardVisible;
@@ -32,6 +33,14 @@ public class ProfileTab implements Serializable {
 	private ProfileTabFolder prfFolder = new ProfileTabFolder();
 	private ProfileTabDocument prfDocument = new ProfileTabDocument();
 	private ProfileTabMail prfMail = new ProfileTabMail();
+	
+	public String getDefaultTab() {
+		return defaultTab;
+	}
+
+	public void setDefaultTab(String defaultTab) {
+		this.defaultTab = defaultTab;
+	}
 
 	public boolean isDesktopVisible() {
 		return desktopVisible;

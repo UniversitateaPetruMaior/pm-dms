@@ -1,28 +1,28 @@
-<%@ page import="java.io.File" %>
-<%@ page import="java.util.Vector" %>
-<%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
-<%@ page import="com.openkm.servlet.admin.BaseServlet" %>
-<%@ page import="com.openkm.core.Config" %>
-<%@ page import="com.openkm.core.HttpSessionManager" %>
-<%@ page import="com.openkm.kea.tree.KEATree" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ page import="java.io.File"%>
+<%@ page import="java.util.Vector"%>
+<%@ page import="org.apache.commons.lang.StringEscapeUtils"%>
+<%@ page import="com.openkm.servlet.admin.BaseServlet"%>
+<%@ page import="com.openkm.core.Config"%>
+<%@ page import="com.openkm.core.HttpSessionManager"%>
+<%@ page import="com.openkm.kea.tree.KEATree"%>
 <%@ page import="com.openkm.bean.Repository"%>
-<%@ page import="com.openkm.util.FormatUtil" %>
-<%@ page import="com.openkm.util.impexp.RepositoryImporter" %>
-<%@ page import="com.openkm.util.impexp.HTMLInfoDecorator" %>
-<%@ page import="com.openkm.util.impexp.ImpExpStats" %>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.openkm.util.impexp.RepositoryImporter"%>
+<%@ page import="com.openkm.util.impexp.HTMLInfoDecorator"%>
+<%@ page import="com.openkm.util.impexp.ImpExpStats"%>
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <link rel="Shortcut icon" href="favicon.ico" />
-  <link rel="stylesheet" type="text/css" href="css/style.css" />
-  <title>Generate thesaurus</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="Shortcut icon" href="favicon.ico" />
+<link rel="stylesheet" type="text/css" href="css/style.css" />
+<title>Generate thesaurus</title>
 </head>
 <body>
-<%
-	if (BaseServlet.isAdmin(request)) {
+	<%
+	if (BaseServlet.isMultipleInstancesAdmin(request)) {
 		request.setCharacterEncoding("UTF-8");
 		String strLevel = request.getParameter("level");
 		
@@ -31,7 +31,7 @@
 		out.println("</ul>");
 		out.println("<br/>");
 		out.println("<form action=\"generate_thesaurus.jsp\">");
-		out.println("<table class=\"form\">");
+		out.println("<table class=\"form\" width=\"125px\">");
 		out.println("<tr><td>");
 		out.println("Show level <select name=\"level\">");
 		
@@ -42,7 +42,7 @@
 		out.println("</select>");
 		out.println("</td></tr>");
 		out.println("<tr><td align=\"right\">");
-		out.println("<input type=\"submit\" value=\"Generate\">");
+		out.println("<input type=\"submit\" value=\"Generate\" class=\"executeButton\">");
 		out.println("</td></tr>");
 		out.println("</table>");
 		out.println("</form>");

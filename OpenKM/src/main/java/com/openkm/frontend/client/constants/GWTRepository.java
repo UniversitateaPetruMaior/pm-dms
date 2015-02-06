@@ -35,5 +35,6 @@ public class GWTRepository {
 	public static final String CATEGORIES = "okm:categories";
 	public static final String PERSONAL = "okm:personal";
 	public static final String MAIL = "okm:mail";
+	public static final String METADATA = "okm:metadata";
 	public static final String SYS_CONFIG = "okm:config";
 }

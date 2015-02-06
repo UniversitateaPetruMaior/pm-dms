@@ -34,6 +34,7 @@ import com.openkm.module.jcr.stuff.JcrSessionManager;
 public class RepositoryInfo extends TimerTask {
 	private static Logger log = LoggerFactory.getLogger(RepositoryInfo.class);
 	private static StatsInfo documentsByContext = new StatsInfo();
+	private static StatsInfo mailsByContext = new StatsInfo();
 	private static StatsInfo foldersByContext = new StatsInfo();
 	private static StatsInfo documentsSizeByContext = new StatsInfo();
 	private static volatile boolean running = false;
@@ -62,8 +63,9 @@ public class RepositoryInfo extends TimerTask {
 				OKMStats okmStats = OKMStats.getInstance();
 				
 				try {
-					documentsByContext = okmStats.getDocumentsByContext(token);
+					mailsByContext = okmStats.getMailsByContext(token);
 					foldersByContext = okmStats.getFoldersByContext(token);
+					documentsByContext = okmStats.getDocumentsByContext(token);
 					documentsSizeByContext = okmStats.getDocumentsSizeByContext(token);
 				} catch (RepositoryException e) {
 					log.error(e.getMessage(), e);
@@ -79,21 +81,28 @@ public class RepositoryInfo extends TimerTask {
 	}
 	
 	/**
-	 * @return
+	 * @return Documents grouped by context.
 	 */
 	public static StatsInfo getDocumentsByContext() {
 		return documentsByContext;
 	}
 	
 	/**
-	 * @return
+	 * @return Folders grouped by context.
 	 */
 	public static StatsInfo getFoldersByContext() {
 		return foldersByContext;
 	}
 	
 	/**
-	 * @return
+	 * @return Mails grouped by context.
+	 */
+	public static StatsInfo getMailsByContext() {
+		return mailsByContext;
+	}
+	
+	/**
+	 * @return Documents size by context.
 	 */
 	public static StatsInfo getDocumentsSizeByContext() {
 		return documentsSizeByContext;

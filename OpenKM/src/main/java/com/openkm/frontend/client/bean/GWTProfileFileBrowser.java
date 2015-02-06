@@ -38,6 +38,17 @@ public class GWTProfileFileBrowser implements IsSerializable {
 	private boolean lastModifiedVisible;
 	private boolean authorVisible;
 	private boolean versionVisible;
+	private boolean extraColumns = false;
+	
+	// width
+	private String statusWidth;
+	private String massiveWidth;
+	private String iconWidth;
+	private String nameWidth;
+	private String sizeWidth;
+	private String lastModifiedWidth;
+	private String authorWidth;
+	private String versionWidth;
 
 	public boolean isStatusVisible() {
 		return statusVisible;
@@ -101,6 +112,78 @@ public class GWTProfileFileBrowser implements IsSerializable {
 
 	public void setVersionVisible(boolean versionVisible) {
 		this.versionVisible = versionVisible;
+	}
+
+	public boolean isExtraColumns() {
+		return extraColumns;
+	}
+
+	public void setExtraColumns(boolean extraColumns) {
+		this.extraColumns = extraColumns;
+	}
+
+	public String getStatusWidth() {
+		return statusWidth;
+	}
+
+	public void setStatusWidth(String statusWidth) {
+		this.statusWidth = statusWidth;
+	}
+
+	public String getMassiveWidth() {
+		return massiveWidth;
+	}
+
+	public void setMassiveWidth(String massiveWidth) {
+		this.massiveWidth = massiveWidth;
+	}
+
+	public String getIconWidth() {
+		return iconWidth;
+	}
+
+	public void setIconWidth(String iconWidth) {
+		this.iconWidth = iconWidth;
+	}
+
+	public String getNameWidth() {
+		return nameWidth;
+	}
+
+	public void setNameWidth(String nameWidth) {
+		this.nameWidth = nameWidth;
+	}
+
+	public String getSizeWidth() {
+		return sizeWidth;
+	}
+
+	public void setSizeWidth(String sizeWidth) {
+		this.sizeWidth = sizeWidth;
+	}
+
+	public String getLastModifiedWidth() {
+		return lastModifiedWidth;
+	}
+
+	public void setLastModifiedWidth(String lastModifiedWidth) {
+		this.lastModifiedWidth = lastModifiedWidth;
+	}
+
+	public String getAuthorWidth() {
+		return authorWidth;
+	}
+
+	public void setAuthorWidth(String authorWidth) {
+		this.authorWidth = authorWidth;
+	}
+
+	public String getVersionWidth() {
+		return versionWidth;
+	}
+
+	public void setVersionWidth(String versionWidth) {
+		this.versionWidth = versionWidth;
 	}
 
 	public String toString() {

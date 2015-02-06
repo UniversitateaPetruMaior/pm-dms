@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.dao;
@@ -40,9 +40,10 @@ import com.openkm.util.SecureStore;
 
 public class AuthDAO {
 	private static Logger log = LoggerFactory.getLogger(AuthDAO.class);
-
-	private AuthDAO() {}
-			
+	
+	private AuthDAO() {
+	}
+	
 	/**
 	 * Create user in database
 	 */
@@ -69,7 +70,7 @@ public class AuthDAO {
 		
 		log.debug("createUser: void");
 	}
-
+	
 	/**
 	 * Update user in database
 	 */
@@ -126,7 +127,7 @@ public class AuthDAO {
 	}
 	
 	/**
-	 * Update user password in database 
+	 * Update user password in database
 	 */
 	public static void updateUserPassword(String usrId, String usrPassword) throws DatabaseException {
 		log.debug("updateUserPassword({}, {})", usrId, usrPassword);
@@ -196,7 +197,6 @@ public class AuthDAO {
 		String qsTwitter = "delete from TwitterAccount ta where ta.user=:user";
 		String qsBookmark = "delete from Bookmark bm where bm.user=:user";
 		String qsConfig = "delete from UserConfig uc where uc.user=:user";
-		String qsItems = "delete from UserItems ui where ui.user=:user";
 		String qsSharedQuery = "from QueryParams qp where :user in elements(qp.shared)";
 		Session session = null;
 		Transaction tx = null;
@@ -206,7 +206,7 @@ public class AuthDAO {
 			tx = session.beginTransaction();
 			User user = (User) session.load(User.class, usrId);
 			session.delete(user);
-						
+			
 			Query qMail = session.createQuery(qsMail);
 			qMail.setString("user", usrId);
 			qMail.executeUpdate();
@@ -222,10 +222,6 @@ public class AuthDAO {
 			Query qConfig = session.createQuery(qsConfig);
 			qConfig.setString("user", usrId);
 			qConfig.executeUpdate();
-			
-			Query qItems = session.createQuery(qsItems);
-			qItems.setString("user", usrId);
-			qItems.executeUpdate();
 			
 			Query qSharedQuery = session.createQuery(qsSharedQuery);
 			qSharedQuery.setString("user", usrId);
@@ -253,7 +249,7 @@ public class AuthDAO {
 	@SuppressWarnings("unchecked")
 	public static List<User> findAllUsers(boolean filterByActive) throws DatabaseException {
 		log.debug("findAllUsers({})", filterByActive);
-		String qs = "from User u "+(filterByActive?"where u.active=:active":"")+" order by u.id";
+		String qs = "from User u " + (filterByActive ? "where u.active=:active" : "") + " order by u.id";
 		Session session = null;
 		
 		try {
@@ -273,15 +269,15 @@ public class AuthDAO {
 			HibernateUtil.close(session);
 		}
 	}
-
+	
 	/**
 	 * Get all users within a role
 	 */
 	@SuppressWarnings("unchecked")
 	public static List<User> findUsersByRole(String rolId, boolean filterByActive) throws DatabaseException {
 		log.debug("findUsersByRole({}, {})", rolId, filterByActive);
-		String qs = "select u from User u, Role r where r.id=:rolId and r in elements(u.roles) " + 
-			(filterByActive?"and u.active=:active":"")+" order by u.id";
+		String qs = "select u from User u, Role r where r.id=:rolId and r in elements(u.roles) "
+				+ (filterByActive ? "and u.active=:active" : "") + " order by u.id";
 		Session session = null;
 		
 		try {
@@ -309,8 +305,8 @@ public class AuthDAO {
 	@SuppressWarnings("unchecked")
 	public static List<Role> findRolesByUser(String usrId, boolean filterByActive) throws DatabaseException {
 		log.debug("findRolesByUser({}, {})", usrId, filterByActive);
-		String qs = "select r from User u, Role r where u.id=:usrId and r in elements(u.roles) " + 
-			(filterByActive?"and r.active=:active":"")+" order by r.id";
+		String qs = "select r from User u, Role r where u.id=:usrId and r in elements(u.roles) "
+				+ (filterByActive ? "and r.active=:active" : "") + " order by r.id";
 		Session session = null;
 		
 		try {
@@ -353,7 +349,7 @@ public class AuthDAO {
 			HibernateUtil.close(session);
 		}
 	}
-
+	
 	/**
 	 * Create role in database
 	 */
@@ -426,7 +422,7 @@ public class AuthDAO {
 		
 		log.debug("activeRole: void");
 	}
-
+	
 	/**
 	 * Delete role from database
 	 */
@@ -436,7 +432,7 @@ public class AuthDAO {
 		Session session = null;
 		Transaction tx = null;
 		
-		try {			
+		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
 			Role role = (Role) session.load(Role.class, rolId);
@@ -457,7 +453,7 @@ public class AuthDAO {
 		
 		log.debug("deleteRole: void");
 	}
-
+	
 	/**
 	 * Get all roles in database
 	 */
@@ -501,7 +497,7 @@ public class AuthDAO {
 			HibernateUtil.close(session);
 		}
 	}
-
+	
 	/**
 	 * Grant role to user
 	 */
@@ -527,7 +523,7 @@ public class AuthDAO {
 		
 		log.debug("grantRole: void");
 	}
-
+	
 	/**
 	 * Revoke role from user
 	 */

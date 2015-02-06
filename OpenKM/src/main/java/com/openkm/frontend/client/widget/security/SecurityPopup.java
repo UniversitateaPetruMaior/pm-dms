@@ -60,7 +60,7 @@ public class SecurityPopup extends DialogBox {
 	private SimplePanel sp;
 	public SecurityPanel securityPanel;
 	private int width = 612;
-	private String path = "";
+	private String uuid = "";
 	
 	/**
 	 * Security popup
@@ -97,7 +97,7 @@ public class SecurityPopup extends DialogBox {
 				Map<String, Integer> revokeUsers = userGrants.get(1);
 				Map<String, Integer> addRoles = roleGrants.get(0);
 				Map<String, Integer> revokeRoles = roleGrants.get(1);
-				authService.changeSecurity(path, addUsers, revokeUsers, addRoles, revokeRoles, recursiveChecked, new AsyncCallback<Object>() {
+				authService.changeSecurity(uuid, addUsers, revokeUsers, addRoles, revokeRoles, recursiveChecked, new AsyncCallback<Object>() {
 					@Override
 					public void onSuccess(Object result) {
 						if (!recursiveChecked) {
@@ -156,6 +156,13 @@ public class SecurityPopup extends DialogBox {
 	}
 	
 	/**
+	 * initSecurity
+	 */
+	public void initSecurity() {
+		securityPanel.initSecurity();
+	}
+	
+	/**
 	 * Language refresh
 	 */
 	public void langRefresh() {
@@ -169,13 +176,13 @@ public class SecurityPopup extends DialogBox {
 	/**
 	 * Show the security popup
 	 */
-	public void show(String path) {
-		this.path = path;
+	public void show(String uuid) {
+		this.uuid = uuid;
 		int left = (Window.getClientWidth()-width) / 2;
 		int top = (Window.getClientHeight()-400) / 2;
 		setPopupPosition(left, top);
 		setText(Main.i18n("security.label"));
-		securityPanel.reset(path);
+		securityPanel.reset(uuid);
 		change.setEnabled(false);
 		super.show();
 		

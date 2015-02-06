@@ -22,7 +22,6 @@ package com.openkm.servlet.frontend;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -44,10 +43,12 @@ import com.openkm.core.RepositoryException;
 import com.openkm.dao.AuthDAO;
 import com.openkm.dao.LanguageDAO;
 import com.openkm.dao.MailAccountDAO;
+import com.openkm.dao.MimeTypeDAO;
 import com.openkm.dao.ReportDAO;
 import com.openkm.dao.UserConfigDAO;
 import com.openkm.dao.bean.Language;
 import com.openkm.dao.bean.MailAccount;
+import com.openkm.dao.bean.MimeType;
 import com.openkm.dao.bean.Profile;
 import com.openkm.dao.bean.Report;
 import com.openkm.dao.bean.User;
@@ -55,8 +56,9 @@ import com.openkm.dao.bean.UserConfig;
 import com.openkm.frontend.client.OKMException;
 import com.openkm.frontend.client.bean.GWTAvailableOption;
 import com.openkm.frontend.client.bean.GWTLanguage;
+import com.openkm.frontend.client.bean.GWTMimeType;
 import com.openkm.frontend.client.bean.GWTProfileFileBrowser;
-import com.openkm.frontend.client.bean.GWTProfileExplorer;
+import com.openkm.frontend.client.bean.GWTProfilePagination;
 import com.openkm.frontend.client.bean.GWTProfileToolbar;
 import com.openkm.frontend.client.bean.GWTPropertyGroup;
 import com.openkm.frontend.client.bean.GWTUser;
@@ -72,11 +74,16 @@ import com.openkm.util.WarUtils;
 import com.openkm.validator.ValidatorException;
 import com.openkm.validator.ValidatorFactory;
 import com.openkm.validator.password.PasswordValidator;
+import com.openkm.vernum.MajorMinorReleaseVersionNumerationAdapter;
+import com.openkm.vernum.MajorMinorVersionNumerationAdapter;
+import com.openkm.vernum.VersionNumerationAdapter;
+import com.openkm.vernum.VersionNumerationFactory;
 
 /**
  * WorkspaceServlet
  * 
  * @author jllort
+ * 
  */
 public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWorkspaceService {
 	private static Logger log = LoggerFactory.getLogger(WorkspaceServlet.class);
@@ -87,6 +94,7 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 		log.debug("getUserWorkspace()");
 		updateSessionManager();
 		GWTWorkspace workspace = new GWTWorkspace();
+		
 		workspace.setApplicationURL(Config.APPLICATION_URL);
 		workspace.setAppVersion(GWTUtil.copy(WarUtils.getAppVersion()));
 		workspace.setWorkflowRunConfigForm(Config.WORKFLOW_RUN_CONFIG_FORM);
@@ -150,6 +158,19 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			workspace.setWizardCategories(up.getPrfWizard().isCategoriesEnabled());
 			workspace.setWizardKeywords(up.getPrfWizard().isKeywordsEnabled());
 			
+			// acrobat plgin preview
+			workspace.setAcrobatPluginPreview(up.getPrfMisc().isAcrobatPluginPreview());
+			
+			// increase version
+			if (up.getPrfMisc().isIncreaseVersion()) {
+				VersionNumerationAdapter vna = VersionNumerationFactory.getVersionNumerationAdapter();
+				if (vna instanceof MajorMinorReleaseVersionNumerationAdapter) {
+					workspace.setIncreaseVersion(2);
+				} else if (vna instanceof MajorMinorVersionNumerationAdapter) {
+					workspace.setIncreaseVersion(1);
+				}
+			}
+			
 			// Is a misc workflow list available
 			workspace.setMiscWorkflowList(miscWorkflowLst);
 			
@@ -169,12 +190,15 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			// User quota ( limit user repository size )
 			workspace.setUserQuotaEnabled(up.getPrfMisc().getUserQuota() > 0);
 			workspace.setUserQuotaLimit(up.getPrfMisc().getUserQuota() * 1024 * 1024);
+			workspace.setPrintPreview(up.getPrfMisc().isPrintPreview());
 			workspace.setUploadNotifyUsers(up.getPrfMisc().isUploadNotifyUsers());
+			workspace.setNotifyExternalUsers(up.getPrfMisc().isNotifyExternalUsers());
 			workspace.setWebdavFix(Config.SYSTEM_WEBDAV_FIX);
 			
 			// Stack visibility
 			workspace.setStackTaxonomy(up.getPrfStack().isTaxonomyVisible());
 			workspace.setStackCategoriesVisible(up.getPrfStack().isCategoriesVisible());
+			workspace.setStackMetadataVisible(up.getPrfStack().isMetadataVisible());
 			workspace.setStackThesaurusVisible(up.getPrfStack().isThesaurusVisible());
 			workspace.setStackTemplatesVisible(up.getPrfStack().isTemplatesVisible());
 			workspace.setStackPersonalVisible(up.getPrfStack().isPersonalVisible());
@@ -190,6 +214,7 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			workspace.setMenuHelpVisible(up.getPrfMenu().isHelpVisible());
 			
 			// Tab visibility
+			workspace.setDefaultTab(up.getPrfTab().getDefaultTab());
 			workspace.setTabDesktopVisible(up.getPrfTab().isDesktopVisible());
 			workspace.setTabSearchVisible(up.getPrfTab().isSearchVisible());
 			workspace.setTabDashboardVisible(up.getPrfTab().isDashboardVisible());
@@ -197,10 +222,9 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 					&& up.getPrfTab().isAdministrationVisible());
 			
 			// If there's no stack visible force Desktop to do not be visible
-			if (!up.getPrfStack().isTaxonomyVisible() && !up.getPrfStack().isCategoriesVisible()
+			if (!up.getPrfStack().isTaxonomyVisible() && !up.getPrfStack().isCategoriesVisible() && !up.getPrfStack().isMetadataVisible()
 					&& !up.getPrfStack().isThesaurusVisible() && !up.getPrfStack().isTemplatesVisible()
-					&& !up.getPrfStack().isPersonalVisible() && !up.getPrfStack().isMailVisible()
-					&& !up.getPrfStack().isTrashVisible()) {
+					&& !up.getPrfStack().isPersonalVisible() && !up.getPrfStack().isMailVisible() && !up.getPrfStack().isTrashVisible()) {
 				workspace.setTabDesktopVisible(false);
 			}
 			
@@ -239,6 +263,7 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			availableOption.setCreateFolderOption(up.getPrfMenu().getPrfFile().isCreateFolderVisible());
 			availableOption.setFindFolderOption(up.getPrfMenu().getPrfFile().isFindFolderVisible());
 			availableOption.setFindDocumentOption(up.getPrfMenu().getPrfFile().isFindDocumentVisible());
+			availableOption.setSimilarDocumentVisible(up.getPrfMenu().getPrfFile().isSimilarDocumentVisible());
 			availableOption.setGotoFolderOption(up.getPrfMenu().getPrfFile().isGoFolderVisible());
 			availableOption.setDownloadOption(up.getPrfMenu().getPrfFile().isDownloadVisible());
 			availableOption.setDownloadPdfOption(up.getPrfMenu().getPrfFile().isDownloadPdfVisible());
@@ -253,8 +278,8 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			availableOption.setRestoreOption(up.getPrfMenu().getPrfFile().isRestoreVisible());
 			availableOption.setPurgeTrashOption(up.getPrfMenu().getPrfFile().isPurgeTrashVisible());
 			availableOption.setSendDocumentLinkOption(up.getPrfMenu().getPrfFile().isSendDocumentLinkVisible());
-			availableOption.setSendDocumentAttachmentOption(up.getPrfMenu().getPrfFile()
-					.isSendDocumentAttachmentVisible());
+			availableOption.setSendDocumentAttachmentOption(up.getPrfMenu().getPrfFile().isSendDocumentAttachmentVisible());
+			availableOption.setForwardMailOption(up.getPrfMenu().getPrfFile().isForwardMailVisible());
 			
 			// Menu Edit
 			availableOption.setLockOption(up.getPrfMenu().getPrfEdit().isLockVisible());
@@ -267,6 +292,7 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			availableOption.setCancelCheckoutOption(up.getPrfMenu().getPrfEdit().isCancelCheckOutVisible());
 			availableOption.setDeleteOption(up.getPrfMenu().getPrfEdit().isDeleteVisible());
 			availableOption.setAddPropertyGroupOption(up.getPrfMenu().getPrfEdit().isAddPropertyGroupVisible());
+			availableOption.setUpdatePropertyGroupOption(up.getPrfMenu().getPrfEdit().isUpdatePropertyGroupVisible());
 			availableOption.setRemovePropertyGroupOption(up.getPrfMenu().getPrfEdit().isRemovePropertyGroupVisible());
 			availableOption.setAddSubscriptionOption(up.getPrfMenu().getPrfEdit().isAddSubscriptionVisible());
 			availableOption.setRemoveSubscriptionOption(up.getPrfMenu().getPrfEdit().isRemoveSubscriptionVisible());
@@ -291,6 +317,7 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			availableOption.setAdministrationOption(up.getPrfMenu().getPrfTool().isAdministrationVisible()
 					&& getThreadLocalRequest().isUserInRole(Config.DEFAULT_ADMIN_ROLE));
 			availableOption.setPreferencesOption(up.getPrfMenu().getPrfTool().isPreferencesVisible());
+			availableOption.setConvertOption(up.getPrfMenu().getPrfTool().isConvertVisible());
 			
 			// Menu Help
 			availableOption.setHelpOption(up.getPrfMenu().getPrfHelp().isHelpVisible());
@@ -319,44 +346,36 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			// Toolbar
 			// Is visible on toolbar && available option too
 			GWTProfileToolbar profileToolbar = new GWTProfileToolbar();
-			profileToolbar.setAddDocumentVisible(up.getPrfToolbar().isAddDocumentVisible()
-					&& availableOption.isAddDocumentOption());
+			profileToolbar.setAddDocumentVisible(up.getPrfToolbar().isAddDocumentVisible() && availableOption.isAddDocumentOption());
 			profileToolbar.setAddPropertyGroupVisible(up.getPrfToolbar().isAddPropertyGroupVisible()
 					&& availableOption.isAddPropertyGroupOption());
 			profileToolbar.setAddSubscriptionVisible(up.getPrfToolbar().isAddSubscriptionVisible()
 					&& availableOption.isAddSubscriptionOption());
 			profileToolbar.setCancelCheckoutVisible(up.getPrfToolbar().isCancelCheckoutVisible()
 					&& availableOption.isCancelCheckoutOption());
-			profileToolbar.setCheckoutVisible(up.getPrfToolbar().isCheckoutVisible()
-					&& availableOption.isCheckoutOption());
-			profileToolbar
-					.setCheckinVisible(up.getPrfToolbar().isCheckinVisible() && availableOption.isCheckinOption());
-			profileToolbar.setCreateFolderVisible(up.getPrfToolbar().isCreateFolderVisible()
-					&& availableOption.isCreateFolderOption());
+			profileToolbar.setCheckoutVisible(up.getPrfToolbar().isCheckoutVisible() && availableOption.isCheckoutOption());
+			profileToolbar.setCheckinVisible(up.getPrfToolbar().isCheckinVisible() && availableOption.isCheckinOption());
+			profileToolbar.setCreateFolderVisible(up.getPrfToolbar().isCreateFolderVisible() && availableOption.isCreateFolderOption());
 			profileToolbar.setDeleteVisible(up.getPrfToolbar().isDeleteVisible() && availableOption.isDeleteOption());
 			profileToolbar.setDownloadPdfVisible(up.getPrfToolbar().isDownloadPdfVisible() && availableOption.isDownloadPdfOption());
-			profileToolbar.setDownloadVisible(up.getPrfToolbar().isDownloadVisible()
-					&& availableOption.isDownloadOption());
-			profileToolbar.setFindDocumentVisible(up.getPrfToolbar().isFindDocumentVisible()
-					&& availableOption.isFindDocumentOption());
-			profileToolbar.setFindFolderVisible(up.getPrfToolbar().isFindFolderVisible()
-					&& availableOption.isFindFolderOption());
+			profileToolbar.setDownloadVisible(up.getPrfToolbar().isDownloadVisible() && availableOption.isDownloadOption());
+			profileToolbar.setFindDocumentVisible(up.getPrfToolbar().isFindDocumentVisible() && availableOption.isFindDocumentOption());
+			profileToolbar.setFindFolderVisible(up.getPrfToolbar().isFindFolderVisible() && availableOption.isFindFolderOption());
+			profileToolbar.setSimilarDocumentVisible(up.getPrfToolbar().isSimilarDocumentVisible()
+					&& availableOption.isSimilarDocumentVisible());
 			profileToolbar.setHomeVisible(up.getPrfToolbar().isHomeVisible() && availableOption.isHomeOption());
 			profileToolbar.setLockVisible(up.getPrfToolbar().isLockVisible() && availableOption.isLockOption());
-			profileToolbar
-					.setRefreshVisible(up.getPrfToolbar().isRefreshVisible() && availableOption.isRefreshOption());
+			profileToolbar.setPrintVisible(up.getPrfToolbar().isPrintVisible() && workspace.isPrintPreview());
+			profileToolbar.setRefreshVisible(up.getPrfToolbar().isRefreshVisible() && availableOption.isRefreshOption());
 			profileToolbar.setRemovePropertyGroupVisible(up.getPrfToolbar().isRemovePropertyGroupVisible()
 					&& availableOption.isRemovePropertyGroupOption());
 			profileToolbar.setRemoveSubscriptionVisible(up.getPrfToolbar().isRemoveSubscriptionVisible()
 					&& availableOption.isRemoveSubscriptionOption());
-			profileToolbar
-					.setScannerVisible(up.getPrfToolbar().isScannerVisible() && availableOption.isScannerOption());
-			profileToolbar.setStartWorkflowVisible(up.getPrfToolbar().isStartWorkflowVisible()
-					&& availableOption.isWorkflowOption());
+			profileToolbar.setScannerVisible(up.getPrfToolbar().isScannerVisible() && availableOption.isScannerOption());
+			profileToolbar.setStartWorkflowVisible(up.getPrfToolbar().isStartWorkflowVisible() && availableOption.isWorkflowOption());
 			profileToolbar.setUnlockVisible(up.getPrfToolbar().isUnlockVisible() && availableOption.isUnLockOption());
-			profileToolbar.setUploaderVisible(up.getPrfToolbar().isUploaderVisible()
-					&& availableOption.isUploaderOption());
-			profileToolbar.setOmrVisible(up.getPrfToolbar().isOmrVisible());
+			profileToolbar.setUploaderVisible(up.getPrfToolbar().isUploaderVisible() && availableOption.isUploaderOption());
+			profileToolbar.setSplitterResizeVisible(up.getPrfToolbar().isSplitterResizeVisible());
 			workspace.setProfileToolbar(profileToolbar);
 			
 			// file broser
@@ -369,23 +388,42 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			profileFileBrowser.setLastModifiedVisible(up.getPrfFileBrowser().isLastModifiedVisible());
 			profileFileBrowser.setAuthorVisible(up.getPrfFileBrowser().isAuthorVisible());
 			profileFileBrowser.setVersionVisible(up.getPrfFileBrowser().isVersionVisible());
+			profileFileBrowser.setStatusWidth(up.getPrfFileBrowser().getStatusWidth());
+			profileFileBrowser.setMassiveWidth(up.getPrfFileBrowser().getMassiveWidth());
+			profileFileBrowser.setIconWidth(up.getPrfFileBrowser().getIconWidth());
+			profileFileBrowser.setNameWidth(up.getPrfFileBrowser().getNameWidth());
+			profileFileBrowser.setSizeWidth(up.getPrfFileBrowser().getSizeWidth());
+			profileFileBrowser.setLastModifiedWidth(up.getPrfFileBrowser().getLastModifiedWidth());
+			profileFileBrowser.setAuthorWidth(up.getPrfFileBrowser().getAuthorWidth());
+			profileFileBrowser.setVersionWidth(up.getPrfFileBrowser().getVersionWidth());
 			workspace.setProfileFileBrowser(profileFileBrowser);
 			
 			// pagination
-			GWTProfileExplorer profileExplorer = new GWTProfileExplorer();
-			profileExplorer.setTypeFilterEnabled(up.getPrfExplorer().isTypeFilterEnabled());
-			workspace.setProfileExplorer(profileExplorer);
+			GWTProfilePagination profilePagination = new GWTProfilePagination();
+			profilePagination.setMiscFilterEnabled(up.getPrfPagination().isMiscFilterEnabled());
+			profilePagination.setTypeFilterEnabled(up.getPrfPagination().isTypeFilterEnabled());
+			profilePagination.setPaginationEnabled(up.getPrfPagination().isPaginationEnabled());
+			profilePagination.setPageList(up.getPrfPagination().getPageList());
+			profilePagination.setShowFoldersEnabled(up.getPrfPagination().isShowFoldersEnabled());
+			profilePagination.setShowDocumentsEnabled(up.getPrfPagination().isShowDocumentsEnabled());
+			profilePagination.setShowMailsEnabled(up.getPrfPagination().isShowMailsEnabled());
+			workspace.setProfilePagination(profilePagination);
 			
 			// Setting available UI languages
 			List<GWTLanguage> langs = new ArrayList<GWTLanguage>();
-			
 			for (Language lang : LanguageDAO.findAll()) {
 				langs.add(GWTUtil.copy(lang));
 			}
-			
 			workspace.setLangs(langs);
-			User user = new User();
 			
+			// Mimetypes
+			List<GWTMimeType> mimeTypes = new ArrayList<GWTMimeType>();
+			for (MimeType mt : MimeTypeDAO.findBySearch()) {
+				mimeTypes.add(GWTUtil.copy(mt));
+			}
+			workspace.setMimeTypes(mimeTypes);
+			
+			User user = new User();
 			if (Config.PRINCIPAL_ADAPTER.equals(DatabasePrincipalAdapter.class.getCanonicalName())) {
 				user = AuthDAO.findUserByPk(getThreadLocalRequest().getRemoteUser());
 				
@@ -400,13 +438,13 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 				user.setPassword("");
 			}
 			
-			for (Iterator<MailAccount> it = MailAccountDAO.findByUser(getThreadLocalRequest().getRemoteUser(), true)
-					.iterator(); it.hasNext();) {
-				MailAccount mailAccount = it.next();
-				workspace.setImapHost(mailAccount.getMailHost());
-				workspace.setImapUser(mailAccount.getMailUser());
-				workspace.setImapFolder(mailAccount.getMailFolder());
-				workspace.setImapID(mailAccount.getId());
+			for (MailAccount mailAccount : MailAccountDAO.findByUser(getThreadLocalRequest().getRemoteUser(), true)) {
+				workspace.setMailProtocol(mailAccount.getMailProtocol());
+				workspace.setMailHost(mailAccount.getMailHost());
+				workspace.setMailUser(mailAccount.getMailUser());
+				workspace.setMailPassword(mailAccount.getMailPassword());
+				workspace.setMailFolder(mailAccount.getMailFolder());
+				workspace.setMailID(mailAccount.getId());
 			}
 			
 			if (user != null) {
@@ -421,38 +459,29 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 				workspace.setChangePassword(false);
 			}
 			
-			// Saving workspace to session ( will be used to get extracolumn
-			// data )
+			// Saving workspace to session ( will be used to get extracolumn data )
 			saveUserWorkspaceSession(workspace);
 		} catch (DatabaseException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Database),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Database), e.getMessage());
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_IO),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_IO), e.getMessage());
 		} catch (ParseException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Parse),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Parse), e.getMessage());
 		} catch (RepositoryException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Repository),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Repository), e.getMessage());
 		} catch (PrincipalAdapterException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(
-					ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_PrincipalAdapter),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_PrincipalAdapter), e.getMessage());
 		} catch (PathNotFoundException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_PathNotFound),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_PathNotFound), e.getMessage());
 		} catch (NoSuchGroupException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_NoSuchGroup),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_NoSuchGroup), e.getMessage());
 		} finally {
 			JCRUtils.logout(session);
 		}
@@ -470,12 +499,10 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			docSize = new Double(OKMDashboard.getInstance().getUserDocumentsSize(null));
 		} catch (RepositoryException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Repository),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Repository), e.getMessage());
 		} catch (DatabaseException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Database),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Database), e.getMessage());
 		}
 		
 		return docSize;
@@ -485,47 +512,43 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 	public void updateUserWorkspace(GWTWorkspace workspace) throws OKMException {
 		log.debug("updateUserWorkspace()");
 		updateSessionManager();
-		
-		// For updating user
-		User user = new User();
-		user.setId(workspace.getUser().getId());
-		user.setPassword(workspace.getPassword());
-		user.setEmail(workspace.getEmail());
-		
-		// For updating imap mail
-		MailAccount mailAccount = new MailAccount();
-		mailAccount.setActive(true);
-		mailAccount.setMailFolder(workspace.getImapFolder());
-		mailAccount.setMailHost(workspace.getImapHost());
-		mailAccount.setMailPassword(workspace.getImapPassword());
-		mailAccount.setMailUser(workspace.getImapUser());
-		mailAccount.setUser(workspace.getUser().getId());
-		mailAccount.setId(workspace.getImapID());
-		
+
 		try {
 			// Can change password
 			if (Config.PRINCIPAL_ADAPTER.equals(DatabasePrincipalAdapter.class.getCanonicalName())) {
-				AuthDAO.updateUserPassword(workspace.getUser().getId(), workspace.getPassword());
-				
-				if (!user.getEmail().equals("")) {
+				if (!workspace.getPassword().isEmpty()) {
+					AuthDAO.updateUserPassword(workspace.getUser().getId(), workspace.getPassword());
+				}
+
+				if (!workspace.getEmail().isEmpty()) {
 					AuthDAO.updateUserEmail(workspace.getUser().getId(), workspace.getEmail());
 				}
 			}
-			
-			if (MailAccountDAO.findByUser(workspace.getUser().getId(), false).size() > 0) {
-				MailAccountDAO.update(mailAccount);
-				
-				if (!mailAccount.getMailPassword().equals("")) {
-					MailAccountDAO.updatePassword(mailAccount.getId(), mailAccount.getMailPassword());
+
+			if (!workspace.getMailHost().isEmpty() && !workspace.getMailUser().isEmpty() && !workspace.getMailPassword().isEmpty()) {
+				MailAccount mailAccount = new MailAccount();
+				mailAccount.setActive(true);
+				mailAccount.setMailProtocol(workspace.getMailProtocol());
+				mailAccount.setMailFolder(workspace.getMailFolder());
+				mailAccount.setMailHost(workspace.getMailHost());
+				mailAccount.setMailPassword(workspace.getMailPassword());
+				mailAccount.setMailUser(workspace.getMailUser());
+				mailAccount.setUser(workspace.getUser().getId());
+				mailAccount.setId(workspace.getMailID());
+
+				if (MailAccountDAO.findByPk(workspace.getMailID()) != null) {
+					MailAccountDAO.update(mailAccount);
+
+					if (!mailAccount.getMailPassword().isEmpty()) {
+						MailAccountDAO.updatePassword(mailAccount.getId(), mailAccount.getMailPassword());
+					}
+				} else {
+					MailAccountDAO.create(mailAccount);
 				}
-			} else if (mailAccount.getMailHost().length() > 0 && mailAccount.getMailFolder().length() > 0
-					&& mailAccount.getMailUser().length() > 0 && !mailAccount.getMailPassword().equals("")) {
-				MailAccountDAO.create(mailAccount);
 			}
 		} catch (DatabaseException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_SQL),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_SQL), e.getMessage());
 		}
 	}
 	
@@ -533,12 +556,11 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 	public void deleteMailAccount(long id) throws OKMException {
 		log.debug("deleteMailAccount({})", id);
 		updateSessionManager();
-		
+
 		try {
 			MailAccountDAO.delete(id);
 		} catch (DatabaseException e) {
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_SQL),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_SQL), e.getMessage());
 		}
 	}
 	
@@ -557,8 +579,7 @@ public class WorkspaceServlet extends OKMRemoteServiceServlet implements OKMWork
 			}
 		} catch (RepositoryException e) {
 			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Repository),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkspaceService, ErrorCode.CAUSE_Repository), e.getMessage());
 		}
 		
 		return msg;

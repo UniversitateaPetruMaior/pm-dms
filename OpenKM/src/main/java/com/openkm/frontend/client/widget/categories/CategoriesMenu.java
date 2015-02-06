@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.frontend.client.widget.categories;
@@ -34,15 +34,15 @@ import com.openkm.frontend.client.widget.MenuBase;
  * CategoriesMenu menu
  * 
  * @author jllort
- *
+ * 
  */
 public class CategoriesMenu extends MenuBase {
-	
 	private ToolBarOption toolBarOption;
 	private MenuBar dirMenu;
 	private MenuItem create;
 	private MenuItem rename;
 	private MenuItem move;
+	private MenuItem export;
 	
 	public CategoriesMenu() {
 		toolBarOption = new ToolBarOption();
@@ -60,6 +60,9 @@ public class CategoriesMenu extends MenuBase {
 		move.addStyleName("okm-MenuItem");
 		dirMenu.addItem(move);
 		dirMenu.setStyleName("okm-MenuBar");
+		export = new MenuItem(Util.menuHTML("img/icon/actions/export.gif", Main.i18n("tree.menu.export")), true, exportToFile);
+		export.addStyleName("okm-MenuItem-strike");
+		dirMenu.addItem(export);
 		initWidget(dirMenu);
 	}
 	
@@ -93,11 +96,22 @@ public class CategoriesMenu extends MenuBase {
 		}
 	};
 	
+	// Command menu to set default home
+	Command exportToFile = new Command() {
+		public void execute() {
+			if (toolBarOption.exportOption) {
+				Main.get().activeFolderTree.exportFolderToFile();
+				Main.get().activeFolderTree.hideMenuPopup();
+			}
+		}
+	};
+	
 	@Override
 	public void langRefresh() {
 		create.setHTML(Util.menuHTML("img/icon/actions/add_folder.gif", Main.i18n("tree.menu.directory.create")));
 		rename.setHTML(Util.menuHTML("img/icon/actions/delete.gif", Main.i18n("tree.menu.directory.remove")));
 		move.setHTML(Util.menuHTML("img/icon/actions/move_folder.gif", Main.i18n("tree.menu.directory.move")));
+		export.setHTML(Util.menuHTML("img/icon/actions/export.gif", Main.i18n("tree.menu.export")));
 	}
 	
 	@Override
@@ -105,6 +119,7 @@ public class CategoriesMenu extends MenuBase {
 		if (toolBarOption.createFolderOption) {enable(create);} else {disable(create);}
 		if (toolBarOption.renameOption) {enable(rename);} else {disable(rename);}
 		if (toolBarOption.moveOption) {enable(move);} else {disable(move);}
+		if (toolBarOption.exportOption){enable(export);} else {disable(export);}
 	}
 	
 	@Override
@@ -118,8 +133,11 @@ public class CategoriesMenu extends MenuBase {
 		if (!option.isMoveOption()) {
 			dirMenu.removeItem(move);
 		}
+		if (!option.isExportOption()) {
+			dirMenu.removeItem(export);
+		}
 	}
-
+	
 	@Override
 	public void setOptions(ToolBarOption toolBarOption) {
 		this.toolBarOption = toolBarOption;
@@ -133,7 +151,18 @@ public class CategoriesMenu extends MenuBase {
 	}
 	
 	@Override
-	public void enableAddPropertyGroup() {}
+	public void enableAddPropertyGroup() {
+	}
+	
 	@Override
-	public void disableAddPropertyGroup() {}
+	public void disableAddPropertyGroup() {
+	}
+	
+	@Override
+	public void disablePdfMerge() {
+	}
+	
+	@Override
+	public void enablePdfMerge() {
+	}
 }

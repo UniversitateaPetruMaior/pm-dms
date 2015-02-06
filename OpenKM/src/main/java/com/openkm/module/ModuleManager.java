@@ -45,7 +45,6 @@ public class ModuleManager {
 	private static MailModule mailModule = null;
 	private static PropertyModule propertyModule = null;
 	private static UserConfigModule userConfigModule = null;
-	private static SignatureModule signatureModule = null;
 	
 	/**
 	 * 
@@ -211,21 +210,6 @@ public class ModuleManager {
 		
 		return workflowModule;
 	}
-	
-	/**
-	 * 
-	 */
-	public static synchronized ScriptingModule getScriptingModule() {
-		if (scriptingModule == null) {
-			if (Config.REPOSITORY_NATIVE) {
-				scriptingModule = new com.openkm.module.db.DbScriptingModule();
-			} else {
-				scriptingModule = new com.openkm.module.jcr.JcrScriptingModule();
-			}
-		}
-		
-		return scriptingModule;
-	}
 
 	/**
 	 * 
@@ -285,20 +269,5 @@ public class ModuleManager {
 		}
 		
 		return userConfigModule;
-	}
-
-	/**
-	 * 
-	 */
-	public static synchronized SignatureModule getSignatureModule() {
-		if (signatureModule == null) {
-			if (Config.REPOSITORY_NATIVE) {
-				signatureModule = new com.openkm.module.db.DbSignatureModule();
-			} else {
-				signatureModule = new com.openkm.module.jcr.JcrSignatureModule();
-			}
-		}
-
-		return signatureModule;
 	}
 }

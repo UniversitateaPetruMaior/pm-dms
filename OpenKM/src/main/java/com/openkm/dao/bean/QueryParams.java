@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "queryParams")
 public class QueryParams implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
@@ -219,24 +222,25 @@ public class QueryParams implements Serializable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
-		sb.append("id="); sb.append(id);
-		sb.append(", queryName="); sb.append(queryName);
-		sb.append(", user="); sb.append(user);
-		sb.append(", name="); sb.append(name);
-		sb.append(", keywords="); sb.append(keywords);
-		sb.append(", categories="); sb.append(categories);
-		sb.append(", content="); sb.append(content);
-		sb.append(", mimeType="); sb.append(mimeType);
-		sb.append(", author="); sb.append(author);
-		sb.append(", path="); sb.append(path);
-		sb.append(", dashboard="); sb.append(dashboard);
-		sb.append(", domain="); sb.append(domain);
-		sb.append(", operator="); sb.append(operator);
-		sb.append(", shared="); sb.append(shared);
-		sb.append(", statementQuery="); sb.append(statementQuery);
-		sb.append(", statementType="); sb.append(statementType);
-		sb.append(", lastModifiedFrom="); sb.append(lastModifiedFrom==null?null:lastModifiedFrom.getTime());
-		sb.append(", lastModifiedTo="); sb.append(lastModifiedTo==null?null:lastModifiedTo.getTime());
+		sb.append("id=").append(id);
+		sb.append(", queryName=").append(queryName);
+		sb.append(", user=").append(user);
+		sb.append(", name=").append(name);
+		sb.append(", keywords=").append(keywords);
+		sb.append(", categories=").append(categories);
+		sb.append(", content=").append(content);
+		sb.append(", mimeType=").append(mimeType);
+		sb.append(", author=").append(author);
+		sb.append(", path=").append(path);
+		sb.append(", dashboard=").append(dashboard);
+		sb.append(", domain=").append(domain);
+		sb.append(", operator=").append(operator);
+		sb.append(", properties=").append(properties);
+		sb.append(", shared=").append(shared);
+		sb.append(", statementQuery=").append(statementQuery);
+		sb.append(", statementType=").append(statementType);
+		sb.append(", lastModifiedFrom=").append(lastModifiedFrom==null?null:lastModifiedFrom.getTime());
+		sb.append(", lastModifiedTo=").append(lastModifiedTo==null?null:lastModifiedTo.getTime());
 		sb.append("}");
 		return sb.toString();
 	}

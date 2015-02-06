@@ -243,6 +243,7 @@ public class NodeNoteDAO {
 	@SuppressWarnings("unchecked")
 	public void purgeHelper(Session session, String parentUuid) throws HibernateException {
 		String qs = "from NodeNote nn where nn.parent=:parent";
+		long begin = System.currentTimeMillis();
 		Query q = session.createQuery(qs);
 		q.setString("parent", parentUuid);
 		List<NodeNote> listNotes = q.list();
@@ -250,6 +251,8 @@ public class NodeNoteDAO {
 		for (NodeNote nNote : listNotes) {
 			session.delete(nNote);
 		}
+		
+		log.trace("purgeHelper.Time: {}", System.currentTimeMillis() - begin);
 	}
 	
 	/**

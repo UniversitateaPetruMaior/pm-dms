@@ -56,6 +56,7 @@ public class WebDAVFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
 			ServletException {
 		log.debug("doFilter({}, {}, {})", new Object[] { request, response, chain });
+		long begin = System.currentTimeMillis();
 		
 		if (Config.SYSTEM_WEBDAV_SERVER) {
 			response.setContentType(MimeTypeConfig.MIME_HTML);
@@ -68,6 +69,7 @@ public class WebDAVFilter implements Filter {
 			out.close();
 		}
 		
+		log.trace("doFilter.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("doFilter: void");
 	}
 	

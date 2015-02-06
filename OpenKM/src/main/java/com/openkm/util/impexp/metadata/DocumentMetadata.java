@@ -49,9 +49,6 @@ public class DocumentMetadata {
 	// mix:scripting
 	private String scripting;
 	
-	// mix:encryption
-	private String cipherName;
-	
 	// okm:notes
 	private List<NoteMetadata> notes = new ArrayList<NoteMetadata>();
 	
@@ -169,14 +166,6 @@ public class DocumentMetadata {
 		this.scripting = scripting;
 	}
 	
-	public String getCipherName() {
-		return cipherName;
-	}
-
-	public void setCipherName(String cipherName) {
-		this.cipherName = cipherName;
-	}
-	
 	public List<NoteMetadata> getNotes() {
 		return notes;
 	}
@@ -233,7 +222,6 @@ public class DocumentMetadata {
 		sb.append(", categories="); sb.append(categories);
 		sb.append(", subscriptors="); sb.append(subscriptors);
 		sb.append(", scripting="); sb.append(scripting);
-		sb.append(", cipherName="); sb.append(cipherName);
 		sb.append(", notes="); sb.append(notes);
 		sb.append(", propertyGroups="); sb.append(propertyGroups);
 		sb.append(", version="); sb.append(version);

@@ -199,4 +199,8 @@ public class TemplateMenu extends MenuBase {
 	public void enableAddPropertyGroup() {}
 	@Override
 	public void disableAddPropertyGroup() {}
+	@Override
+	public void disablePdfMerge() {}
+	@Override
+	public void enablePdfMerge() {}
 }

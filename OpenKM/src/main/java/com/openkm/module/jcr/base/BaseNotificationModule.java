@@ -72,7 +72,7 @@ public class BaseNotificationModule {
 			}
 			
 			if (!mails.isEmpty()) {
-				CommonNotificationModule.sendMailSubscription(user, node.getPath(), eventType, comment, mails);
+				CommonNotificationModule.sendMailSubscription(user, node.getUUID(), node.getPath(), eventType, comment, mails);
 			}
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);

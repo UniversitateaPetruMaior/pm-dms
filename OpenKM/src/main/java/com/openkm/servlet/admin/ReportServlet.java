@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import bsh.EvalError;
 
 import com.openkm.bean.form.FormElement;
+import com.openkm.bean.form.Input;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.MimeTypeConfig;
 import com.openkm.core.ParseException;
@@ -253,7 +255,18 @@ public class ReportServlet extends BaseServlet {
 		params.put("host", host.substring(0, host.lastIndexOf("/") + 1));
 		
 		for (FormElement fe : ReportUtils.getReportParameters(rpId)) {
-			params.put(fe.getName(), WebUtils.getString(request, fe.getName()));
+			String value = WebUtils.getString(request, fe.getName());
+			
+			if (fe instanceof Input && ((Input) fe).getType().equals(Input.TYPE_DATE)) {
+				try {
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+					params.put(fe.getName(), sdf.parse(value));
+				} catch (java.text.ParseException e) {
+					throw new ParseException(e.getMessage(), e);
+				}
+			} else {
+				params.put(fe.getName(), value);
+			}
 		}
 		
 		ByteArrayOutputStream baos = null;	

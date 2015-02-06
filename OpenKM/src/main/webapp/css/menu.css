@@ -1,5 +1,7 @@
 /* Just some base styles not needed for example to function */
-*, html { font-family: Verdana, Arial, Helvetica, sans-serif; }
+*, html {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+}
 
 ul, li {
 	margin: 0;
@@ -16,7 +18,7 @@ ul {
 	overflow: hidden;
 }
 
-ul > li {
+ul>li {
 	position: relative;
 	float: left;
 	list-style: none;
@@ -38,7 +40,7 @@ ul li img {
 }
 
 /* Reset relative position, as this plays havoc with good browsers */
-ul li:not([class=na]) img {
+ul li:not ([class=na] ) img {
 	position: static;
 }
 

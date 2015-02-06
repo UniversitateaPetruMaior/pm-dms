@@ -40,6 +40,7 @@ public class FindToolBarMenu extends DialogBox {
 	private MenuBar dirMenu;
 	private MenuItem findFolder;
 	private MenuItem findDocument;
+	private MenuItem findSimilarDocument;
 	
 	/**
 	 * ResizeToolBarMenu
@@ -53,9 +54,11 @@ public class FindToolBarMenu extends DialogBox {
 		dirMenu.setStyleName("okm-SubMenuBar");
 		findFolder = new MenuItem(Util.menuHTML("img/icon/actions/folder_find.gif", Main.i18n("general.menu.file.find.folder")), true, findFolderOKM);
 		findDocument = new MenuItem(Util.menuHTML("img/icon/actions/document_find.png", Main.i18n("general.menu.file.find.document")), true, findDocumentOKM);
+		findSimilarDocument = new MenuItem(Util.menuHTML("img/icon/actions/similar_find.png", Main.i18n("general.menu.file.find.similar.document")), true, findSimilarOKM);
 		
 		dirMenu.addItem(findFolder);
 		dirMenu.addItem(findDocument);
+		dirMenu.addItem(findSimilarDocument);
 		
 		setWidget(dirMenu);
 	}
@@ -80,12 +83,23 @@ public class FindToolBarMenu extends DialogBox {
 		}
 	};
 	
+	// Command menu to find similardocument
+	Command findSimilarOKM = new Command() {
+		public void execute() {
+			if (toolBarOption.findSimilarDocumentOption) {
+				Main.get().mainPanel.topPanel.toolBar.executeFindSimilarDocument();
+				hide();
+			}
+		}
+	};
+	
 	/**
 	 * langRefresh
 	 */
 	public void langRefresh() {
 		findFolder.setHTML(Util.menuHTML("img/icon/actions/normal_size.png", Main.i18n("general.menu.file.find.folder")));
 		findDocument.setHTML(Util.menuHTML("img/icon/actions/document_find.png", Main.i18n("general.menu.file.find.document")));
+		findSimilarDocument.setHTML(Util.menuHTML("img/icon/actions/similar_find.png", Main.i18n("general.menu.file.find.similar.document")));
 	}
 	
 	/**
@@ -112,6 +126,7 @@ public class FindToolBarMenu extends DialogBox {
 	public void evaluateMenuOptions(){
 		if (toolBarOption.findFolderOption) {enable(findFolder);} else {disable(findFolder);}
 		if (toolBarOption.findDocumentOption) {enable(findDocument);} else {disable(findDocument);}
+		if (toolBarOption.findSimilarDocumentOption) {enable(findSimilarDocument);} else {disable(findSimilarDocument);}
 	}
 	
 	/**
@@ -125,6 +140,9 @@ public class FindToolBarMenu extends DialogBox {
 		}
 		if (!option.isFindDocumentVisible()) {
 			dirMenu.removeItem(findDocument);
+		}
+		if (!option.isSimilarDocumentVisible()) {
+			dirMenu.removeItem(findSimilarDocument);
 		}
 	}
 	

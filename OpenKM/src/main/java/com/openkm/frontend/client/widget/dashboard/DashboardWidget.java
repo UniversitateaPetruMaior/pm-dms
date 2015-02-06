@@ -221,8 +221,7 @@ public class DashboardWidget extends Composite {
 					
 					visiteNode(source, doc.getUuid(), dsDocumentResult.getDate());
 					String docPath = doc.getPath();
-					String path = docPath.substring(0, docPath.lastIndexOf("/"));
-					CommonUI.openPath(path, docPath);
+					CommonUI.openPath(Util.getParent(docPath), docPath);
 				}
 			});
 			
@@ -331,8 +330,7 @@ public class DashboardWidget extends Composite {
 					
 					visiteNode(source, mail.getUuid(), dsMailResult.getDate());
 					String mailPath = mail.getPath();
-					String path = mailPath.substring(0, mailPath.lastIndexOf("/"));
-					CommonUI.openPath(path, mailPath);
+					CommonUI.openPath(Util.getParent(mailPath), mailPath);
 				}
 			});
 			

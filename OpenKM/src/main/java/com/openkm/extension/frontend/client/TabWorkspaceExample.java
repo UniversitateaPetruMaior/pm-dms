@@ -22,6 +22,7 @@
 package com.openkm.extension.frontend.client;
 
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.TabBar;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.openkm.frontend.client.extension.widget.tabworkspace.TabWorkspaceExtension;
 
@@ -46,5 +47,11 @@ public class TabWorkspaceExample extends TabWorkspaceExtension {
 	@Override
 	public String getTabText() {
 		return "tab workspace";
+	}
+
+	@Override
+	public void setTab(TabBar tabBar, int tabIndex) {
+		// TODO Auto-generated method stub
+		
 	}
 }

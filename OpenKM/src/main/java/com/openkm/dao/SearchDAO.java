@@ -30,19 +30,26 @@ import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermDocs;
+import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.search.similar.MoreLikeThis;
+import org.apache.lucene.store.Directory;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -50,6 +57,7 @@ import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.hibernate.search.SearchFactory;
+import org.hibernate.search.query.dsl.QueryBuilder;
 import org.hibernate.search.reader.ReaderProvider;
 import org.hibernate.search.store.DirectoryProvider;
 import org.slf4j.Logger;
@@ -68,6 +76,7 @@ import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeMail;
 import com.openkm.module.db.stuff.DbAccessManager;
 import com.openkm.module.db.stuff.SecurityHelper;
+import com.openkm.util.FormatUtil;
 
 /**
  * Search results are filtered by com.openkm.module.db.stuff.ReadAccessFilterFactory, which limit the results only for
@@ -120,6 +129,7 @@ public class SearchDAO {
 		Transaction tx = null;
 		
 		try {
+			long begin = System.currentTimeMillis();
 			session = HibernateUtil.getSessionFactory().openSession();
 			ftSession = Search.getFullTextSession(session);
 			tx = ftSession.beginTransaction();
@@ -137,6 +147,7 @@ public class SearchDAO {
 			}
 			
 			HibernateUtil.commit(tx);
+			log.trace("findByQuery.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 			log.debug("findByQuery: {}", result);
 			return result;
 		} catch (IOException e) {
@@ -165,6 +176,7 @@ public class SearchDAO {
 		Transaction tx = null;
 		
 		try {
+			long begin = System.currentTimeMillis();
 			session = HibernateUtil.getSessionFactory().openSession();
 			ftSession = Search.getFullTextSession(session);
 			tx = ftSession.beginTransaction();
@@ -185,6 +197,7 @@ public class SearchDAO {
 			}
 			
 			HibernateUtil.commit(tx);
+			log.trace("findBySimpleQuery.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 			log.debug("findBySimpleQuery: {}", result);
 			return result;
 		} catch (org.apache.lucene.queryParser.ParseException e) {
@@ -524,23 +537,26 @@ public class SearchDAO {
 	 * TODO This cache should be for every user (no pass through access manager) and cleaned
 	 * after a create, move or copy folder operation.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<String> findFoldersInDepth(String parentUuid) throws PathNotFoundException, DatabaseException {
 		log.debug("findFoldersInDepth({})", parentUuid);
 		List<String> ret = null;
-		
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
+			long begin = System.currentTimeMillis();
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
-			
+
 			// Security Check
 			NodeBase parentNode = (NodeBase) session.load(NodeBase.class, parentUuid);
 			SecurityHelper.checkRead(parentNode);
-			
+
 			ret = findFoldersInDepthHelper(session, parentUuid);
 			HibernateUtil.commit(tx);
+
+			log.trace("findFoldersInDepth.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 		} catch (PathNotFoundException e) {
 			HibernateUtil.rollback(tx);
 			throw e;
@@ -598,6 +614,7 @@ public class SearchDAO {
 		Transaction tx = null;
 		
 		try {
+			long begin = System.currentTimeMillis();
 			session = HibernateUtil.getSessionFactory().openSession();
 			ftSession = Search.getFullTextSession(session);
 			tx = ftSession.beginTransaction();
@@ -637,6 +654,7 @@ public class SearchDAO {
 			}
 			
 			HibernateUtil.commit(tx);
+			log.trace("moreLikeThis.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 			log.debug("moreLikeThis: {}", result);
 			return result;
 		} catch (IOException e) {
@@ -663,5 +681,61 @@ public class SearchDAO {
 		DirectoryProvider provider = searchFactory.getDirectoryProviders(entity)[0];
 		ReaderProvider readerProvider = searchFactory.getReaderProvider();
 		return readerProvider.openReader(provider);
+	}
+	
+	/**
+	 * Get Lucent document terms.
+	 */
+	@SuppressWarnings("unchecked")
+	public List<String> getTerms(Class<?> entityType, String nodeUuid) throws CorruptIndexException, IOException {
+		List<String> terms = new ArrayList<String>();
+		FullTextSession ftSession = null;
+		IndexSearcher searcher = null;
+		ReaderProvider provider = null;
+		Session session = null;
+		IndexReader reader = null;
+		
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			ftSession = Search.getFullTextSession(session);
+			SearchFactory sFactory = ftSession.getSearchFactory();
+			provider = sFactory.getReaderProvider();
+			QueryBuilder builder = sFactory.buildQueryBuilder().forEntity(entityType).get();
+			Query query = builder.keyword().onField("uuid").matching(nodeUuid).createQuery();
+			
+			DirectoryProvider<Directory>[] dirProv = sFactory.getDirectoryProviders(NodeDocument.class);
+			reader = provider.openReader(dirProv[0]);
+			searcher = new IndexSearcher(reader);
+			TopDocs topDocs = searcher.search(query, 1);
+			
+			for (ScoreDoc sDoc : topDocs.scoreDocs) {
+				if (!reader.isDeleted(sDoc.doc)) {
+					for (TermEnum te = reader.terms(); te.next(); ) {
+						Term t = te.term();
+						
+						if ("text".equals(t.field())) {
+							for (TermDocs tds = reader.termDocs(t); tds.next(); ) {
+								if (sDoc.doc == tds.doc()) {
+									terms.add(t.text());
+									//log.info("Field: {} - {}", t.field(), t.text());
+								}
+							}
+						}
+					}
+				}
+			}
+		} finally {
+			if (provider != null && reader != null) {
+				provider.closeReader(reader);
+			}
+			
+			if (searcher != null) {
+				searcher.close();
+			}
+			HibernateUtil.close(ftSession);
+			HibernateUtil.close(session);
+		}
+		
+		return terms;
 	}
 }

@@ -136,8 +136,8 @@ public class DatabaseMetadataUtils {
 	/**
 	 * Get virtual column string value
 	 */
-	public static String getString(DatabaseMetadataValue value, String column) throws DatabaseException,
-			IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	public static String getString(DatabaseMetadataValue value, String column) throws DatabaseException, IllegalAccessException,
+			InvocationTargetException, NoSuchMethodException {
 		List<DatabaseMetadataType> types = DatabaseMetadataDAO.findAllTypes(value.getTable());
 		
 		for (DatabaseMetadataType emt : types) {
@@ -150,10 +150,20 @@ public class DatabaseMetadataUtils {
 	}
 	
 	/**
+	 * Get value from id. This is a shortcut method.
+	 */
+	public static String getString(String table, String filter, String column) throws DatabaseException, IllegalAccessException,
+			InvocationTargetException, NoSuchMethodException {
+		String query = DatabaseMetadataUtils.buildQuery(table, filter);
+		DatabaseMetadataValue dmv = DatabaseMetadataDAO.executeValueQueryUnique(query);
+		return DatabaseMetadataUtils.getString(dmv, column);
+	}
+	
+	/**
 	 * Get virtual column date value
 	 */
-	public static Calendar getDate(DatabaseMetadataValue value, String column) throws DatabaseException,
-			IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	public static Calendar getDate(DatabaseMetadataValue value, String column) throws DatabaseException, IllegalAccessException,
+			InvocationTargetException, NoSuchMethodException {
 		List<DatabaseMetadataType> types = DatabaseMetadataDAO.findAllTypes(value.getTable());
 		
 		for (DatabaseMetadataType emt : types) {
@@ -176,8 +186,8 @@ public class DatabaseMetadataUtils {
 		for (DatabaseMetadataType emt : types) {
 			if (emt.getVirtualColumn().equals(DatabaseMetadataMap.MV_NAME_ID)
 					|| emt.getVirtualColumn().equals(DatabaseMetadataMap.MV_NAME_TABLE)) {
-				throw new DatabaseException("Virtual column name restriction violated " + DatabaseMetadataMap.MV_NAME_ID
-						+ " or " + DatabaseMetadataMap.MV_NAME_TABLE);
+				throw new DatabaseException("Virtual column name restriction violated " + DatabaseMetadataMap.MV_NAME_ID + " or "
+						+ DatabaseMetadataMap.MV_NAME_TABLE);
 			}
 			
 			map.put(emt.getVirtualColumn(), BeanUtils.getProperty(value, emt.getRealColumn()));
@@ -238,7 +248,10 @@ public class DatabaseMetadataUtils {
 		
 		if (query != null && query.length() > 0) {
 			List<DatabaseMetadataType> types = DatabaseMetadataDAO.findAllTypes(table);
-			Collections.sort(types, LenComparator.getInstance()); //avoid the case in which one of the virtual columns is a substring of another (ex. id and admin_id)
+			
+			// avoid the case in which one of the virtual columns is a substring of another (ex. id and admin_id)
+			Collections.sort(types, LenComparator.getInstance());
+			
 			for (DatabaseMetadataType emt : types) {
 				String vcol = "\\$" + emt.getVirtualColumn().toLowerCase();
 				query = query.replaceAll(vcol, emt.getRealColumn().toLowerCase());

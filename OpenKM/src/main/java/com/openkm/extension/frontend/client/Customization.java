@@ -1,23 +1,22 @@
-
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.extension.frontend.client;
@@ -27,21 +26,21 @@ import java.util.List;
 
 import com.openkm.extension.frontend.client.widget.dropbox.Dropbox;
 import com.openkm.extension.frontend.client.widget.macros.Macros;
+import com.openkm.extension.frontend.client.widget.openmeetings.OpenMeetings;
 import com.openkm.extension.frontend.client.widget.toolbar.downloadButton.DownloadButton;
 import com.openkm.extension.frontend.client.widget.toolbar.downloadPdfButton.DownloadPdfButton;
+import com.openkm.extension.frontend.client.widget.workflow.Workflow;
+import com.openkm.extension.frontend.client.widget.zoho.Zoho;
 
 /**
  * Customization
  * 
  * @author jllort
- *
+ * 
  */
 public class Customization {
-	
 	/**
 	 * getExtensionWidgets
-	 * 
-	 * @return
 	 */
 	public static List<Object> getExtensionWidgets(List<String> uuidList) {
 		List<Object> extensions = new ArrayList<Object>();
@@ -66,25 +65,39 @@ public class Customization {
 		if (uuidList.contains("4d245f30-ef47-11df-98cf-0800200c9a66")) {
 			extensions.add(new ToolBarBoxExample().getToolBarBox());
 		}
-
-		//extensions.add(new MainMenuExample().getNewMenu());
-		//extensions.add(new HandlersTest());		
 		
-		// OPENKM PROPIETARY EXTENSIONS		
+		// extensions.add(new MainMenuExample().getNewMenu());
+		// extensions.add(new HandlersTest());
+		
+		// OPENKM PROPIETARY EXTENSIONS
 		if (DownloadButton.isRegistered(uuidList)) {
 			extensions.add(new DownloadButton(uuidList).getButton());
 		}
 		
-		if (DownloadPdfButton.isRegistered(uuidList)) { 
+		if (DownloadPdfButton.isRegistered(uuidList)) {
 			extensions.add(new DownloadPdfButton(uuidList).getButton());
+		}
+		
+		if (Zoho.isRegistered(uuidList)) {
+			extensions.addAll(new Zoho(uuidList).getExtensions());
+		}
+		
+		if (Workflow.isRegistered(uuidList)) {
+			extensions.addAll(new Workflow(uuidList).getExtensions());
+		}
+		
+		if (Dropbox.isRegistered(uuidList)) {
+			extensions.addAll(new Dropbox(uuidList).getExtensions());
 		}
 		
 		if (Macros.isRegistered(uuidList)) {
 			extensions.addAll(new Macros(uuidList).getExtensions());
 		}
-		if (Dropbox.isRegistered(uuidList)) {
-			extensions.addAll(new Dropbox(uuidList).getExtensions());
+		
+		if (OpenMeetings.isRegistered(uuidList)) {
+			extensions.addAll(new OpenMeetings(uuidList).getExtensions());
 		}
+		
 		return extensions;
 	}
 }

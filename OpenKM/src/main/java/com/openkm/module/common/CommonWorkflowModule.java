@@ -214,6 +214,7 @@ public class CommonWorkflowModule {
 	public static Map<String, List<FormElement>> getProcessDefinitionForms(long processDefinitionId)
 			throws ParseException {
 		log.debug("getProcessDefinitionForms({})", processDefinitionId);
+		long begin = System.currentTimeMillis();
 		JbpmContext jbpmContext = JBPMUtils.getConfig().createJbpmContext();
 		Map<String, List<FormElement>> forms = new HashMap<String, List<FormElement>>();
 		InputStream is = null;
@@ -234,6 +235,7 @@ public class CommonWorkflowModule {
 			jbpmContext.close();
 		}
 		
+		log.trace("getProcessDefinitionForms.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getProcessDefinitionForms: {}", forms);
 		return forms;
 	}

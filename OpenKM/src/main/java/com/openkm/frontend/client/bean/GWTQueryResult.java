@@ -30,7 +30,6 @@ import com.google.gwt.user.client.rpc.IsSerializable;
  *
  */
 public class GWTQueryResult implements IsSerializable {
-
 	private GWTDocument document;
 	private GWTFolder folder;
 	private GWTMail mail;

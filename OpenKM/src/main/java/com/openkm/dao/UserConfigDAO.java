@@ -240,6 +240,7 @@ public class UserConfigDAO {
 		Transaction tx = null;
 		
 		try {
+			long begin = System.currentTimeMillis();
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
 			UserConfig ret = (UserConfig) session.get(UserConfig.class, user);
@@ -290,6 +291,7 @@ public class UserConfigDAO {
 			}
 			
 			HibernateUtil.commit(tx);
+			log.trace("findByPk.Time: {}", System.currentTimeMillis() - begin);
 			log.debug("findByPk: {}", ret);
 			return ret;
 		} catch (PathNotFoundException e) {

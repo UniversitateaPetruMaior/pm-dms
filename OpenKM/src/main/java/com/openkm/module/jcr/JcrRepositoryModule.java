@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.jcr;
@@ -46,6 +46,7 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.ConfigurationException;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
@@ -61,6 +62,7 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.bean.AppVersion;
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Folder;
 import com.openkm.bean.Permission;
 import com.openkm.bean.Property;
@@ -85,7 +87,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	private static Logger log = LoggerFactory.getLogger(JcrRepositoryModule.class);
 	private static javax.jcr.Repository repository = null;
 	private static Session systemSession = null;
-
+	
 	/**
 	 * Cache the repository information
 	 * 
@@ -115,7 +117,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 		if (systemSession == null) {
 			// System User Session
 			try {
-				systemSession = SystemSession.create((RepositoryImpl)repository, wc);
+				systemSession = SystemSession.create((RepositoryImpl) repository, wc);
 			} catch (LoginException e) {
 				log.error(e.getMessage(), e);
 				throw e;
@@ -127,7 +129,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 				throw e;
 			}
 		}
-
+		
 		log.debug("getRepository: " + repository);
 		return repository;
 	}
@@ -150,7 +152,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	/**
-	 * Close repository and free the lock 
+	 * Close repository and free the lock
 	 */
 	public synchronized static void shutdown() {
 		log.debug("shutdownRepository()");
@@ -160,10 +162,10 @@ public class JcrRepositoryModule implements RepositoryModule {
 		}
 		
 		systemSession = null;
-        ((RepositoryImpl)repository).shutdown();
-        repository = null;
-        log.debug("shutdownRepository: void");
-    }
+		((RepositoryImpl) repository).shutdown();
+		repository = null;
+		log.debug("shutdownRepository: void");
+	}
 	
 	/**
 	 * Get the System User Session to perform unsecured operations.
@@ -172,13 +174,13 @@ public class JcrRepositoryModule implements RepositoryModule {
 	 */
 	public static Session getSystemSession() {
 		log.debug("getSystemSession()");
-				
+		
 		if (systemSession != null) {
-			log.debug("systemSession.isLive() = "+systemSession.isLive());
-			log.debug("systemSession.getUserID() = "+systemSession.getUserID());
+			log.debug("systemSession.isLive() = " + systemSession.isLive());
+			log.debug("systemSession.getUserID() = " + systemSession.getUserID());
 			
 			try {
-				log.debug("systemSession.hasPendingChanges() = "+systemSession.hasPendingChanges());
+				log.debug("systemSession.hasPendingChanges() = " + systemSession.hasPendingChanges());
 			} catch (javax.jcr.RepositoryException e) {
 				log.error("# MKK-1 # MKK-1 # MKK-1 # MKK-1 # MKK-1 # MKK-1 # MKK-1 #");
 				log.error(e.getMessage(), e);
@@ -193,29 +195,29 @@ public class JcrRepositoryModule implements RepositoryModule {
 		log.debug("getSystemSession: {}", systemSession);
 		return systemSession;
 	}
-
+	
 	/**
 	 * Initialize the repository.
 	 * 
 	 * @return The root path of the initialized repository.
 	 * @throws AccessDeniedException If there is any security problem: you can't access the parent
-	 * document folder because of lack of permissions.
+	 *         document folder because of lack of permissions.
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
-	public synchronized static String initialize() throws javax.jcr.RepositoryException, 
-			FileNotFoundException, InvalidNodeTypeDefException, ParseException, DatabaseException {
+	public synchronized static String initialize() throws javax.jcr.RepositoryException, FileNotFoundException,
+			InvalidNodeTypeDefException, ParseException, DatabaseException {
 		log.debug("initialize()");
-				
+		
 		// Initializes Repository and SystemSession
 		getRepository();
 		Session systemSession = getSystemSession();
 		String okmRootPath = create(systemSession);
 		
-		// Store system session token 
+		// Store system session token
 		JcrAuthModule.loadUserData(systemSession);
 		JcrSessionManager.getInstance().putSystemSession(systemSession);
-		log.debug("*** System user created {}", systemSession.getUserID());				
-				
+		log.debug("*** System user created {}", systemSession.getUserID());
+		
 		log.debug("initialize: {}", okmRootPath);
 		return okmRootPath;
 	}
@@ -223,8 +225,8 @@ public class JcrRepositoryModule implements RepositoryModule {
 	/**
 	 * Create OpenKM repository structure
 	 */
-	public synchronized static String create(Session session) throws javax.jcr.RepositoryException,
-			FileNotFoundException, InvalidNodeTypeDefException, ParseException {
+	public synchronized static String create(Session session) throws javax.jcr.RepositoryException, FileNotFoundException,
+			InvalidNodeTypeDefException, ParseException {
 		String okmRootPath = null;
 		Node rootNode = null;
 		
@@ -235,19 +237,19 @@ public class JcrRepositoryModule implements RepositoryModule {
 		} catch (javax.jcr.RepositoryException e) {
 			log.info("No {} node found", Repository.ROOT);
 		}
-			
+		
 		try {
 			if (rootNode == null) {
 				log.info("Repository creation");
-
+				
 				// Register namespaces
 				log.info("Register namespace");
 				Workspace ws = session.getWorkspace();
-				NamespaceRegistry nsr = ws.getNamespaceRegistry(); 
+				NamespaceRegistry nsr = ws.getNamespaceRegistry();
 				nsr.registerNamespace(Repository.OKM, Repository.OKM_URI);
 				nsr.registerNamespace(PropertyGroup.GROUP, PropertyGroup.GROUP_URI);
 				nsr.registerNamespace(PropertyGroup.GROUP_PROPERTY, PropertyGroup.GROUP_PROPERTY_URI);
-
+				
 				// Register custom node types from resources
 				log.info("Register custom node types");
 				InputStream is = JcrRepositoryModule.class.getResourceAsStream(Config.NODE_DEFINITIONS);
@@ -266,19 +268,19 @@ public class JcrRepositoryModule implements RepositoryModule {
 				log.info("Create {}", Repository.ROOT);
 				Node okmRoot = createBase(session, root, Repository.ROOT);
 				okmRootPath = okmRoot.getPath();
-
+				
 				// Create okm:thesaurus
 				log.info("Create {}", Repository.THESAURUS);
 				createBase(session, root, Repository.THESAURUS);
-
+				
 				// Create okm:categories
 				log.info("Create {}", Repository.CATEGORIES);
 				createBase(session, root, Repository.CATEGORIES);
-
+				
 				// Create okm:templates
 				log.info("Create {}", Repository.TEMPLATES);
 				createBase(session, root, Repository.TEMPLATES);
-
+				
 				// Create okm:personal
 				log.info("Create {}", Repository.PERSONAL);
 				createBase(session, root, Repository.PERSONAL);
@@ -286,7 +288,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 				// Create okm:mail
 				log.info("Create {}", Repository.MAIL);
 				createBase(session, root, Repository.MAIL);
-
+				
 				// Create okm:trash
 				log.info("Create {}", Repository.TRASH);
 				createBase(session, root, Repository.TRASH);
@@ -294,7 +296,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 				// Create okm:config
 				log.info("Create okm:config");
 				Node okmConfig = root.addNode(Repository.SYS_CONFIG, Repository.SYS_CONFIG_TYPE);
-
+				
 				// Generate installation UUID
 				String uuid = UUID.randomUUID().toString();
 				okmConfig.setProperty(Repository.SYS_CONFIG_UUID, uuid);
@@ -317,7 +319,8 @@ public class JcrRepositoryModule implements RepositoryModule {
 				String repoVer = okmConfig.getProperty(Repository.SYS_CONFIG_VERSION).getString();
 				
 				if (!WarUtils.getAppVersion().getMajor().equals(repoVer)) {
-					log.warn("### Actual repository version ("+repoVer+") differs from application repository version ("+WarUtils.getAppVersion().getMajor()+") ###");
+					log.warn("### Actual repository version (" + repoVer + ") differs from application repository version ("
+							+ WarUtils.getAppVersion().getMajor() + ") ###");
 					log.warn("### You should upgrade the repository ###");
 				}
 			}
@@ -344,17 +347,16 @@ public class JcrRepositoryModule implements RepositoryModule {
 	/**
 	 * Create base node
 	 */
-	private static Node createBase(Session session, Node root, String name) throws ItemExistsException,
-			javax.jcr.PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException,
-			ConstraintViolationException, javax.jcr.RepositoryException {
+	private static Node createBase(Session session, Node root, String name) throws ItemExistsException, javax.jcr.PathNotFoundException,
+			NoSuchNodeTypeException, LockException, VersionException, ConstraintViolationException, javax.jcr.RepositoryException {
 		Node base = root.addNode(name, Folder.TYPE);
-
+		
 		// Add basic properties
 		base.setProperty(Folder.AUTHOR, session.getUserID());
 		base.setProperty(Folder.NAME, name);
-		base.setProperty(Property.KEYWORDS, new String[]{});
-		base.setProperty(Property.CATEGORIES, new String[]{}, PropertyType.REFERENCE);
-
+		base.setProperty(Property.KEYWORDS, new String[] {});
+		base.setProperty(Property.CATEGORIES, new String[] {}, PropertyType.REFERENCE);
+		
 		// Auth info
 		base.setProperty(Permission.USERS_READ, new String[] { session.getUserID() });
 		base.setProperty(Permission.USERS_WRITE, new String[] { session.getUserID() });
@@ -367,12 +369,12 @@ public class JcrRepositoryModule implements RepositoryModule {
 		
 		return base;
 	}
-
+	
 	/**
 	 * Remove a repository from disk.
 	 * 
 	 * @throws AccessDeniedException If there is any security problem: you can't access the parent
-	 * document folder because of lack of permissions. 
+	 *         document folder because of lack of permissions.
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
 	public synchronized void remove() throws RepositoryException {
@@ -383,7 +385,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 		if ((new File(Config.REPOSITORY_HOME)).isAbsolute()) {
 			repHome = Config.REPOSITORY_HOME;
 		} else {
-			repHome = Config.HOME_DIR+File.separator+Config.REPOSITORY_HOME;
+			repHome = Config.HOME_DIR + File.separator + Config.REPOSITORY_HOME;
 		}
 		
 		try {
@@ -396,8 +398,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getRootFolder(String token) throws PathNotFoundException, RepositoryException, 
-			DatabaseException {
+	public Folder getRootFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getRootFolder({})", token);
 		Folder rootFolder = new Folder();
 		Session session = null;
@@ -421,7 +422,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getRootFolder: {}", rootFolder);
@@ -429,8 +432,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getTrashFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getTrashFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getTrashFolder({})", token);
 		Folder trashFolder = new Folder();
 		Session session = null;
@@ -454,7 +456,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getTrashFolder: {}", trashFolder);
@@ -462,8 +466,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getTrashFolderBase(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getTrashFolderBase(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getTrashFolderBase({})", token);
 		Folder trashFolder = new Folder();
 		Session session = null;
@@ -487,7 +490,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getTrashFolderBase: {}", trashFolder);
@@ -495,8 +500,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getTemplatesFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getTemplatesFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getTemplatesFolder({})", token);
 		Folder templatesFolder = new Folder();
 		Session session = null;
@@ -520,7 +524,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getTemplatesFolder: {}", templatesFolder);
@@ -528,8 +534,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getPersonalFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getPersonalFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getPersonalFolder({})", token);
 		Folder personalFolder = new Folder();
 		Session session = null;
@@ -553,7 +558,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getPersonalFolder: {}", personalFolder);
@@ -561,8 +568,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getPersonalFolderBase(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getPersonalFolderBase(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getPersonalFolderBase({})", token);
 		Folder personalFolder = new Folder();
 		Session session = null;
@@ -586,7 +592,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getPersonalFolderBase: {}", personalFolder);
@@ -594,8 +602,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getMailFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getMailFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getMailFolder({})", token);
 		Folder mailFolder = new Folder();
 		Session session = null;
@@ -620,7 +627,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getMailFolder: {}", mailFolder);
@@ -628,8 +637,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getMailFolderBase(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getMailFolderBase(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getMailFolderBase({})", token);
 		Folder mailFolder = new Folder();
 		Session session = null;
@@ -653,7 +661,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getMailFolderBase: {}", mailFolder);
@@ -661,8 +671,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getThesaurusFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getThesaurusFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getThesaurusFolder({})", token);
 		Folder thesaurusFolder = new Folder();
 		Session session = null;
@@ -686,7 +695,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getThesaurusFolder: {}", thesaurusFolder);
@@ -694,8 +705,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getCategoriesFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getCategoriesFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getCategoriesFolder({})", token);
 		Folder categoriesFolder = new Folder();
 		Session session = null;
@@ -719,7 +729,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getCategoriesFolder: {}", categoriesFolder);
@@ -728,45 +740,43 @@ public class JcrRepositoryModule implements RepositoryModule {
 	
 	/**
 	 * Register custom node definition from file.
-	 *
+	 * 
 	 * TODO For Jackrabbit 2.0 should be done as:
-	 *   InputStream is = getClass().getClassLoader().getResourceAsStream("test.cnd");
-	 *   Reader cnd = new InputStreamReader(is);
-	 *   NodeType[] nodeTypes = CndImporter.registerNodeTypes(cnd, session);
+	 * InputStream is = getClass().getClassLoader().getResourceAsStream("test.cnd");
+	 * Reader cnd = new InputStreamReader(is);
+	 * NodeType[] nodeTypes = CndImporter.registerNodeTypes(cnd, session);
 	 * 
 	 * The key method is:
-	 *   CndImporter.registerNodeTypes("cndfile", session);
+	 * CndImporter.registerNodeTypes("cndfile", session);
 	 */
 	@SuppressWarnings("unchecked")
-	public synchronized static void registerCustomNodeTypes(Session session, InputStream cndFile)
-			throws FileNotFoundException, ParseException,
-			javax.jcr.RepositoryException, InvalidNodeTypeDefException {
+	public synchronized static void registerCustomNodeTypes(Session session, InputStream cndFile) throws FileNotFoundException,
+			ParseException, javax.jcr.RepositoryException, InvalidNodeTypeDefException {
 		log.debug("registerCustomNodeTypes({}, {})", session, cndFile);
-
+		
 		// Read in the CND file
 		InputStreamReader fileReader = new InputStreamReader(cndFile);
 		
 		// Create a CompactNodeTypeDefReader
-		CompactNodeTypeDefReader cndReader = new CompactNodeTypeDefReader(
-				fileReader, Config.NODE_DEFINITIONS);
-
+		CompactNodeTypeDefReader cndReader = new CompactNodeTypeDefReader(fileReader, Config.NODE_DEFINITIONS);
+		
 		// Get the List of NodeTypeDef objects
 		List<NodeTypeDef> ntdList = cndReader.getNodeTypeDefs();
-
+		
 		// Get the NodeTypeManager from the Workspace.
 		// Note that it must be cast from the generic JCR NodeTypeManager to the
 		// Jackrabbit-specific implementation.
 		Workspace ws = session.getWorkspace();
 		NodeTypeManagerImpl ntmgr = (NodeTypeManagerImpl) ws.getNodeTypeManager();
-
+		
 		// Acquire the NodeTypeRegistry
 		NodeTypeRegistry ntreg = ntmgr.getNodeTypeRegistry();
-
+		
 		// Loop through the prepared NodeTypeDefs
 		for (Iterator<NodeTypeDef> i = ntdList.iterator(); i.hasNext();) {
 			// Get the NodeTypeDef...
 			NodeTypeDef ntd = i.next();
-
+			
 			// ...and register or reregister it
 			if (!ntreg.isRegistered(ntd.getName())) {
 				log.info("Register type " + ntd.getName().toString());
@@ -776,13 +786,12 @@ public class JcrRepositoryModule implements RepositoryModule {
 				ntreg.reregisterNodeType(ntd);
 			}
 		}
-
+		
 		log.debug("registerCustomNodeTypes: void");
 	}
-
+	
 	@Override
-	public void purgeTrash(String token) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public void purgeTrash(String token) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("purgeTrash({})", token);
 		Node userTrash = null;
 		Session session = null;
@@ -800,7 +809,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 			
 			userTrash = session.getRootNode().getNode(Repository.TRASH + "/" + session.getUserID());
 			
-			for (NodeIterator it = userTrash.getNodes(); it.hasNext(); ) {
+			for (NodeIterator it = userTrash.getNodes(); it.hasNext();) {
 				Node child = it.nextNode();
 				
 				if (child.isNodeType(Document.TYPE)) {
@@ -823,7 +832,9 @@ public class JcrRepositoryModule implements RepositoryModule {
 			JCRUtils.discardsPendingChanges(userTrash);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("purgeTrash: void");
@@ -833,7 +844,7 @@ public class JcrRepositoryModule implements RepositoryModule {
 	public String getUpdateMessage(String token) throws RepositoryException {
 		return Repository.getUpdateMsg();
 	}
-
+	
 	@Override
 	public String getRepositoryUuid(String token) throws RepositoryException {
 		return Repository.getUuid();
@@ -857,16 +868,17 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("hasNode: {}", ret);
 		return ret;
 	}
-
+	
 	@Override
-	public String getNodePath(String token, String uuid) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public String getNodePath(String token, String uuid) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getNodePath({}, {})", token, uuid);
 		String ret;
 		Session session = null;
@@ -886,16 +898,17 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getNodePath: {}", ret);
 		return ret;
 	}
 	
 	@Override
-	public String getNodeUuid(String token, String path) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public String getNodeUuid(String token, String path) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getNodeUuid({}, {})", token, path);
 		String ret;
 		Session session = null;
@@ -915,9 +928,11 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getNodeUuid: {}", ret);
 		return ret;
 	}
@@ -940,10 +955,18 @@ public class JcrRepositoryModule implements RepositoryModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getAppVersion: {}", ret);
 		return ret;
+	}
+	
+	@Override
+	public void copyAttributes(String token, String srcId, String dstId, ExtendedAttributes extAttr) throws AccessDeniedException,
+			PathNotFoundException, DatabaseException {
+		throw new NotImplementedException("copyAttributes");
 	}
 }

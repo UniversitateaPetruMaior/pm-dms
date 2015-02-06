@@ -63,6 +63,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger log = LoggerFactory.getLogger(RebuildIndexesServlet.class);
 	private static final String BASE_NAME = RebuildIndexesServlet.class.getSimpleName();
+	private static volatile boolean optimizeIndexesRunning = false;
 	private static final String[][] breadcrumb = new String[][] {
 		new String[] { "utilities.jsp", "Utilities" },
 		new String[] { "rebuild_indexes.jsp", "Rebuild indexes" }
@@ -75,7 +76,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String method = request.getMethod();
 		
-		if (isAdmin(request)) {
+		if (checkMultipleInstancesAccess(request, response)) {
 			if (method.equals(METHOD_GET)) {
 				doGet(request, response);
 			} else if (method.equals(METHOD_POST)) {
@@ -106,12 +107,14 @@ public class RebuildIndexesServlet extends BaseServlet {
 	/**
 	 * Force text extraction
 	 */
-	private void textExtractor(HttpServletRequest request, HttpServletResponse response) throws ServletException,
-			IOException {
+	private void textExtractor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		PrintWriter out = response.getWriter();
 		response.setContentType(MimeTypeConfig.MIME_HTML);
 		header(out, "Rebuild text extraction", breadcrumb);
 		out.flush();
+		
+		// Activity log
+		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_TEXT_EXTRACTOR", null, null, null);
 		
 		try {
 			Config.SYSTEM_MAINTENANCE = true;
@@ -130,7 +133,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 			
 			// Rebuild indexes
 			out.println("<li>Rebuilding text extractions</li>");
-			ProgressMonitor monitor = new ProgressMonitor(out, total);
+			ProgressMonitor monitor = new ProgressMonitor(out, "NodeDocument", total);
 			new TextExtractorWorker().rebuildWorker(monitor);
 			
 			Config.SYSTEM_READONLY = false;
@@ -146,15 +149,15 @@ public class RebuildIndexesServlet extends BaseServlet {
 		} catch (Exception e) {
 			out.println("<div class=\"warn\">Exception: " + e.getMessage() + "</div>");
 			out.flush();
+		} finally {
+			Config.SYSTEM_READONLY = false;
+			Config.SYSTEM_MAINTENANCE = false;
 		}
 		
 		// End page
 		footer(out);
 		out.flush();
 		out.close();
-		
-		// Activity log
-		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_TEXT_EXTRACTOR", null, null, null);
 	}
 	
 	/**
@@ -163,8 +166,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 	 * @see http://docs.jboss.org/hibernate/search/3.4/reference/en-US/html/manual-index-changes.html
 	 * @see http://in.relation.to/Bloggers/HibernateSearch32FastIndexRebuild
 	 */
-	private void luceneIndexes(HttpServletRequest request, HttpServletResponse response) throws ServletException,
-			IOException {
+	private void luceneIndexes(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		if (Config.HIBERNATE_INDEXER_MASS_INDEXER) {
 			luceneIndexesMassIndexer(request, response);
 		} else {
@@ -176,8 +178,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 	 * FlushToIndexes implementation
 	 */
 	@SuppressWarnings("rawtypes")
-	private void luceneIndexesFlushToIndexes(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	private void luceneIndexesFlushToIndexes(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		log.debug("luceneIndexesFlushToIndexes({}, {})", request, response);
 		PrintWriter out = response.getWriter();
 		response.setContentType(MimeTypeConfig.MIME_HTML);
@@ -187,6 +188,9 @@ public class RebuildIndexesServlet extends BaseServlet {
 		FullTextSession ftSession = null;
 		Session session = null;
 		Transaction tx = null;
+		
+		// Activity log
+		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_REBUILD_INDEXES", null, null, null);
 		
 		try {
 			Config.SYSTEM_MAINTENANCE = true;
@@ -224,7 +228,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 				out.println("<li>Indexing " + nodeType + "</li>");
 				out.flush();
 				
-				ProgressMonitor monitor = new ProgressMonitor(out, total.get(nodeType));
+				ProgressMonitor monitor = new ProgressMonitor(out, nodeType, total.get(nodeType));
 				ScrollableResults results = ftSession.createCriteria(cls)
 					.setFetchSize(Config.HIBERNATE_INDEXER_BATCH_SIZE_LOAD_OBJECTS)
 					.scroll(ScrollMode.FORWARD_ONLY);
@@ -258,6 +262,8 @@ public class RebuildIndexesServlet extends BaseServlet {
 			out.println("<div class=\"warn\">Exception: " + e.getMessage() + "</div>");
 			out.flush();
 		} finally {
+			Config.SYSTEM_READONLY = false;
+			Config.SYSTEM_MAINTENANCE = false;
 			HibernateUtil.close(ftSession);
 			HibernateUtil.close(session);
 		}
@@ -267,8 +273,6 @@ public class RebuildIndexesServlet extends BaseServlet {
 		out.flush();
 		out.close();
 		
-		// Activity log
-		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_REBUILD_INDEXES", null, null, null);
 		log.debug("luceneIndexesFlushToIndexes: void");
 	}
 	
@@ -276,8 +280,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 	 * MassIndexer implementation.
 	 */
 	@SuppressWarnings("rawtypes")
-	private void luceneIndexesMassIndexer(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
+	private void luceneIndexesMassIndexer(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		log.debug("luceneIndexesMassIndexer({}, {})", request, response);
 		PrintWriter out = response.getWriter();
 		response.setContentType(MimeTypeConfig.MIME_HTML);
@@ -286,6 +289,9 @@ public class RebuildIndexesServlet extends BaseServlet {
 		
 		FullTextSession ftSession = null;
 		Session session = null;
+		
+		// Activity log
+		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_REBUILD_INDEXES", null, null, null);
 		
 		try {
 			Config.SYSTEM_MAINTENANCE = true;
@@ -313,7 +319,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 			// Rebuild indexes
 			out.println("<li>Rebuilding indexes</li>");
 			out.flush();
-			ProgressMonitor monitor = new ProgressMonitor(out, (int) total);
+			ProgressMonitor monitor = new ProgressMonitor(out, "NodeBase", (int) total);
 			ftSession.createIndexer()
 				.batchSizeToLoadObjects(Config.HIBERNATE_INDEXER_BATCH_SIZE_LOAD_OBJECTS)
 				.threadsForSubsequentFetching(Config.HIBERNATE_INDEXER_THREADS_SUBSEQUENT_FETCHING)
@@ -336,6 +342,8 @@ public class RebuildIndexesServlet extends BaseServlet {
 			out.println("<div class=\"warn\">Exception: " + e.getMessage() + "</div>");
 			out.flush();
 		} finally {
+			Config.SYSTEM_READONLY = false;
+			Config.SYSTEM_MAINTENANCE = false;
 			HibernateUtil.close(ftSession);
 			HibernateUtil.close(session);
 		}
@@ -345,23 +353,20 @@ public class RebuildIndexesServlet extends BaseServlet {
 		out.flush();
 		out.close();
 		
-		// Activity log
-		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_REBUILD_INDEXES", null, null, null);
 		log.debug("luceneIndexesMassIndexer: void");
 	}
 	
 	/**
 	 * Perform index optimization
 	 */
-	private void optimizeIndexes(HttpServletRequest request, HttpServletResponse response) throws ServletException,
-			IOException {
+	private void optimizeIndexes(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		PrintWriter out = response.getWriter();
 		response.setContentType(MimeTypeConfig.MIME_HTML);
 		header(out, "Optimize Lucene indexes", breadcrumb);
 		out.flush();
 		
-		FullTextSession ftSession = null;
-		Session session = null;
+		// Activity log
+		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_OPTIMIZE_INDEXES", null, null, null);
 		
 		try {
 			Config.SYSTEM_MAINTENANCE = true;
@@ -370,14 +375,10 @@ public class RebuildIndexesServlet extends BaseServlet {
 			out.println("<li>System into maintenance mode</li>");
 			FileLogger.info(BASE_NAME, "BEGIN - Indexes optimization");
 			
-			session = HibernateUtil.getSessionFactory().openSession();
-			ftSession = Search.getFullTextSession(session);
-			
 			// Optimize indexes
 			out.println("<li>Optimize indexes</li>");
 			out.flush();
-			SearchFactory searchFactory = ftSession.getSearchFactory();
-			searchFactory.optimize();
+			optimizeIndexes();
 			
 			Config.SYSTEM_READONLY = false;
 			Config.SYSTEM_MAINTENANCE = false;
@@ -393,32 +394,63 @@ public class RebuildIndexesServlet extends BaseServlet {
 			out.println("<div class=\"warn\">Exception: " + e.getMessage() + "</div>");
 			out.flush();
 		} finally {
-			HibernateUtil.close(ftSession);
-			HibernateUtil.close(session);
+			Config.SYSTEM_READONLY = false;
+			Config.SYSTEM_MAINTENANCE = false;
 		}
 		
 		// End page
 		footer(out);
 		out.flush();
 		out.close();
+	}
+	
+	/**
+	 * Do real indexes optimization.
+	 */
+	public static void optimizeIndexes() throws Exception {
+		FullTextSession ftSession = null;
+		Session session = null;
 		
-		// Activity log
-		UserActivity.log(request.getRemoteUser(), "ADMIN_FORCE_OPTIMIZE_INDEXES", null, null, null);
+		if (optimizeIndexesRunning) {
+			log.warn("*** Optimize indexes already running ***");
+		} else {
+			optimizeIndexesRunning = true;
+			log.debug("*** Begin optimize indexes ***");
+			
+			try {
+				session = HibernateUtil.getSessionFactory().openSession();
+				ftSession = Search.getFullTextSession(session);
+				
+				// Optimize indexes
+				SearchFactory searchFactory = ftSession.getSearchFactory();
+				searchFactory.optimize();
+			} catch (Exception e) {
+				throw e;
+			} finally {
+				optimizeIndexesRunning = false;
+				HibernateUtil.close(ftSession);
+				HibernateUtil.close(session);
+			}
+			
+			log.debug("*** End optimize indexes ***");
+		}
 	}
 	
 	/**
 	 * Indexer progress monitor
 	 */
 	class ProgressMonitor implements MassIndexerProgressMonitor {
-		PrintWriter pw = null;
+		private PrintWriter pw = null;
 		private long count = 0;
 		private long total = 0;
 		private long oldPerCent = -1;
 		private long oldPerMile = -1;
+		private String tag = null;
 		
-		public ProgressMonitor(PrintWriter out, long total) {
+		public ProgressMonitor(PrintWriter out, String tag, long total) {
 			log.debug("ProgressMonitor({}, {})", out, total);
 			this.total = total;
+			this.tag = tag;
 			this.pw = out;
 		}
 		
@@ -441,7 +473,7 @@ public class RebuildIndexesServlet extends BaseServlet {
 				long perMile = count * 1000 / total;
 				
 				if (perMile > oldPerMile) {
-					FileLogger.info(BASE_NAME, "Progress {0}%%", perMile);
+					FileLogger.info(BASE_NAME, "{0} progress {1}%%", tag, perMile);
 					oldPerMile = perMile;
 				}
 			} catch (IOException e) {

@@ -574,10 +574,12 @@ public class ImageManipulation {
 			if (mark.isMark(x, y)) {
 				Field field = (Field) (fields.get(new Character((char) (ascTemplateLocations[i]))));
 				log.debug("*** " + i + ":" + (char) (ascTemplateLocations[i]) + ":" + field);
-				field.putValue(i);
-				log.debug("Found mark at " + x + "," + y + ":" + (char) (ascTemplateLocations[i]) + ":" + field.getName() + "="
-						+ field.getValue(i));
-				mark.putMarkOnImage(markedImage);
+
+                if (field != null) {
+				    field.putValue(i);
+				    log.debug("Found mark at ({}, {}) : {} : {} = {}", new Object[] { x, y, (char) (ascTemplateLocations[i]), field.getName(), field.getValue(i) });
+				    mark.putMarkOnImage(markedImage);
+                }
 			}
 		}
 		

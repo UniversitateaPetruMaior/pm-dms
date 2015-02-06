@@ -33,6 +33,7 @@ import com.openkm.core.DatabaseException;
 import com.openkm.dao.AuthDAO;
 import com.openkm.dao.bean.Role;
 import com.openkm.dao.bean.User;
+import com.openkm.spring.PrincipalUtils;
 
 public class DatabasePrincipalAdapter implements PrincipalAdapter {
 	private static Logger log = LoggerFactory.getLogger(DatabasePrincipalAdapter.class);
@@ -123,7 +124,8 @@ public class DatabasePrincipalAdapter implements PrincipalAdapter {
 		String mail = null;
 		
 		try {
-			com.openkm.dao.bean.User usr = AuthDAO.findUserByPk(user);
+			User usr = AuthDAO.findUserByPk(user);
+			
 			if (usr != null && !usr.getEmail().equals("")) {
 				mail = usr.getEmail();
 			}
@@ -141,7 +143,8 @@ public class DatabasePrincipalAdapter implements PrincipalAdapter {
 		String name = null;
 		
 		try {
-			com.openkm.dao.bean.User usr = AuthDAO.findUserByPk(user);
+			User usr = AuthDAO.findUserByPk(user);
+			
 			if (usr != null && !usr.getName().equals("")) {
 				name = usr.getName();
 			}
@@ -159,7 +162,8 @@ public class DatabasePrincipalAdapter implements PrincipalAdapter {
 		String password = null;
 		
 		try {
-			com.openkm.dao.bean.User usr = AuthDAO.findUserByPk(user);
+			User usr = AuthDAO.findUserByPk(user);
+			
 			if (usr != null && !usr.getName().equals("")) {
 				password = usr.getPassword();
 			}
@@ -169,5 +173,133 @@ public class DatabasePrincipalAdapter implements PrincipalAdapter {
 		
 		log.debug("getPassword: {}", password);
 		return password;
+	}
+	
+	@Override
+	public void createUser(String user, String password, String email, String name, boolean active) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				User usr = new User();
+				usr.setId(user);
+				usr.setPassword(password);
+				usr.setName(name);
+				usr.setEmail(email);
+				usr.setActive(active);
+				AuthDAO.createUser(usr);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can create users");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
+	}
+	
+	@Override
+	public void deleteUser(String user) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				AuthDAO.deleteUser(user);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can delete users");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
+	}
+	
+	@Override
+	public void updateUser(String user, String password, String email, String name, boolean active) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				User usr = new User();
+				usr.setId(user);
+				usr.setPassword(password);
+				usr.setName(name);
+				usr.setEmail(email);
+				usr.setActive(active);
+				AuthDAO.updateUser(usr);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can delete users");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void createRole(String role, boolean active) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				Role rol = new Role();
+				rol.setId(role);
+				rol.setActive(active);
+				AuthDAO.createRole(rol);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can create roles");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
+	}
+	
+	@Override
+	public void deleteRole(String role) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				AuthDAO.deleteRole(role);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can delete roles");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void updateRole(String role, boolean active) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				Role rol = new Role();
+				rol.setId(role);
+				rol.setActive(active);
+				AuthDAO.updateRole(rol);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can create roles");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void assignRole(String user, String role) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				User usr = AuthDAO.findUserByPk(user);
+				Role rol = AuthDAO.findRoleByPk(role);
+				usr.getRoles().add(rol);
+				AuthDAO.updateUser(usr);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can assign roles");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public void removeRole(String user, String role) throws PrincipalAdapterException {
+		try {
+			if (PrincipalUtils.hasRole(Config.DEFAULT_ADMIN_ROLE)) {
+				User usr = AuthDAO.findUserByPk(user);
+				Role rol = AuthDAO.findRoleByPk(role);
+				usr.getRoles().remove(rol);
+				AuthDAO.updateUser(usr);
+			} else {
+				throw new PrincipalAdapterException("Only administrators can remove roles");
+			}
+		} catch (DatabaseException e) {
+			throw new PrincipalAdapterException(e.getMessage(), e);
+		}
 	}
 }

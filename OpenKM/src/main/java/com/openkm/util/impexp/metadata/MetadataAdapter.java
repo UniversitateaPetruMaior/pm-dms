@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.api.OKMAuth;
 import com.openkm.api.OKMPropertyGroup;
-import com.openkm.api.OKMScripting;
 import com.openkm.bean.Document;
 import com.openkm.bean.Folder;
 import com.openkm.bean.Mail;
@@ -109,10 +108,6 @@ public abstract class MetadataAdapter {
 			dmd.getNotes().add(getMetadata(nt));
 		}
 		
-		// Scripting
-		OKMScripting okmScripting = OKMScripting.getInstance();
-		dmd.setScripting(okmScripting.getScript(token, doc.getPath()));
-		
 		// Security
 		OKMAuth okmAuth = OKMAuth.getInstance();
 		dmd.setGrantedUsers(okmAuth.getGrantedUsers(token, doc.getPath()));
@@ -152,10 +147,6 @@ public abstract class MetadataAdapter {
 		for (Note nt : fld.getNotes()) {
 			fmd.getNotes().add(getMetadata(nt));
 		}
-		
-		// Scripting
-		OKMScripting okmScripting = OKMScripting.getInstance();
-		fmd.setScripting(okmScripting.getScript(token, fld.getPath()));
 		
 		// Security
 		OKMAuth okmAuth = OKMAuth.getInstance();
@@ -204,10 +195,6 @@ public abstract class MetadataAdapter {
 		for (Note nt : mail.getNotes()) {
 			mmd.getNotes().add(getMetadata(nt));
 		}
-		
-		// Scripting
-		OKMScripting okmScripting = OKMScripting.getInstance();
-		mmd.setScripting(okmScripting.getScript(token, mail.getPath()));
 		
 		// Security
 		OKMAuth okmAuth = OKMAuth.getInstance();

@@ -90,7 +90,7 @@ public class NodeDocumentVersion implements Serializable {
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
 	private String name;
 	
-	@Column(name = "NDV_CURRENT")
+	@Column(name = "NDV_CURRENT", nullable = false)
 	@Type(type = "true_false")
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
 	private boolean current;

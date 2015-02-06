@@ -140,6 +140,9 @@ public class WorkflowServlet extends OKMRemoteServiceServlet implements OKMWorkf
 		} catch (WorkflowException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkflowService, ErrorCode.CAUSE_Workflow), e.getMessage());
+		} catch (PathNotFoundException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkflowService, ErrorCode.CAUSE_PathNotFound), e.getMessage());
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMWorkflowService, ErrorCode.CAUSE_General), e.getMessage());

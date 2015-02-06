@@ -21,8 +21,8 @@
 
 package com.openkm.dao;
 
-import java.util.List;
-
+import com.openkm.core.DatabaseException;
+import com.openkm.dao.bean.cache.UserItems;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -30,8 +30,7 @@ import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.openkm.core.DatabaseException;
-import com.openkm.dao.bean.cache.UserItems;
+import java.util.List;
 
 public class UserItemsDAO {
 	private static Logger log = LoggerFactory.getLogger(UserItemsDAO.class);

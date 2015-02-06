@@ -125,7 +125,7 @@ div.warn {
 	color: maroon;
 	text-align: left;
 }
-	
+
 div.ok {
 	color: green;
 	text-align: left;
@@ -147,7 +147,7 @@ span.vanadium-invalid {
 
 #breadcrumb {
 	font: 11px Arial, Helvetica, sans-serif;
-	background-image: url('../img/bc_bg.gif'); 
+	background-image: url('../img/bc_bg.gif');
 	background-repeat: repeat-x;
 	height: 20px;
 	line-height: 20px;
@@ -165,13 +165,13 @@ span.vanadium-invalid {
 }
 
 #breadcrumb li.action {
-	background-image: url('../img/table_title.gif'); 
+	background-image: url('../img/table_title.gif');
 }
 
-#breadcrumb li.action > a {
+#breadcrumb li.action>a {
 	display: inline-block;
-	background-image: url('../img/bc_vertical_separator.gif'); 
-	background-repeat: no-repeat; 
+	background-image: url('../img/bc_vertical_separator.gif');
+	background-repeat: no-repeat;
 	background-position: left;
 	padding-left: 10px;
 	padding-right: 10px;
@@ -187,10 +187,10 @@ span.vanadium-invalid {
 	float: left;
 }
 
-#breadcrumb li.path > a {
+#breadcrumb li.path>a {
 	display: inline-block;
-	background-image: url('../img/bc_separator.gif'); 
-	background-repeat: no-repeat; 
+	background-image: url('../img/bc_separator.gif');
+	background-repeat: no-repeat;
 	background-position: right;
 	padding-right: 15px;
 	text-decoration: none;
@@ -209,7 +209,7 @@ span.vanadium-invalid {
 	margin: 16px;
 	width: 150px;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	background-image: url("../img/action/generic.png");
@@ -225,7 +225,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/false.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -239,7 +239,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/true.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -253,7 +253,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/action/new.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -267,7 +267,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/action/delete.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -281,7 +281,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/action/examine.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -295,7 +295,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/action/save.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -309,7 +309,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/action/load.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -323,7 +323,7 @@ span.vanadium-invalid {
 	font-size: 10px;
 	font-family: verdana, arial, sans-serif;
 	cursor: pointer;
-  	cursor: hand;
+	cursor: hand;
 	background-image: url("../img/action/signal.png");
 	background-repeat: no-repeat;
 	padding-left: 17px;
@@ -332,14 +332,22 @@ span.vanadium-invalid {
 
 /* Chrome fix for button images */
 @media screen and (-webkit-min-device-pixel-ratio:0) {
-	.noButton, .yesButton, .addButton, .deleteButton, .searchButton, .saveButton, .loadButton, .executeButton {
+	.noButton, .yesButton, .addButton, .deleteButton, .searchButton,
+		.saveButton, .loadButton, .executeButton {
 		padding-left: 20px;
 	}
 }
 
 /* Explorer fix for button images */
-<!--[if IE]>
-	.noButton, .yesButton, .addButton, .deleteButton, .searchButton, .saveButton, .loadButton, .executeButton {
-		padding-left: 12px;
-	}
-<![endif]-->
+<!--
+[if IE]>.noButton, .yesButton, .addButton, .deleteButton, .searchButton,
+	.saveButton, .loadButton, .executeButton {
+	padding-left: 12px;
+}
+<!
+[
+endif
+]
+
+
+-->

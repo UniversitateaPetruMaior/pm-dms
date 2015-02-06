@@ -123,8 +123,13 @@ public class MimeTypeServlet extends BaseServlet {
 							mt.setId(Integer.parseInt(item.getString("UTF-8")));
 						} else if (item.getFieldName().equals("mt_name")) {
 							mt.setName(item.getString("UTF-8").toLowerCase());
+						} else if (item.getFieldName().equals("mt_description")) {
+							mt.setDescription(item.getString("UTF-8").toLowerCase());
+						} else if (item.getFieldName().equals("mt_search")) {
+							mt.setSearch(true);
 						} else if (item.getFieldName().equals("mt_extensions")) {
 							String[] extensions = item.getString("UTF-8").split(" ");
+							
 							for (int i=0; i<extensions.length; i++) {
 								mt.getExtensions().add(extensions[i].toLowerCase());
 							}

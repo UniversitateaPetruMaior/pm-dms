@@ -34,5 +34,6 @@ public class RPCService {
 	public static String ConverterServlet = Main.CONTEXT + "/frontend/Converter";
 	public static String FileUploadService = Main.CONTEXT + "/frontend/FileUpload";
 	public static String ReportServlet = Main.CONTEXT + "/frontend/ExecuteReport";
+	public static String CSVExporterServlet = Main.CONTEXT + "/frontend/CSVExporter";
 	public static String FeedService = Main.CONTEXT + "/feed/";
 }

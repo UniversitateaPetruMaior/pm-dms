@@ -128,35 +128,54 @@ public class SearchFullResult extends Composite {
 		hPanel.setStyleName("okm-NoWrap");
 		hPanel.add(new HTML(score.getHTML()));
 		hPanel.add(Util.hSpace("5"));
-		if(doc.isAttachment())  {
-			hPanel.add(new HTML(Util.imageItemHTML("img/email_attach.gif")));
-			hPanel.add(Util.hSpace("5"));
-		}
+		
 		hPanel.add(new HTML(Util.mimeImageHTML(doc.getMimeType())));
 		hPanel.add(Util.hSpace("5"));
 		Anchor anchor = new Anchor();
 		anchor.setHTML(doc.getName());
 		anchor.setStyleName("okm-Hyperlink");
 		String path = "";
-		// On attachemt case must remove last folder path, because it's internal usage not for visualization
+		
+		// On attachment case must remove last folder path, because it's internal usage not for visualization
 		if (doc.isAttachment()) {
-			anchor.setTitle(doc.getParent().substring(0, doc.getParent().lastIndexOf("/")));
-			path = doc.getParent();
+			anchor.setTitle(Util.getParent(doc.getParentPath()));
+			path = doc.getParentPath(); // path will contains mail path
 		} else {
-			anchor.setTitle(doc.getParent());
+			anchor.setTitle(doc.getParentPath());
 			path = doc.getPath();
 		}
+		
 		final String docPath = path;
 		anchor.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				CommonUI.openPath(docPath.substring(0,docPath.lastIndexOf("/")), docPath);
+				CommonUI.openPath(Util.getParent(docPath), docPath);
 			}
 		});
+		
 		hPanel.add(anchor);
 		hPanel.add(Util.hSpace("5"));
 		hPanel.add(new HTML(doc.getActualVersion().getName()));
 		hPanel.add(Util.hSpace("5"));
+		
+		// Search similar documents
+		if (Main.get().workspaceUserProperties.getWorkspace().getAvailableOption().isSimilarDocumentVisible()) {
+			final String uuid = doc.getUuid();
+			Image findSimilarDocument = new Image(OKMBundleResources.INSTANCE.findSimilarDocument());
+			findSimilarDocument.addClickHandler(new ClickHandler() {
+				@Override
+				public void onClick(ClickEvent event) {
+					Main.get().findSimilarDocumentSelectPopup.show();
+					Main.get().findSimilarDocumentSelectPopup.find(uuid);
+				}
+			});
+			
+			findSimilarDocument.setTitle(Main.i18n("general.menu.file.find.similar.document"));
+			findSimilarDocument.setStyleName("okm-KeyMap-ImageHover");
+			hPanel.add(findSimilarDocument);
+			hPanel.add(Util.hSpace("5"));
+		}
+		
 		// Download
 		if (Main.get().workspaceUserProperties.getWorkspace().getAvailableOption().isDownloadOption()) {
 			Image downloadDocument = new Image(OKMBundleResources.INSTANCE.download());
@@ -165,18 +184,19 @@ public class SearchFullResult extends Composite {
 				public void onClick(ClickEvent event) {
 					Util.downloadFileByUUID(doc.getUuid(), "");
 				}
-				
 			});
+			
 			downloadDocument.setTitle(Main.i18n("general.menu.file.download.document"));
 			downloadDocument.setStyleName("okm-KeyMap-ImageHover");
 			hPanel.add(downloadDocument);
 		}
+		
 		table.setWidget(rows++, 0, hPanel);		
 		
 		// Excerpt row
-		if ((Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.getSearchMode()==SearchControl.SEARCH_MODE_SIMPLE ||
-			 !Main.get().mainPanel.search.searchBrowser.searchIn.searchNormal.content.getText().equals(""))&& 
-			 gwtQueryResult.getExcerpt()!=null) {
+		if ((Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.getSearchMode() == SearchControl.SEARCH_MODE_SIMPLE ||
+				!Main.get().mainPanel.search.searchBrowser.searchIn.searchNormal.content.getText().equals("")) &&
+				gwtQueryResult.getExcerpt() != null) {
 			table.setHTML(rows++, 0, ""+gwtQueryResult.getExcerpt()+(gwtQueryResult.getExcerpt().length()>256?" ...":""));
 			HTML space = new HTML();
 			table.setWidget(rows, 0, space);
@@ -187,7 +207,13 @@ public class SearchFullResult extends Composite {
 		HorizontalPanel hPanel2 = new HorizontalPanel();
 		hPanel2.setStyleName("okm-NoWrap");
 		hPanel2.add(new HTML("<b>"+Main.i18n("document.folder")+":</b>&nbsp;"));
-		hPanel2.add(drawFolder(doc.getParentPath()));
+		if (doc.isAttachment()) {
+			String convertedPath = doc.getParentPath();
+			convertedPath = Util.getParent(convertedPath) + "/"+ Util.getName(convertedPath).substring(37);
+			hPanel2.add(drawMailWithAttachment(convertedPath, path));
+		} else {
+			hPanel2.add(drawFolder(doc.getParentPath()));
+		}
 		table.setWidget(rows++, 0, hPanel2);
 		
 		// Document detail
@@ -224,10 +250,6 @@ public class SearchFullResult extends Composite {
 	
 	/**
 	 * addPropertyGroups
-	 * 
-	 * @param path
-	 * @param table
-	 * @return
 	 */
 	private int addPropertyGroups(final String path, FlexTable table) {
 		int rows = table.getRowCount();
@@ -250,31 +272,31 @@ public class SearchFullResult extends Composite {
 	
 	/**
 	 * drawCategoriesKeywords
-	 * 
-	 * @param categories
-	 * @param keywords
-	 * @param table
-	 * @return
 	 */
 	private int addCategoriesKeywords(Set<GWTFolder> categories, Set<String> keywords, FlexTable table) {
 		int rows = table.getRowCount();
+		
 		// Categories and tagcloud
-		if (categories.size()>0 || keywords.size()>0) { 
+		if (categories.size() > 0 || keywords.size() > 0) { 
 			HorizontalPanel hPanel = new HorizontalPanel();
 			hPanel.setStyleName("okm-NoWrap");
-			if (categories.size()>0) {
+			
+			if (categories.size() > 0) {
 				FlexTable tableSubscribedCategories = new FlexTable();
 				tableSubscribedCategories.setStyleName("okm-DisableSelect");
+				
 				// Sets the document categories
 				for (Iterator<GWTFolder> it = categories.iterator(); it.hasNext();) {
 					drawCategory(tableSubscribedCategories, it.next());
 				}
+				
 				hPanel.add(new HTML("<b>"+Main.i18n("document.categories")+"</b>"));
 				hPanel.add(Util.hSpace("5"));
 				hPanel.add(tableSubscribedCategories);
 				hPanel.add(Util.hSpace("33"));
 			}
-			if (keywords.size()>0) {
+			
+			if (keywords.size() > 0) {
 				// Tag cloud
 				TagCloud keywordsCloud = new TagCloud();
 				keywordsCloud.setWidth("350");
@@ -283,25 +305,23 @@ public class SearchFullResult extends Composite {
 				hPanel.add(Util.hSpace("5"));
 				hPanel.add(keywordsCloud);
 			}
+			
 			table.setWidget(rows++, 0, hPanel);
 		}
+		
 		return rows;
 	}
 	
 	/**
 	 * drawPropertyGroups
-	 * 
-	 * @param docPath
-	 * @param propertyGroups
-	 * @param propertyGroupsPanel
 	 */
 	private void drawPropertyGroups(final String docPath, final List<GWTPropertyGroup> propertyGroups, 
-									final HorizontalPanel propertyGroupsPanel) {
-		if (propertyGroups.size()>0) {
+			final HorizontalPanel propertyGroupsPanel) {
+		if (propertyGroups.size() > 0) {
 			Status status = Main.get().mainPanel.search.searchBrowser.searchResult.status;
 			status.setFlag_refreshPropertyGroups();
 			final GWTPropertyGroup propertyGroup = propertyGroups.remove(0);
-			propertyGroupService.getProperties(docPath, propertyGroup.getName(), new AsyncCallback<List<GWTFormElement>>() {
+			propertyGroupService.getProperties(docPath, propertyGroup.getName(), false, new AsyncCallback<List<GWTFormElement>>() {
 				@Override
 				public void onSuccess(List<GWTFormElement> result) {
 					if (propertyGroupsPanel.getWidgetCount()==0) {
@@ -322,6 +342,7 @@ public class SearchFullResult extends Composite {
 						propertyGroupsPanel.setCellWidth(vlPanel, "7");
 						propertyGroupsPanel.setCellHeight(vlPanel, "100%");
 					}
+					
 					Image verticalLine = new Image("img/transparent_pixel.gif");
 					verticalLine.setStyleName("okm-Vertical-Line-Border");
 					verticalLine.setSize("2","100%");
@@ -342,6 +363,7 @@ public class SearchFullResult extends Composite {
 					propertyGroupsPanel.setCellHeight(verticalLine, "100%");
 					drawPropertyGroups(docPath, propertyGroups, propertyGroupsPanel);
 				}
+				
 				@Override
 				public void onFailure(Throwable caught) {
 					Main.get().showError("drawPropertyGroups", caught);
@@ -415,6 +437,12 @@ public class SearchFullResult extends Composite {
 		hPanel3.add(new HTML(dtf.format(folder.getCreated())));
 		table.setWidget(rows++, 0, hPanel3);
 		
+		// Categories and tagcloud
+		rows = addCategoriesKeywords(folder.getCategories(),folder.getKeywords(), table);
+		
+		// PropertyGroups
+		rows = addPropertyGroups(folder.getPath(), table);
+		
 		// Separator end line
 		Image horizontalLine = new Image("img/transparent_pixel.gif");
 		horizontalLine.setStyleName("okm-TopPanel-Line-Border");
@@ -453,8 +481,7 @@ public class SearchFullResult extends Composite {
 			@Override
 			public void onClick(ClickEvent event) {
 				String docPath = mail.getPath();
-				String path = docPath.substring(0,docPath.lastIndexOf("/"));
-				CommonUI.openPath(path, docPath);
+				CommonUI.openPath(Util.getParent(docPath), docPath);
 			}
 		});
 		anchor.setStyleName("okm-Hyperlink");
@@ -467,19 +494,36 @@ public class SearchFullResult extends Composite {
 		hPanel2.add(new HTML("<b>"+Main.i18n("mail.subject")+":</b>&nbsp;"));
 		hPanel2.add(new HTML(mail.getSubject()));
 		
-		// mail detail
+		// Excerpt row
+		if ((Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.getSearchMode() == SearchControl.SEARCH_MODE_SIMPLE ||
+				!Main.get().mainPanel.search.searchBrowser.searchIn.searchNormal.content.getText().equals("")) &&
+				gwtQueryResult.getExcerpt() != null) {
+			table.setHTML(rows++, 0, ""+gwtQueryResult.getExcerpt()+(gwtQueryResult.getExcerpt().length()>256?" ...":""));
+			HTML space = new HTML();
+			table.setWidget(rows, 0, space);
+			table.getFlexCellFormatter().setHeight(rows++, 0, "5");
+		}
+		
+		// Folder row
 		HorizontalPanel hPanel3 = new HorizontalPanel();
 		hPanel3.setStyleName("okm-NoWrap");
-		hPanel3.add(new HTML("<b>"+Main.i18n("search.result.author")+":</b>&nbsp;"));
-		hPanel3.add(new HTML(mail.getAuthor()));
-		hPanel3.add(Util.hSpace("33"));
-		hPanel3.add(new HTML("<b>"+Main.i18n("search.result.size")+":</b>&nbsp;"));
-		hPanel3.add(new HTML(Util.formatSize(mail.getSize())));
-		hPanel3.add(Util.hSpace("33"));
-		hPanel3.add(new HTML("<b>"+Main.i18n("search.result.date.create")+":&nbsp;</b>"));
-		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
-		hPanel3.add(new HTML(dtf.format(mail.getCreated())));
+		hPanel3.add(new HTML("<b>"+Main.i18n("document.folder")+":</b>&nbsp;"));
+		hPanel3.add(drawFolder(mail.getParentPath()));
 		table.setWidget(rows++, 0, hPanel3);
+		
+		// mail details
+		HorizontalPanel hPanel4 = new HorizontalPanel();
+		hPanel4.setStyleName("okm-NoWrap");
+		hPanel4.add(new HTML("<b>"+Main.i18n("search.result.author")+":</b>&nbsp;"));
+		hPanel4.add(new HTML(mail.getAuthor()));
+		hPanel4.add(Util.hSpace("33"));
+		hPanel4.add(new HTML("<b>"+Main.i18n("search.result.size")+":</b>&nbsp;"));
+		hPanel4.add(new HTML(Util.formatSize(mail.getSize())));
+		hPanel4.add(Util.hSpace("33"));
+		hPanel4.add(new HTML("<b>"+Main.i18n("search.result.date.create")+":&nbsp;</b>"));
+		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
+		hPanel4.add(new HTML(dtf.format(mail.getCreated())));
+		table.setWidget(rows++, 0, hPanel4);
 		
 		// Categories and tagcloud
 		rows = addCategoriesKeywords(mail.getCategories(),mail.getKeywords(), table);
@@ -487,24 +531,22 @@ public class SearchFullResult extends Composite {
 		// PropertyGroups
 		rows = addPropertyGroups(mail.getPath(), table);
 		
-		// From panel
-		HorizontalPanel hPanel4 = new HorizontalPanel();
-		hPanel4.setStyleName("okm-NoWrap");
-		hPanel4.add(new HTML("<b>"+Main.i18n("mail.from")+":</b>&nbsp;"));
-		hPanel4.add(new HTML(mail.getFrom()));
-		table.setWidget(rows++, 0, hPanel4);
+		// From, To and Reply panel
+		HorizontalPanel hPanel5 = new HorizontalPanel();
+		hPanel5.setStyleName("okm-NoWrap");
+		hPanel5.add(new HTML("<b>"+Main.i18n("mail.from")+":</b>&nbsp;"));
+		hPanel5.add(new HTML(mail.getFrom()));
 		
-		// To panel
 		if (mail.getTo().length > 0) {
-			HorizontalPanel hPanel5 = new HorizontalPanel();
-			hPanel5.setStyleName("okm-NoWrap");
 			VerticalPanel toPanel = new VerticalPanel();
 			
-			for (int i=0; i<mail.getTo().length; i++) {
+			for (int i=0; i < mail.getTo().length; i++) {
 				Anchor hTo = new Anchor();
-				final String mailTo = mail.getTo()[i].contains("<")?mail.getTo()[i].substring(mail.getTo()[i].indexOf("<")+1, mail.getTo()[i].indexOf(">")):mail.getTo()[i];
+				final String mailTo = mail.getTo()[i].contains("<") ?
+						mail.getTo()[i].substring(mail.getTo()[i].indexOf("<") + 1,
+								mail.getTo()[i].indexOf(">")):mail.getTo()[i];
 				hTo.setHTML(mail.getTo()[i].replace("<", "&lt;").replace(">", "&gt;"));
-				hTo.setTitle("mailto:"+mailTo);
+				hTo.setTitle("mailto:" + mailTo);
 				hTo.setStyleName("okm-Mail-Link");
 				hTo.addStyleName("okm-NoWrap");
 				hTo.addClickHandler(new ClickHandler() { 
@@ -513,25 +555,25 @@ public class SearchFullResult extends Composite {
 						Window.open("mailto:" + mailTo, "_self", "");
 					}
 				});
+				
 				toPanel.add(hTo);
 			}
 			
+			hPanel5.add(Util.hSpace("33"));
+			hPanel5.add((new HTML("<b>" + Main.i18n("mail.to") + ":</b>&nbsp;")));
 			hPanel5.add(toPanel);
-			table.setWidget(rows++, 0, hPanel5);
 		}
 		
-		// Reply panel
 		if (mail.getReply().length > 0) {
-			HorizontalPanel hPanel6 = new HorizontalPanel();
-			hPanel6.setStyleName("okm-NoWrap");
-			hPanel6.add(new HTML("<b>"+Main.i18n("mail.reply")+":</b>&nbsp;"));
 			VerticalPanel replyPanel = new VerticalPanel();
 			
-			for (int i=0; i<mail.getReply().length; i++) {
+			for (int i=0; i < mail.getReply().length; i++) {
 				Anchor hReply = new Anchor();
-				final String mailReply = mail.getReply()[i].contains("<")?mail.getReply()[i].substring(mail.getReply()[i].indexOf("<")+1, mail.getReply()[i].indexOf(">")):mail.getReply()[i];
+				final String mailReply = mail.getReply()[i].contains("<") ?
+						mail.getReply()[i].substring(mail.getReply()[i].indexOf("<") + 1,
+								mail.getReply()[i].indexOf(">")):mail.getReply()[i];
 				hReply.setHTML(mail.getReply()[i].replace("<", "&lt;").replace(">", "&gt;"));
-				hReply.setTitle("mailto:"+mailReply);
+				hReply.setTitle("mailto:" + mailReply);
 				hReply.setStyleName("okm-Mail-Link");
 				hReply.addStyleName("okm-NoWrap");
 				hReply.addClickHandler(new ClickHandler() { 
@@ -540,12 +582,16 @@ public class SearchFullResult extends Composite {
 						Window.open("mailto:" + mailReply, "_self", "");
 					}
 				});
+				
 				replyPanel.add(hReply);
 			}
 			
-			hPanel6.add(replyPanel);
-			table.setWidget(rows++, 0, hPanel6);
+			hPanel5.add(Util.hSpace("33"));
+			hPanel5.add(new HTML("<b>" + Main.i18n("mail.reply") + ":</b>&nbsp;"));
+			hPanel5.add(replyPanel);
 		}
+		
+		table.setWidget(rows++, 0, hPanel5);
 		
 		// Separator end line
 		Image horizontalLine = new Image("img/transparent_pixel.gif");
@@ -558,8 +604,6 @@ public class SearchFullResult extends Composite {
 	
 	/**
 	 * drawCategory
-	 * 
-	 * @param category
 	 */
 	private void drawCategory(final FlexTable tableSubscribedCategories, final GWTFolder category) {
 		int row = tableSubscribedCategories.getRowCount();
@@ -587,9 +631,6 @@ public class SearchFullResult extends Composite {
 	
 	/**
 	 * drawFolder
-	 * 
-	 * @param folder
-	 * @return
 	 */
 	private Anchor drawFolder(final String path) {
 		Anchor anchor = new Anchor();
@@ -598,6 +639,22 @@ public class SearchFullResult extends Composite {
 			@Override
 			public void onClick(ClickEvent arg0) {
 				CommonUI.openPath(path, null);
+			}
+		});
+		anchor.setStyleName("okm-KeyMap-ImageHover");
+		return anchor;
+	}
+	
+	/**
+	 * drawMailWithAttachment
+	 */
+	private Anchor drawMailWithAttachment(String convertedPath, final String path) {
+		Anchor anchor = new Anchor();
+		anchor.setHTML(Util.imageItemHTML("img/email_attach.gif", convertedPath, "top"));	
+		anchor.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent arg0) {
+				CommonUI.openPath(Util.getParent(path), path);
 			}
 		});
 		anchor.setStyleName("okm-KeyMap-ImageHover");

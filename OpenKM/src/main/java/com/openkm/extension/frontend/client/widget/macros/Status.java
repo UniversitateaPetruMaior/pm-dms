@@ -38,7 +38,6 @@ import com.openkm.frontend.client.extension.comunicator.GeneralComunicator;
  *
  */
 public class Status extends PopupPanel {
-	
 	private HorizontalPanel hPanel;
 	private HTML msg;
 	private HTML space;

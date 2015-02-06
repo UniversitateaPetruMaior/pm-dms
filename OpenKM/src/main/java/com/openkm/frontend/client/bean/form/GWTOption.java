@@ -27,6 +27,7 @@ public class GWTOption implements IsSerializable {
 	private String label = "";
 	private String value = "";
 	private boolean selected = false;
+	private boolean suggested = false;
 	
 	public boolean isSelected() {
 		return selected;
@@ -52,12 +53,21 @@ public class GWTOption implements IsSerializable {
 		this.value = value;
 	}
 	
+	public boolean isSuggested() {
+		return suggested;
+	}
+
+	public void setSuggested(boolean suggested) {
+		this.suggested = suggested;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		sb.append("label="); sb.append(label);
 		sb.append(", value="); sb.append(value);
-		sb.append(", seected="); sb.append(selected);
+		sb.append(", selected="); sb.append(selected);
+		sb.append(", suggested="); sb.append(suggested);
 		sb.append("}");
 		return sb.toString();
 	}

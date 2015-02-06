@@ -38,6 +38,7 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.openkm.frontend.client.Main;
+import com.openkm.frontend.client.util.Util;
 
 /**
  * NotifyPanel
@@ -62,6 +63,9 @@ public class NotifyPanel extends Composite {
 	private HTML filterText;
 	private String usersFilter = "";
 	private String groupsFilter = "";
+	private VerticalPanel vNotifyExternalUserPanel;
+	private TextBox externalMailAddress;
+	private HTML externalUserHTML;
 	
 	/**
 	 * NotifyPanel
@@ -153,8 +157,20 @@ public class NotifyPanel extends Composite {
 			}
 		});
 		
+		vNotifyExternalUserPanel = new VerticalPanel();
+		externalUserHTML = new HTML(Main.i18n("security.notify.external.mail"));
+		externalMailAddress = new TextBox();
+		externalMailAddress.setWidth("374");
+		externalMailAddress.setStyleName("okm-Input");
+		vNotifyExternalUserPanel.add(Util.vSpace("5"));
+		vNotifyExternalUserPanel.add(externalUserHTML);
+		vNotifyExternalUserPanel.add(externalMailAddress);
+		vNotifyExternalUserPanel.setVisible(false);
+		
+		
 		vPanel.add(filterPanel);
 		vPanel.add(tabPanel);
+		vPanel.add(vNotifyExternalUserPanel);
 		
 		vPanel.setCellHorizontalAlignment(filterPanel, VerticalPanel.ALIGN_RIGHT);
 		
@@ -179,6 +195,12 @@ public class NotifyPanel extends Composite {
 	public void reset() {
 		notifyUser.reset();
 		notifyRole.reset();
+		filter.setText("");
+		filter.setEnabled(true); 
+		checkBoxFilter.setValue(true);
+		usersFilter = "";
+		groupsFilter = "";
+		externalMailAddress.setText("");
 	}
 	
 	/**
@@ -230,6 +252,13 @@ public class NotifyPanel extends Composite {
 	}
 	
 	/**
+	 * enableNotifyExternalUsers
+	 */
+	public void enableNotifyExternalUsers() {
+		vNotifyExternalUserPanel.setVisible(true);
+	}
+	
+	/**
 	 * getRolesToNotify
 	 * 
 	 * @return
@@ -245,5 +274,12 @@ public class NotifyPanel extends Composite {
 	 */
 	public String getUsersToNotify() {
 		return notifyUser.getUsersToNotify();
+	}
+	
+	/**
+	 * getExternalMailAddress
+	 */
+	public String getExternalMailAddress() {
+		return externalMailAddress.getText();
 	}
 }

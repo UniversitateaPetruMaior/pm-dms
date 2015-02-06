@@ -50,7 +50,7 @@ public class DbSessionManager {
 	/**
 	 * Prevents class instantiation
 	 */
-	private DbSessionManager() {
+	protected DbSessionManager() {
 	}
 	
 	/**

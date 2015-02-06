@@ -22,19 +22,56 @@
 package com.openkm.util;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.io.IOUtils;
 import org.dts.spell.SpellChecker;
 import org.dts.spell.dictionary.OpenOfficeSpellDictionary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.core.Config;
+import com.openkm.core.MimeTypeConfig;
+import com.openkm.dao.NodeDocumentVersionDAO;
+import com.openkm.dao.bean.NodeDocument;
+import com.openkm.util.metadata.MetadataExtractor;
+import com.openkm.util.metadata.OfficeMetadata;
+import com.openkm.util.metadata.OpenOfficeMetadata;
+import com.openkm.util.metadata.PdfMetadata;
 
 public class DocumentUtils {
 	private static Logger log = LoggerFactory.getLogger(DocumentUtils.class);
+	
+	public void staticExtractMetadata(NodeDocument nDoc) {
+		InputStream is = null;
+		
+		try {
+			if (MimeTypeConfig.MIME_PDF.equals(nDoc.getMimeType())) {
+				is = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(nDoc.getUuid(), true);
+				PdfMetadata md = MetadataExtractor.pdfExtractor(is);
+				log.info("{}", md);
+			} else if (MimeTypeConfig.MIME_MS_WORD.equals(nDoc.getMimeType())
+					|| MimeTypeConfig.MIME_MS_EXCEL.equals(nDoc.getMimeType())
+					|| MimeTypeConfig.MIME_MS_POWERPOINT.equals(nDoc.getMimeType())) {
+				is = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(nDoc.getUuid(), true);
+				OfficeMetadata md = MetadataExtractor.officeExtractor(is, nDoc.getMimeType());
+				log.info("{}", md);
+			} else if (MimeTypeConfig.MIME_OO_TEXT.equals(nDoc.getMimeType())
+					|| MimeTypeConfig.MIME_OO_SPREADSHEET.equals(nDoc.getMimeType())
+					|| MimeTypeConfig.MIME_OO_PRESENTATION.equals(nDoc.getMimeType())) {
+				is = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(nDoc.getUuid(), true);
+				OpenOfficeMetadata md = new OpenOfficeMetadata();
+				log.info("{}", md);
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		} finally {
+			IOUtils.closeQuietly(is);
+		}
+	}
 	
 	/**
 	 * Text spell checker

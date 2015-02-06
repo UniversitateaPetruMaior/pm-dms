@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.openkm.automation.AutomationException;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Mail;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.DatabaseException;
@@ -51,17 +52,17 @@ public interface MailModule {
 	 */
 	public Mail create(String token, Mail mail) throws PathNotFoundException, ItemExistsException,
 			VirusDetectedException, AccessDeniedException, RepositoryException, DatabaseException,
-			UserQuotaExceededException;
+			UserQuotaExceededException, AutomationException;
 
 	/**
 	 * Obtains properties from a previously created mail.
 	 * 
-	 * @param mailPath The path that identifies an unique mail. 
+	 * @param mailId The path that identifies an unique mail, or its UUID. 
 	 * @return A mail object with the selected mail properties.
 	 * @throws PathNotFoundException If the indicated mail doesn't exist.
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
-	public Mail getProperties(String token, String mailPath) throws PathNotFoundException,
+	public Mail getProperties(String token, String mailId) throws PathNotFoundException,
 			RepositoryException, DatabaseException;
 	
 	/**
@@ -140,40 +141,58 @@ public interface MailModule {
 	public void copy(String token, String mailPath, String dstPath) throws PathNotFoundException,
 			ItemExistsException, AccessDeniedException, RepositoryException, IOException, AutomationException,
 			DatabaseException, UserQuotaExceededException;
+	
+	/**
+	 * Copy a mail to another location in the repository.
+	 * 
+	 * @param mailPath The path that identifies an unique mail.
+	 * @param dstPath The path of the destination mail.
+	 * @param extAttr Attributes to define what need to be duplicated.
+	 * @throws PathNotFoundException If the dstPath does not exists.
+	 * @throws ItemExistsException If there is already a mail in the
+	 * destination mail with the same name.
+	 * @throws AccessDeniedException If there is any security problem: 
+	 * you can't modify the parent mail or the destination mail
+	 * because of lack of permissions.
+	 * @throws RepositoryException If there is any general repository problem.
+	 */
+	public void extendedCopy(String token, String mailPath, String dstPath, ExtendedAttributes extAttr) throws
+			PathNotFoundException, ItemExistsException, AccessDeniedException, RepositoryException, IOException,
+			AutomationException, DatabaseException, UserQuotaExceededException;
 
 	/**
 	 * Retrieve a list of child mails from an existing folder.
 	 * 
-	 * @param fldPath The path that identifies an unique folder.
+	 * @param fldId The path that identifies an unique folder or its UUID.
 	 * @return A Collection with the child folders.
 	 * @throws PathNotFoundException If there is no folder in the repository in this path
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
 	@Deprecated
-	public List<Mail> getChilds(String token, String fldPath) throws PathNotFoundException, 
+	public List<Mail> getChilds(String token, String fldId) throws PathNotFoundException, 
 			RepositoryException, DatabaseException;
 	
 	/**
 	 * Retrieve a list of children mails from an existing folder.
 	 * 
-	 * @param fldPath The path that identifies an unique folder.
+	 * @param fldId The path that identifies an unique folder or its UUID.
 	 * @return A Collection with the child folders.
 	 * @throws PathNotFoundException If there is no folder in the repository in this path
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
-	public List<Mail> getChildren(String token, String fldPath) throws PathNotFoundException, 
+	public List<Mail> getChildren(String token, String fldId) throws PathNotFoundException, 
 			RepositoryException, DatabaseException;
 
 	/**
 	 * Test if a mail path is valid.
 	 * 
-	 * @param mailPath The path that identifies an unique mail.
+	 * @param mailId The path that identifies an unique mail or its UUID.
 	 * @throws AccessDeniedException If there is any security problem: 
 	 * you can't access this mail because of lack of permissions.
 	 * @throws RepositoryException If there is any general repository problem.
 	 * @throws PathNotFoundException If there is no mail in the repository with this path.
 	 */
-	public boolean isValid(String token, String mailPath) throws PathNotFoundException,
+	public boolean isValid(String token, String mailId) throws PathNotFoundException,
 			AccessDeniedException, RepositoryException, DatabaseException;
 	
 	/**

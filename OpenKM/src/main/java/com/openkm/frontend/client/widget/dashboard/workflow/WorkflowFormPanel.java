@@ -64,6 +64,7 @@ import com.openkm.frontend.client.service.OKMWorkflowService;
 import com.openkm.frontend.client.service.OKMWorkflowServiceAsync;
 import com.openkm.frontend.client.util.CommonUI;
 import com.openkm.frontend.client.util.OKMBundleResources;
+import com.openkm.frontend.client.util.Util;
 import com.openkm.frontend.client.widget.form.FormManager;
 import com.openkm.frontend.client.widget.form.HasWorkflow;
 
@@ -612,8 +613,7 @@ public class WorkflowFormPanel extends Composite implements HasWorkflow {
 			@Override
 			public void onClick(ClickEvent event) {
 				if (!isFolder) {
-					String path = docPath.substring(0,docPath.lastIndexOf("/"));
-					CommonUI.openPath(path, docPath);
+					CommonUI.openPath(Util.getParent(docPath), docPath);
 				} else {
 					CommonUI.openPath(docPath, "");
 				}
@@ -629,8 +629,7 @@ public class WorkflowFormPanel extends Composite implements HasWorkflow {
 			@Override
 			public void onClick(ClickEvent event) {
 				if (!isFolder) {
-					String path = docPath.substring(0,docPath.lastIndexOf("/"));
-					CommonUI.openPath(path, docPath);
+					CommonUI.openPath(Util.getParent(docPath), docPath);
 				} else {
 					CommonUI.openPath(docPath, "");
 				}

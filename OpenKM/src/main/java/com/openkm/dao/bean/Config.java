@@ -40,6 +40,7 @@ public class Config implements Serializable {
 	public static final String BOOLEAN = "boolean";
 	public static final String INTEGER = "integer";
 	public static final String LONG = "long";
+	public static final String FILE = "file";
 	public static final String SELECT = "select";
 	public static final String HIDDEN = "hidden";
 	public static final String LIST = "list";
@@ -52,7 +53,7 @@ public class Config implements Serializable {
 	private String type;
 	
 	@Column(name="CFG_VALUE")
-	@Lob @Type(type = "org.hibernate.type.TextType")
+	@Lob @Type(type = "org.hibernate.type.StringClobType")
 	private String value;
 
 	public String getKey() {

@@ -34,8 +34,7 @@ import com.openkm.dao.bean.MimeType;
 public class MimeTypeConfig {
 	private static Logger log = LoggerFactory.getLogger(MimeTypeConfig.class);
 	
-	// Mime types
-	// NOTE Keep on sync with default.sql
+	// MIME types => NOTE Keep on sync with default.sql
 	public static String MIME_UNDEFINED = "application/octet-stream";
 	public static String MIME_RTF = "application/rtf";
 	public static String MIME_PDF = "application/pdf";
@@ -57,7 +56,9 @@ public class MimeTypeConfig {
 	public static String MIME_JPEG = "image/jpeg";
 	public static String MIME_GIF = "image/gif";
 	public static String MIME_PNG = "image/png";
+	public static String MIME_BMP = "image/bmp";
 	public static String MIME_PSD = "image/x-psd";
+	public static String MIME_ICO = "image/x-ico";
 	public static String MIME_HTML = "text/html";
 	public static String MIME_TEXT = "text/plain";
 	public static String MIME_XML = "text/xml";
@@ -95,7 +96,7 @@ public class MimeTypeConfig {
 	public static MimetypesFileTypeMap mimeTypes = new MimetypesFileTypeMap();
 	
 	/**
-	 * load mime types
+	 * Load MIME types
 	 */
 	public static void loadMimeTypes() {
 		try {

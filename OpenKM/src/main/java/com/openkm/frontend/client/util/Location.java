@@ -42,9 +42,13 @@ public class Location {
     }
     
     public String getContext() {
-    	String context = path.substring(path.indexOf("/") + 1);
-    	context = context.substring(0, context.indexOf("/"));
-    	return "/" + context;
+    	if (path.equals("/frontend/index.html")) {
+    		return "";
+    	} else {
+    		String context = path.substring(path.indexOf("/") + 1);
+    		context = context.substring(0, context.indexOf("/"));
+    		return "/" + context;
+    	}
     }
 
     public String getPort() {

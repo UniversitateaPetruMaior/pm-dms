@@ -53,6 +53,7 @@ import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
 import com.openkm.frontend.client.service.OKMSearchService;
 import com.openkm.frontend.client.service.OKMSearchServiceAsync;
 import com.openkm.frontend.client.util.CommonUI;
+import com.openkm.frontend.client.util.EventUtils;
 import com.openkm.frontend.client.util.Util;
 
 /**
@@ -103,8 +104,7 @@ public class FindDocumentSelectPopup extends DialogBox  {
 			@Override
 			public void onClick(ClickEvent event) {
 				String docPath = documentTable.getText(selectedRow, 1);
-				String path = docPath.substring(0, docPath.lastIndexOf("/"));
-				CommonUI.openPath(path, docPath);
+				CommonUI.openPath(Util.getParent(docPath), docPath);
 				hide();
 			}
 		});
@@ -114,7 +114,8 @@ public class FindDocumentSelectPopup extends DialogBox  {
 		keyword.addKeyUpHandler(new KeyUpHandler() {
 			@Override
 			public void onKeyUp(KeyUpEvent event) {
-				if (keyword.getText().length() >= 3) {
+				if (keyword.getText().length() >= 3 && !EventUtils.isNavigationKey(event.getNativeKeyCode()) &&
+						!EventUtils.isModifierKey(event.getNativeKeyCode())) {
 					GWTQueryParams gwtParams = new GWTQueryParams();
 					int actualView = Main.get().mainPanel.desktop.navigator.stackPanel.getStackIndex();
 					
@@ -139,7 +140,7 @@ public class FindDocumentSelectPopup extends DialogBox  {
 					gwtParams.setMimeType("");
 					gwtParams.setKeywords("");
 					gwtParams.setMimeType("");
-					gwtParams.setName(keyword.getText()+"*"); // add wildcard at ends
+					gwtParams.setName(keyword.getText() + "*");
 					gwtParams.setAuthor("");
 					gwtParams.setMailFrom("");
 					gwtParams.setMailTo("");
@@ -149,6 +150,7 @@ public class FindDocumentSelectPopup extends DialogBox  {
 					gwtParams.setLastModifiedTo(null);
 					gwtParams.setDomain(GWTQueryParams.DOCUMENT);
 					gwtParams.setProperties(new HashMap<String, GWTPropertyParams>());
+					
 					find(gwtParams);
 				} else {
 					removeAllRows();
@@ -173,8 +175,7 @@ public class FindDocumentSelectPopup extends DialogBox  {
 			@Override
 			public void onDoubleClick(DoubleClickEvent event) {
 				String docPath = documentTable.getText(selectedRow, 1);
-				String path = docPath.substring(0, docPath.lastIndexOf("/"));
-				CommonUI.openPath(path, docPath);
+				CommonUI.openPath(Util.getParent(docPath), docPath);
 				hide();
 			}
 		});

@@ -63,7 +63,7 @@ public class RepositorySearchServlet extends BaseServlet {
 			ServletException {
 		String method = request.getMethod();
 		
-		if (isAdmin(request)) {
+		if (checkMultipleInstancesAccess(request, response)) {
 			if (method.equals(METHOD_GET)) {
 				doGet(request, response);
 			} else if (method.equals(METHOD_POST)) {

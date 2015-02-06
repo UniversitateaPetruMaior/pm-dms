@@ -247,6 +247,7 @@ public class TabWorkspace extends Composite implements HasWorkspaceEvent, HasWor
 	public boolean showExtensionTabs() {
 		for (TabWorkspaceExtension tabExtension : widgetExtensionList) {
 			tabBar.addTab(tabExtension.getTabText());
+			tabExtension.setTab(tabBar, tabBar.getTabCount()-1);			
 		}
 		return !widgetExtensionList.isEmpty();
 	}

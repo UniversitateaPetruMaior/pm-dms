@@ -88,6 +88,7 @@ public class SearchSaved extends Composite {
 	public void showMenu() {
 		// The browser menu depends on actual view
 		// Must substract top position from Y Screen Position
+		menuPopup.evaluateMenuOptions();
 		menuPopup.setPopupPosition(table.getMouseX(), table.getMouseY());
 		menuPopup.show();
 	}
@@ -163,9 +164,9 @@ public class SearchSaved extends Composite {
 	private void addRow(GWTQueryParams search) {
 		int rows = table.getRowCount();
 		
-		data.put(new Long(dataIndexValue), search);
-		
+		data.put(new Long(dataIndexValue), search);		
 		table.setHTML(rows, 0, "&nbsp;");
+		
 		table.setHTML(rows, 1, search.getQueryName());
 		table.setHTML(rows, 2, "" + dataIndexValue++);
 		table.setHTML(rows, 3, "");
@@ -239,7 +240,6 @@ public class SearchSaved extends Composite {
 		if (getSelectedRow() >= 0) {
 			status.setFlag_deleteSearch();
 			searchIdToDelete = Long.parseLong(table.getText(getSelectedRow(), 2));
-			
 			searchService.deleteSearch(data.get(searchIdToDelete).getId(), callbackDeleteSearch);
 		}
 	}

@@ -54,6 +54,7 @@ import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
 import com.openkm.frontend.client.service.OKMSearchService;
 import com.openkm.frontend.client.service.OKMSearchServiceAsync;
 import com.openkm.frontend.client.util.CommonUI;
+import com.openkm.frontend.client.util.EventUtils;
 import com.openkm.frontend.client.util.Util;
 
 public class FindFolderSelectPopup extends DialogBox  {	
@@ -104,7 +105,8 @@ public class FindFolderSelectPopup extends DialogBox  {
 		keyword.addKeyUpHandler(new KeyUpHandler() {
 			@Override
 			public void onKeyUp(KeyUpEvent event) {
-				if (keyword.getText().length() >= 3) {
+				if (keyword.getText().length() >= 3 && !EventUtils.isNavigationKey(event.getNativeKeyCode()) &&
+						!EventUtils.isModifierKey(event.getNativeKeyCode())) {
 					GWTQueryParams gwtParams = new GWTQueryParams();
 					int actualView = Main.get().mainPanel.desktop.navigator.stackPanel.getStackIndex();
 					
@@ -129,7 +131,7 @@ public class FindFolderSelectPopup extends DialogBox  {
 					gwtParams.setMimeType("");
 					gwtParams.setKeywords("");
 					gwtParams.setMimeType("");
-					gwtParams.setName(keyword.getText()+"*"); // add wildcard at ends
+					gwtParams.setName(keyword.getText() + "*");
 					gwtParams.setAuthor("");
 					gwtParams.setMailFrom("");
 					gwtParams.setMailTo("");
@@ -139,6 +141,7 @@ public class FindFolderSelectPopup extends DialogBox  {
 					gwtParams.setLastModifiedTo(null);
 					gwtParams.setDomain(GWTQueryParams.FOLDER);
 					gwtParams.setProperties(new HashMap<String, GWTPropertyParams>());
+					
 					find(gwtParams);
 				} else {
 					removeAllRows();

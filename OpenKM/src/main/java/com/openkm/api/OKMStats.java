@@ -70,4 +70,13 @@ public class OKMStats implements StatsModule {
 		log.debug("getFoldersByContext: {}", stats);
 		return stats;
 	}
+
+	@Override
+	public StatsInfo getMailsByContext(String token) throws RepositoryException, DatabaseException {
+		log.debug("getMailsByContext({})", token);
+		StatsModule sm = ModuleManager.getStatsModule();
+		StatsInfo stats = sm.getMailsByContext(token);
+		log.debug("getMailsByContext: {}", stats);
+		return stats;
+	}
 }

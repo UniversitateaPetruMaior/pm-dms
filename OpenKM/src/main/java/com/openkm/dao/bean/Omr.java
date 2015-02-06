@@ -16,13 +16,6 @@ import javax.persistence.Lob;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Type;
-import org.hibernate.search.annotations.Field;
-import org.hibernate.search.annotations.FieldBridge;
-import org.hibernate.search.annotations.Index;
-import org.hibernate.search.annotations.Store;
-
-import com.openkm.module.db.stuff.SetFieldBridge;
-
 
 @Entity
 @Table(name = "OKM_OMR")
@@ -79,8 +72,6 @@ public class Omr implements Serializable {
 	@ElementCollection
 	@Column(name = "OMP_PROPERTY")
 	@CollectionTable(name = "OKM_OMR_PROPERTY", joinColumns = { @JoinColumn(name = "OMP_OMR") })
-	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
-	@FieldBridge(impl = SetFieldBridge.class)
 	protected Set<String> properties = new HashSet<String>();
 	
 	@Column(name = "OMR_ACTIVE", nullable = false)

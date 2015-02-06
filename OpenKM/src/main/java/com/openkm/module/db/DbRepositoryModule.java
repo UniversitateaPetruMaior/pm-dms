@@ -1,26 +1,27 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.db;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -28,11 +29,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import javax.mail.MessagingException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 
 import com.openkm.bean.AppVersion;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Folder;
 import com.openkm.bean.Permission;
 import com.openkm.bean.PropertyGroup;
@@ -43,6 +47,7 @@ import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.ItemExistsException;
 import com.openkm.core.LockException;
+import com.openkm.core.NoSuchGroupException;
 import com.openkm.core.ParseException;
 import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
@@ -56,11 +61,13 @@ import com.openkm.module.RepositoryModule;
 import com.openkm.module.db.base.BaseFolderModule;
 import com.openkm.module.db.stuff.DbSessionManager;
 import com.openkm.spring.PrincipalUtils;
+import com.openkm.util.FileUtils;
 import com.openkm.util.FormUtils;
 import com.openkm.util.MailUtils;
 import com.openkm.util.PathUtils;
 import com.openkm.util.UserActivity;
 import com.openkm.util.WarUtils;
+import com.openkm.util.impexp.RepositoryExporter;
 
 public class DbRepositoryModule implements RepositoryModule {
 	private static Logger log = LoggerFactory.getLogger(DbRepositoryModule.class);
@@ -77,8 +84,17 @@ public class DbRepositoryModule implements RepositoryModule {
 		// Initializes Repository
 		String okmRootPath = create();
 		
-		// Store system session token
-		DbSessionManager.getInstance().putSystemSession();
+		try {
+			// Store system session token
+			DbSessionManager.getInstance().putSystemSession();
+			DbAuthModule.loadUserData(Config.SYSTEM_USER);
+		} catch (ItemExistsException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (PathNotFoundException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (AccessDeniedException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		}
 		
 		log.debug("initialize: {}", okmRootPath);
 		return okmRootPath;
@@ -162,7 +178,8 @@ public class DbRepositoryModule implements RepositoryModule {
 				String repoVer = cfg.getValue();
 				
 				if (!WarUtils.getAppVersion().getMajor().equals(repoVer)) {
-					log.warn("### Actual repository version (" + repoVer + ") differs from application repository version (" + WarUtils.getAppVersion().getMajor() + ") ###");
+					log.warn("### Actual repository version (" + repoVer + ") differs from application repository version ("
+							+ WarUtils.getAppVersion().getMajor() + ") ###");
 					log.warn("### You should upgrade the repository ###");
 				}
 			}
@@ -187,8 +204,8 @@ public class DbRepositoryModule implements RepositoryModule {
 	/**
 	 * Create base node
 	 */
-	private static NodeFolder createBase(String name) throws PathNotFoundException,
-			AccessDeniedException, ItemExistsException, DatabaseException {
+	private static NodeFolder createBase(String name) throws PathNotFoundException, AccessDeniedException, ItemExistsException,
+			DatabaseException {
 		NodeFolder base = new NodeFolder();
 		
 		// Add basic properties
@@ -198,6 +215,10 @@ public class DbRepositoryModule implements RepositoryModule {
 		base.setName(name);
 		base.setUuid(UUID.randomUUID().toString());
 		base.setCreated(Calendar.getInstance());
+		
+		if (Config.STORE_NODE_PATH) {
+			base.setPath("/" + name);
+		}
 		
 		// Auth info
 		int perms = Permission.READ | Permission.WRITE | Permission.DELETE | Permission.SECURITY;
@@ -374,8 +395,7 @@ public class DbRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getPersonalFolderBase(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getPersonalFolderBase(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getPersonalFolderBase({})", token);
 		Folder personalFolder = new Folder();
 		Authentication auth = null, oldAuth = null;
@@ -507,8 +527,7 @@ public class DbRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getCategoriesFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getCategoriesFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getCategoriesFolder({})", token);
 		Folder categoriesFolder = new Folder();
 		Authentication auth = null, oldAuth = null;
@@ -540,8 +559,8 @@ public class DbRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public void purgeTrash(String token) throws PathNotFoundException, AccessDeniedException, LockException,
-			RepositoryException, DatabaseException {
+	public void purgeTrash(String token) throws PathNotFoundException, AccessDeniedException, LockException, RepositoryException,
+			DatabaseException {
 		log.debug("purgeTrash({})", token);
 		Authentication auth = null, oldAuth = null;
 		
@@ -568,11 +587,24 @@ public class DbRepositoryModule implements RepositoryModule {
 				throw new AccessDeniedException("Can't delete a folder with readonly nodes");
 			}
 			
+			if (Config.REPOSITORY_PURGATORY_HOME != null && !Config.REPOSITORY_PURGATORY_HOME.isEmpty()) {
+				File dateDir = FileUtils.createDateDir(Config.REPOSITORY_PURGATORY_HOME);
+				File dstPath = new File(dateDir, PathUtils.getName(userTrashPath));
+				dstPath.mkdir();
+				RepositoryExporter.exportDocuments(null, userTrashPath, dstPath, true, false, null, null);
+			}
+			
 			NodeFolderDAO.getInstance().purge(userTrashUuid, false);
 			
 			// Activity log
 			UserActivity.log(auth.getName(), "PURGE_TRASH", userTrashUuid, userTrashPath, null);
 		} catch (IOException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (ParseException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (NoSuchGroupException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (MessagingException e) {
 			throw new RepositoryException(e.getMessage(), e);
 		} catch (DatabaseException e) {
 			throw e;
@@ -596,8 +628,8 @@ public class DbRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public boolean hasNode(String token, String path) throws RepositoryException, DatabaseException {
-		log.debug("hasNode({}, {})", token, path);
+	public boolean hasNode(String token, String nodeId) throws RepositoryException, DatabaseException {
+		log.debug("hasNode({}, {})", token, nodeId);
 		boolean ret = false;
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
@@ -610,7 +642,11 @@ public class DbRepositoryModule implements RepositoryModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			ret = NodeBaseDAO.getInstance().itemPathExists(path);
+			if (PathUtils.isPath(nodeId)) {
+				ret = NodeBaseDAO.getInstance().itemPathExists(nodeId);
+			} else {
+				ret = NodeBaseDAO.getInstance().itemUuidExists(nodeId);
+			}
 		} catch (DatabaseException e) {
 			throw e;
 		} finally {
@@ -624,8 +660,7 @@ public class DbRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public String getNodePath(String token, String uuid) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public String getNodePath(String token, String uuid) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getNodePath({}, {})", token, uuid);
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
@@ -653,8 +688,7 @@ public class DbRepositoryModule implements RepositoryModule {
 	}
 	
 	@Override
-	public String getNodeUuid(String token, String path) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public String getNodeUuid(String token, String path) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getNodeUuid({}, {})", token, path);
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
@@ -707,14 +741,70 @@ public class DbRepositoryModule implements RepositoryModule {
 		return ret;
 	}
 	
+	@Override
+	public void copyAttributes(String token, String srcId, String dstId, ExtendedAttributes extAttr) throws AccessDeniedException,
+			PathNotFoundException, DatabaseException {
+		log.debug("copyAttributes({}, {}, {}, {})", new Object[] { token, srcId, dstId, extAttr });
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		String srcPath = null;
+		String srcUuid = null;
+		String dstPath = null;
+		String dstUuid = null;
+		
+		if (Config.SYSTEM_READONLY) {
+			throw new AccessDeniedException("System is in read-only mode");
+		}
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			if (PathUtils.isPath(srcId)) {
+				srcPath = srcId;
+				srcUuid = NodeBaseDAO.getInstance().getUuidFromPath(srcId);
+			} else {
+				srcPath = NodeBaseDAO.getInstance().getPathFromUuid(srcId);
+				srcUuid = srcId;
+			}
+			
+			if (PathUtils.isPath(dstId)) {
+				dstPath = dstId;
+				dstUuid = NodeBaseDAO.getInstance().getUuidFromPath(dstId);
+			} else {
+				dstPath = NodeBaseDAO.getInstance().getPathFromUuid(dstId);
+				dstUuid = dstId;
+			}
+			
+			NodeBaseDAO.getInstance().copyAttributes(srcUuid, dstUuid, extAttr);
+			
+			// Check subscriptions
+			// BaseNotificationModule.checkSubscriptions(dstNode, PrincipalUtils.getUser(), "COPY_ATTRIBUTES", null);
+			
+			// Activity log
+			UserActivity.log(PrincipalUtils.getUser(), "COPY_ATTRIBUTES", dstUuid, srcPath, dstPath);
+		} catch (DatabaseException e) {
+			throw e;
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+	
 	/**
 	 * Register custom node definition from file.
+	 * 
+	 * @param pgDefFile Path to file where is the Property Groups definition.
 	 */
-	public synchronized static void registerPropertyGroups(String xml) throws IOException, ParseException,
-			DatabaseException {
+	public synchronized static void registerPropertyGroups(String pgDefFile) throws IOException, ParseException, DatabaseException {
 		// Check xml property groups definition
 		FormUtils.resetPropertyGroupsForms();
-		Map<PropertyGroup, List<FormElement>> pgForms = FormUtils.parsePropertyGroupsForms(xml);
+		Map<PropertyGroup, List<FormElement>> pgForms = FormUtils.parsePropertyGroupsForms(pgDefFile);
 		
 		for (Entry<PropertyGroup, List<FormElement>> pgForm : pgForms.entrySet()) {
 			PropertyGroup pg = pgForm.getKey();
@@ -724,7 +814,7 @@ public class DbRepositoryModule implements RepositoryModule {
 			for (FormElement fe : pgForm.getValue()) {
 				String name = fe.getName();
 				String type = fe.getClass().getName();
-				rpg.getProperties().put(name, type);	
+				rpg.getProperties().put(name, type);
 			}
 			
 			RegisteredPropertyGroupDAO.getInstance().createOrUpdate(rpg);

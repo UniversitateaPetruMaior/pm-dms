@@ -55,7 +55,6 @@ import com.openkm.bean.Note;
 import com.openkm.bean.Notification;
 import com.openkm.bean.Permission;
 import com.openkm.bean.Property;
-import com.openkm.cache.UserItemsManager;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
@@ -110,11 +109,6 @@ public class BaseFolderModule {
 		folderNode.setProperty(Permission.ROLES_SECURITY, rolesSecurity);
 		
 		parentNode.save();
-		
-		if (Config.USER_ITEM_CACHE) {
-			// Update user items size
-			UserItemsManager.incFolders(session.getUserID(), 1);
-		}
 		
 		return folderNode;
 	}
@@ -379,10 +373,6 @@ public class BaseFolderModule {
 		
 		String author = fldNode.getProperty(Folder.AUTHOR).getString();
 		fldNode.remove();
-		
-		if (Config.USER_ITEM_CACHE) {
-			UserItemsManager.decFolders(author, 1);
-		}
 	}
 	
 	/**

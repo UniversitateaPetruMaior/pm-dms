@@ -234,7 +234,6 @@ public class MacrosServlet extends OKMRemoteServiceServlet implements OKMMacrosS
 				// Add full grants to actual remote user
 				String remoteUser = getThreadLocalRequest().getRemoteUser();
 				int allGrants = Permission.ALL_GRANTS;
-				
 				OKMAuth.getInstance().grantUser(null, folder, remoteUser, allGrants, false);
 				
 				// Remove all grants except remote user

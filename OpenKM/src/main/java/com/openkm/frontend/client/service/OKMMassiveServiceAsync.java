@@ -24,6 +24,7 @@ package com.openkm.frontend.client.service;
 import java.util.List;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.openkm.frontend.client.bean.form.GWTFormElement;
 
 /**
  * @author jllort
@@ -33,6 +34,16 @@ public interface OKMMassiveServiceAsync {
 	public void copy(List<String> paths, String fldPath, AsyncCallback<?> callback);
 	public void move(List<String> paths, String fldPath, AsyncCallback<?> callback);
 	public void delete(List<String> paths, AsyncCallback<?> callback);
-	public void checkout(List<String> paths, AsyncCallback<List<String>> callback);
-	public void cancelCheckout (List<String> paths, AsyncCallback<?> callback);
+	public void addNote(List<String> paths, String text, AsyncCallback<?> callback);
+	public void addCategory(List<String> paths, String category, AsyncCallback<?> callback);
+	public void removeCategory(List<String> paths, String category, AsyncCallback<?> callback);
+	public void addKeyword(List<String> paths, String keyword, AsyncCallback<?> callback);
+	public void removeKeyword(List<String> paths, String keyword, AsyncCallback<?> callback);
+	public void addPropertyGroup(List<String> paths, String grpName, AsyncCallback<?> callback);
+	public void setProperties(List<String> paths, String grpName, List<GWTFormElement> formProperties, AsyncCallback<?> callback);
+	public void lock(List<String> paths, AsyncCallback<?> callback);
+	public void unlock(List<String> paths, AsyncCallback<?> callback);
+	public void notify(List<String> uuids, String mails, String users, String roles, String message, boolean attachment, AsyncCallback<?> callback);
+	public void forwardMail(List<String> uuids, String mails, String users, String roles, String message, AsyncCallback<?> callback);
+	public void setMixedProperties(List<String> uuidList, List<GWTFormElement> formProperties, boolean recursive, AsyncCallback<?> callback);
 }

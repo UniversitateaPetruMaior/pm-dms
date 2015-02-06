@@ -105,7 +105,7 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 		
 		// Table data SortableFixedWidthGrid.HOVERING_POLICY_CELL
 		dataTable.setSelectionPolicy(SelectionGrid.SelectionPolicy.ONE_ROW);
-		setResizePolicy(ResizePolicy.UNCONSTRAINED);
+		setResizePolicy(ResizePolicy.FILL_WIDTH);
 		setScrollPolicy(ScrollPolicy.BOTH);
 		
 		columnSorter = new ExtendedColumnSorter();
@@ -114,7 +114,6 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 		// Sets some events
 		DOM.sinkEvents(getDataWrapper(), Event.ONCLICK | Event.ONDBLCLICK | Event.ONMOUSEDOWN | Event.ONMOUSEUP
 				| Event.ONMOUSEMOVE | Event.ONMOUSEUP);
-		
 	}
 	
 	/**
@@ -249,23 +248,28 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			dataTable.setHTML(row, col, folder.getName());
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_LEFT);
 		}
+		
 		if (profileFileBrowser.isSizeVisible()) {
 			dataTable.setHTML(row, col, "&nbsp;");
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isLastModifiedVisible()) {
 			DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
 			dataTable.setHTML(row, col, dtf.format(folder.getCreated()));
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isAuthorVisible()) {
 			dataTable.setHTML(row, col, folder.getUser().getUsername());
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isVersionVisible()) {
 			dataTable.setHTML(row, col, "&nbsp;");
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (!update) {
 			dataTable.setHTML(row, colDataIndex, "" + (dataIndexValue++));
 			dataTable.getCellFormatter().setVisible(row, colDataIndex, false);
@@ -324,13 +328,11 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 	 * Sets the document to the row
 	 * 
 	 * Update indicates should be updated selected row otherside inserts new
-	 * 
-	 * @param doc
-	 * @param update
 	 */
 	public void addRow(GWTDocument doc, boolean update) {
 		int col = 0;
 		final int row = (update)?getSelectedRow():dataTable.getRowCount();
+		
 		if (update) {
 			data.put(new Integer(dataTable.getText(row, colDataIndex)), doc);
 		} else {
@@ -354,12 +356,25 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 				dataTable
 						.setHTML(row, col, dataTable.getHTML(row, col) + Util.imageItemHTML("img/icon/subscribed.gif"));
 			}
+			
 			// Document has notes
 			if (doc.isHasNotes()) {
 				dataTable.setHTML(row, col, dataTable.getHTML(row, col) + Util.imageItemHTML("img/icon/note.gif"));
 			}
-			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_RIGHT);
 			
+			// Document encrypted
+			if (doc.getCipherName() != null && !doc.getCipherName().equals("")) {
+				dataTable.setHTML(row, col,
+						dataTable.getHTML(row, col) + Util.imageItemHTML("img/icon/actions/crypt.png"));
+			}
+			
+			// Document signed
+			if (doc.isSigned()) {
+				dataTable.setHTML(row, col,
+						dataTable.getHTML(row, col) + Util.imageItemHTML("img/icon/actions/digital_signature.png"));
+			}
+			
+			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_RIGHT);
 		}
 		
 		if (profileFileBrowser.isMassiveVisible()) {
@@ -376,33 +391,40 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 					} else {
 						massiveSelected.remove(new Integer(dataTable.getText(row, colDataIndex)));
 					}
+					evaluateMergePdf(); // Only when document checkbox is changed ( only document can be merged )
 				}
 			});
 			
 			dataTable.setWidget(row, col, checkBox);
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isIconVisible()) {
 			dataTable.setHTML(row, col, Util.mimeImageHTML(doc.getMimeType()));
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isNameVisible()) {
 			dataTable.setHTML(row, col, doc.getName());
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_LEFT);
 		}
+		
 		if (profileFileBrowser.isSizeVisible()) {
 			dataTable.setHTML(row, col, Util.formatSize(doc.getActualVersion().getSize()));
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isLastModifiedVisible()) {
 			DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
 			dataTable.setHTML(row, col, dtf.format(doc.getLastModified()));
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isAuthorVisible()) {
 			dataTable.setHTML(row, col, doc.getActualVersion().getUser().getUsername());
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isVersionVisible()) {
 			Hyperlink hLink = new Hyperlink();
 			hLink.setText(doc.getActualVersion().getName());
@@ -410,6 +432,7 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			dataTable.setWidget(row, col, hLink);
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (!update) {
 			dataTable.setHTML(row, colDataIndex, "" + (dataIndexValue++));
 			dataTable.getCellFormatter().setVisible(row, colDataIndex, false);
@@ -422,8 +445,6 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 	
 	/**
 	 * addRow
-	 * 
-	 * @param mail
 	 */
 	public void addRow(GWTMail mail) {
 		addRow(mail, false);
@@ -433,13 +454,11 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 	 * Sets the mail to the row
 	 * 
 	 * Update indicates should be updated selected row otherside inserts new
-	 * 
-	 * @param mail
-	 * @param update
 	 */
 	public void addRow(GWTMail mail, boolean update) {
 		int col = 0;
 		final int row = (update)?getSelectedRow():dataTable.getRowCount();
+		
 		if (update) {
 			data.put(new Integer(dataTable.getText(row, colDataIndex)), mail);
 		} else {
@@ -493,23 +512,28 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			dataTable.setHTML(row, col, mail.getSubject());
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_LEFT);
 		}
+		
 		if (profileFileBrowser.isSizeVisible()) {
 			dataTable.setHTML(row, col, Util.formatSize(mail.getSize()));
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isLastModifiedVisible()) {
 			DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
 			dataTable.setHTML(row, col, dtf.format(mail.getReceivedDate()));
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isAuthorVisible()) {
 			dataTable.setHTML(row, col, mail.getFrom());
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (profileFileBrowser.isVersionVisible()) {
 			dataTable.setHTML(row, col, "&nbsp;");
 			dataTable.getCellFormatter().setHorizontalAlignment(row, col++, HasHorizontalAlignment.ALIGN_CENTER);
 		}
+		
 		if (!update) {
 			dataTable.setHTML(row, colDataIndex, "" + (dataIndexValue++));
 			dataTable.getCellFormatter().setVisible(row, colDataIndex, false);
@@ -543,6 +567,7 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			dragged = false;
 			headerFired = true;
 		}
+		
 		boolean isRenaming = false;
 		
 		// If some action is on course must do speacil actions, this must be made before selected row
@@ -611,35 +636,38 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 				// On double click not sends event to onCellClicked across super.onBrowserEvent();
 				// Disables the event propagation the sequence is:
 				// Two time entry onCellClicked before entry on onBrowserEvent and disables the
-				// Tree onCellClicked that produces inconsistence error refreshing
+				// Tree onCellClicked that produces inconsistency error refreshing
 				DOM.eventCancelBubble(event, true);
 				
 				if (!headerFired && getSelectedRow() >= 0) {
 					if (isFolderSelected()) {
 						Main.get().mainPanel.desktop.browser.tabMultiple.enableTabFolder();
-						if (getSelectedRow() != selectedRow) { // Must not refresh properties on double click if row is
-																// yet selected
+						
+						// Must not refresh properties on double click if row is already selected
+						if (getSelectedRow() != selectedRow) {
 							Main.get().mainPanel.desktop.browser.tabMultiple.tabFolder.setProperties(getFolder());
 						}
+						
 						Main.get().activeFolderTree.setActiveNode(getFolder().getPath(), false, true);
 					} else if (isMailSelected()) {
 						Main.get().mainPanel.desktop.browser.tabMultiple.enableTabMail();
 						GWTMail mail = getMail();
-						if (getSelectedRow() != selectedRow) { // Must not refresh properties on double click if row is
-																// yet selected
-							Main.get().mainPanel.desktop.browser.tabMultiple.tabMail.setProperties(mail);
+						Main.get().mainPanel.topPanel.toolBar.checkToolButtonPermissions(mail, Main.get().activeFolderTree.getFolder());
+						
+						// We come here before executing click ( click is always executed )
+						if (!isRenaming && Main.get().mainPanel.topPanel.toolBar.getToolBarOption().downloadOption) {
+							if (Main.get().workspaceUserProperties.getWorkspace().getAvailableOption().isDownloadOption()) {
+								downloadMail();
+							}
 						}
-						Main.get().mainPanel.topPanel.toolBar.checkToolButtonPermissions(mail,
-								Main.get().activeFolderTree.getFolder());
 					} else {
 						Main.get().mainPanel.desktop.browser.tabMultiple.enableTabDocument();
 						GWTDocument doc = getDocument();
-						Main.get().mainPanel.topPanel.toolBar.checkToolButtonPermissions(doc,
-								Main.get().activeFolderTree.getFolder());
+						Main.get().mainPanel.topPanel.toolBar.checkToolButtonPermissions(doc, Main.get().activeFolderTree.getFolder());
+						
 						// We come here before executing click ( click is always executed )
 						if (!isRenaming && Main.get().mainPanel.topPanel.toolBar.getToolBarOption().downloadOption) {
-							if (Main.get().workspaceUserProperties.getWorkspace().getAvailableOption()
-									.isDownloadOption()) {
+							if (Main.get().workspaceUserProperties.getWorkspace().getAvailableOption().isDownloadOption()) {
 								downloadDocument(false);
 							}
 						}
@@ -660,6 +688,7 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 							&& Main.get().mainPanel.desktop.navigator.getStackIndex() != UIDesktopConstants.NAVIGATOR_THESAURUS
 							&& Main.get().mainPanel.desktop.navigator.getStackIndex() != UIDesktopConstants.NAVIGATOR_TRASH) {
 						String dragText = "";
+						
 						if (isDocumentSelected()) {
 							GWTDocument doc = getDocument();
 							dragText = Util.mimeImageHTML(doc.getMimeType())+doc.getName();
@@ -1098,32 +1127,10 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 	 * Download documents
 	 */
 	public void downloadDocuments(boolean checkout, List<String> uuidList) {
-		if (uuidList.size()>0) {			
-			Util.downloadFilesByUUID(uuidList, (checkout ? "checkout" : ""));
-		}
-	}
-	
-	/**
-	 * Download documents
-	 */
-	public void downloadDocuments(boolean checkout) {
-		List<String> uuidList = new ArrayList<String>();
-		
-		for (int i = 0; dataTable.getRowCount() > i; i++) {
-			CheckBox checkBox = (CheckBox) dataTable.getWidget(i, colMassiveIndex);
-			if (checkBox.getValue()) {
-				Object obj = data.get(Integer.parseInt(dataTable.getText(i, colDataIndex)));
-				if (obj instanceof GWTDocument) {
-					uuidList.add(((GWTDocument) obj).getUuid());
-				}
-			}
-		}
-		
 		if (uuidList.size() > 0) {
 			Util.downloadFilesByUUID(uuidList, (checkout ? "checkout" : ""));
 		}
 	}
-	
 	
 	/**
 	 * Download document
@@ -1138,6 +1145,18 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 	}
 	
 	/**
+	 * Download mail
+	 */
+	public void downloadMail() {
+		// Log.debug("downloadMail()");
+		if (isMailSelected()) {
+			// Log.debug("jump to download");
+			Util.downloadFileByUUID(getMail().getUuid(), "");
+		}
+		// Log.debug("downloadMail: void");
+	}
+	
+	/**
 	 * Download document as PDF
 	 */
 	public void downloadDocumentPdf() {
@@ -1147,6 +1166,18 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			Util.downloadFilePdf(getDocument().getUuid());
 		}
 		// Log.debug("downloadDocumentPdf: void");
+	}
+	
+	/**
+	 * print
+	 */
+	public void print() {
+		// Log.debug("print()");
+		if (isDocumentSelected()) {
+			Log.debug("jump to download");
+			Util.print(getDocument().getUuid());
+		}
+		// Log.debug("print: void");
 	}
 	
 	/**
@@ -1232,6 +1263,7 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			checkBox.setValue(true);
 			massiveSelected.add(Integer.parseInt(dataTable.getText(i, colDataIndex)));
 		}
+		evaluateMergePdf();
 	}
 	
 	/**
@@ -1260,6 +1292,7 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 				massiveSelected.add(Integer.parseInt(dataTable.getText(i, colDataIndex)));
 			}
 		}
+		evaluateMergePdf();
 	}
 	
 	/**
@@ -1285,6 +1318,7 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			CheckBox checkBox = (CheckBox) dataTable.getWidget(i, colMassiveIndex);
 			checkBox.setValue(false);
 		}
+		evaluateMergePdf();
 	}
 	
 	/**
@@ -1317,6 +1351,128 @@ public class ExtendedScrollTable extends ScrollTable implements OriginPanel {
 			}
 		}
 		return paths;
+	}
+	
+	/**
+	 * getAllSelectedUUIDs
+	 */
+	public List<String> getAllSelectedUUIDs() {
+		List<String> uuidList = new ArrayList<String>();
+		
+		for (int i = 0; dataTable.getRowCount() > i; i++) {
+			CheckBox checkBox = (CheckBox) dataTable.getWidget(i, colMassiveIndex);
+			
+			if (checkBox.getValue()) {
+				Object obj = data.get(Integer.parseInt(dataTable.getText(i, colDataIndex)));
+				if (obj instanceof GWTDocument) {
+					uuidList.add(((GWTDocument) obj).getUuid());
+				} else if (obj instanceof GWTFolder) {
+					uuidList.add(((GWTFolder) obj).getUuid());
+				} else if (obj instanceof GWTMail) {
+					uuidList.add(((GWTMail) obj).getUuid());
+				}
+			}
+		}
+		
+		return uuidList;
+	}
+	
+	/**
+	 * getAllSelectedDocumentsUUIDs
+	 */
+	public List<String> getAllSelectedDocumentsUUIDs() {
+		List<String> uuidList = new ArrayList<String>();
+		
+		for (int i = 0; dataTable.getRowCount() > i; i++) {
+			CheckBox checkBox = (CheckBox) dataTable.getWidget(i, colMassiveIndex);
+			
+			if (checkBox.getValue()) {
+				Object obj = data.get(Integer.parseInt(dataTable.getText(i, colDataIndex)));
+				if (obj instanceof GWTDocument) {
+					uuidList.add(((GWTDocument) obj).getUuid());
+				}
+			}
+		}
+		
+		return uuidList;
+	}
+	
+	/**
+	 * getAllSelectedDocumentsPaths
+	 */
+	public List<String> getAllSelectedDocumentsPaths() {
+		List<String> pathList = new ArrayList<String>();
+		
+		for (int i = 0; dataTable.getRowCount() > i; i++) {
+			CheckBox checkBox = (CheckBox) dataTable.getWidget(i, colMassiveIndex);
+			
+			if (checkBox.getValue()) {
+				Object obj = data.get(Integer.parseInt(dataTable.getText(i, colDataIndex)));
+				if (obj instanceof GWTDocument) {
+					pathList.add(((GWTDocument) obj).getPath());
+				}
+			}
+		}
+		
+		return pathList;
+	}
+	
+	/**
+	 * getAllSelectedMailUUIDs
+	 */
+	public List<String> getAllSelectedMailUUIDs() {
+		List<String> uuidList = new ArrayList<String>();
+		
+		for (int i = 0; dataTable.getRowCount() > i; i++) {
+			CheckBox checkBox = (CheckBox) dataTable.getWidget(i, colMassiveIndex);
+			
+			if (checkBox.getValue()) {
+				Object obj = data.get(Integer.parseInt(dataTable.getText(i, colDataIndex)));
+				if (obj instanceof GWTMail) {
+					uuidList.add(((GWTMail) obj).getUuid());
+				}
+			}
+		}
+		
+		return uuidList;
+	}
+	
+	/**
+	 * getAllSelectedPdfDocuments
+	 * 
+	 * @return
+	 */
+	public List<GWTDocument> getAllSelectedPdfDocuments() {
+		List<GWTDocument> docs = new ArrayList<GWTDocument>();
+		for (int i = 0; dataTable.getRowCount() > i; i++) {
+			CheckBox checkBox = (CheckBox) dataTable.getWidget(i, colMassiveIndex);
+			if (checkBox.getValue()) {
+				Object obj = data.get(Integer.parseInt(dataTable.getText(i, colDataIndex)));
+				if (obj instanceof GWTDocument) {
+					GWTDocument doc = (GWTDocument) obj;
+					if (doc.getMimeType().equals("application/pdf")) {
+						docs.add(doc);
+					}
+				}
+			}
+		}
+		return docs;
+	}
+	
+	/**
+	 * evaluateMergePdf
+	 */
+	private void evaluateMergePdf() {
+		if (isMassive() && 
+			(Main.get().mainPanel.desktop.navigator.getStackIndex() != UIDesktopConstants.NAVIGATOR_THESAURUS && 
+			 Main.get().mainPanel.desktop.navigator.getStackIndex() != UIDesktopConstants.NAVIGATOR_CATEGORIES && 
+			 Main.get().mainPanel.desktop.navigator.getStackIndex() != UIDesktopConstants.NAVIGATOR_METADATA &&
+			 Main.get().mainPanel.desktop.navigator.getStackIndex() != UIDesktopConstants.NAVIGATOR_TRASH) &&
+			 getAllSelectedPdfDocuments().size()>1) {
+			Main.get().mainPanel.topPanel.toolBar.enablePdfMerge();
+		} else {
+			Main.get().mainPanel.topPanel.toolBar.disablePdfMerge();
+		}
 	}
 	
 	/**

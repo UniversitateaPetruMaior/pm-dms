@@ -59,7 +59,6 @@ public class Folder extends Composite {
 	private HTML subcribedUsersText;
 	private CategoryManager categoryManager;
 	private KeywordManager keywordManager;
-	private boolean visible = true;
 	private boolean remove = true;
 	
 	/**
@@ -74,7 +73,6 @@ public class Folder extends Composite {
 		tableSubscribedUsers = new FlexTable();
 		scrollPanel = new ScrollPanel(table);
 		
-		tableProperties.setWidth("100%");
 		tableProperties.setHTML(0, 0, "<b>"+Main.i18n("folder.uuid")+"</b>");
 		tableProperties.setHTML(0, 1, "");
 		tableProperties.setHTML(1, 0, "<b>"+Main.i18n("folder.name")+"</b>");
@@ -140,6 +138,7 @@ public class Folder extends Composite {
 		for (int i=0; i<11; i++) {
 			setRowWordWarp(i, 0, true, tableProperties);
 		}
+		
 		setRowWordWarp(0, 0, true, tableSubscribedUsers);
 		
 		tableProperties.setStyleName("okm-DisableSelect");
@@ -176,34 +175,34 @@ public class Folder extends Composite {
 	 * 
 	 * @param folder The folder object
 	 */
-	public void set(GWTFolder folder) {
-		this.folder = folder;
+	public void set(GWTFolder fld) {
+		this.folder = fld;
 		
 		// URL clipboard button
 		String url = Main.get().workspaceUserProperties.getApplicationURL();
 		url += "?uuid=" + URL.encodeQueryString(URL.encodeQueryString(folder.getUuid()));
-		tableProperties.setWidget(9, 1, new HTML("<div id=\"folderurlclipboardcontainer\"></div>\n"));
-		Util.createFolderURLClipboardButton(url);
+		tableProperties.setWidget(9, 1, new HTML("<div id=\"urlClipboard\"></div>\n"));
+		Util.createClipboardButton("urlClipboard", url);
 		
 		// Webdav
 		String webdavUrl = Main.get().workspaceUserProperties.getApplicationURL();
 		String webdavPath = folder.getPath();
 		
 		// Replace only in case webdav fix is enabled
-		if (Main.get().workspaceUserProperties.getWorkspace()!=null && Main.get().workspaceUserProperties.getWorkspace().isWebdavFix()) {
+		if (Main.get().workspaceUserProperties.getWorkspace() != null && Main.get().workspaceUserProperties.getWorkspace().isWebdavFix()) {
 			webdavPath = webdavPath.replace("okm:", "okm_");
 		}
 		
 		// Login case write empty folder
-		if (!webdavUrl.equals("")) {
-			// webdavPath = Util.encodePathElements(webdavPath);
+		if (!webdavUrl.isEmpty()) {
+			webdavPath = Util.encodePathElements(webdavPath);
 			webdavUrl = webdavUrl.substring(0, webdavUrl.lastIndexOf('/')) + "/webdav" + webdavPath;
 		}
 		
-		tableProperties.setWidget(10, 1, new HTML("<div id=\"folderwebdavclipboardcontainer\"></div>\n"));
-		Util.createFolderWebDavClipboardButton(webdavUrl);
+		tableProperties.setWidget(10, 1, new HTML("<div id=\"webdavClipboard\"></div>\n"));
+		Util.createClipboardButton("webdavClipboard", webdavUrl);
 		
-		tableProperties.setHTML(0, 1, folder.getUuid());
+		tableProperties.setHTML(0, 1, folder.getUuid()); 
 		tableProperties.setHTML(1, 1, folder.getName());
 		tableProperties.setHTML(2, 1, folder.getParentPath());
 		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
@@ -217,7 +216,12 @@ public class Folder extends Composite {
 		
 		tableProperties.setWidget(8, 1, keywordManager.getKeywordPanel());
 		
-		remove = ((folder.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE) && visible;
+		// Enable select
+		tableProperties.getFlexCellFormatter().setStyleName(0, 1, "okm-EnableSelect");
+		tableProperties.getFlexCellFormatter().setStyleName(1, 1, "okm-EnableSelect");
+		tableProperties.getFlexCellFormatter().setStyleName(2, 1, "okm-EnableSelect");
+		
+		remove = ((folder.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE);
 		
 		// Enables or disables change keywords with user permissions and document is not check-out or locked
 		if (remove)  {
@@ -231,13 +235,14 @@ public class Folder extends Composite {
 		// Case categories, metadata or thesausus view is enabled file browser panel must be selected to have keywords and
 		// categories tab panel enabled. Never should be asigned to categories, metadata or thesaurus folders.
 		if ((Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_CATEGORIES ||
+			 Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_METADATA ||
 			 Main.get().mainPanel.desktop.navigator.getStackIndex() == UIDesktopConstants.NAVIGATOR_THESAURUS) 
 			 && !Main.get().mainPanel.desktop.browser.fileBrowser.isPanelSelected()) {
 			keywordManager.setVisible(false);
 			categoryManager.setVisible(false);
 		}
 		
-		// Sets wordWrap for al rows
+		// Sets wordWrap for all rows
 		for (int i=0; i<9; i++) {
 			setRowWordWarp(i, 1, true, tableProperties);
 		}
@@ -286,11 +291,6 @@ public class Folder extends Composite {
 				tableProperties.getRowFormatter().setVisible(6, true); // Number of documents
 				tableProperties.getRowFormatter().setVisible(7, true); // Number of e-mails
 				break;
-		}
-		if (actualView==UIDesktopConstants.NAVIGATOR_TRASH) {
-			tableProperties.getCellFormatter().setVisible(8,0,false);
-		} else {
-			tableProperties.getCellFormatter().setVisible(8,0,true);
 		}
 		
 		// keywords
@@ -350,7 +350,7 @@ public class Folder extends Composite {
 		tableProperties.setHTML(9, 0, "<b>"+Main.i18n("folder.url")+"</b>");
 		tableProperties.setHTML(10, 0, "<b>"+Main.i18n("folder.webdav")+"</b>");
 		
-		if (folder!=null) {
+		if (folder != null) {
 			if (folder.isSubscribed()) {
 				tableProperties.setHTML(4, 1, Main.i18n("folder.subscribed.yes"));
 			} else {
@@ -413,7 +413,6 @@ public class Folder extends Composite {
 	 * @param visible The visible value
 	 */
 	public void setVisibleButtons(boolean visible) {
-		this.visible = visible;
 		keywordManager.setVisible(visible);
 		categoryManager.setVisible(visible);
 	}

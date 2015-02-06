@@ -21,6 +21,7 @@
 
 package com.openkm.servlet.frontend;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,9 +37,10 @@ import com.openkm.api.OKMSearch;
 import com.openkm.bean.QueryResult;
 import com.openkm.bean.ResultSet;
 import com.openkm.core.DatabaseException;
+import com.openkm.core.NoSuchGroupException;
 import com.openkm.core.ParseException;
+import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
-import com.openkm.dao.QueryParamsDAO;
 import com.openkm.dao.bean.QueryParams;
 import com.openkm.frontend.client.OKMException;
 import com.openkm.frontend.client.bean.GWTKeyword;
@@ -47,6 +49,7 @@ import com.openkm.frontend.client.bean.GWTQueryResult;
 import com.openkm.frontend.client.bean.GWTResultSet;
 import com.openkm.frontend.client.constants.service.ErrorCode;
 import com.openkm.frontend.client.service.OKMSearchService;
+import com.openkm.principal.PrincipalAdapterException;
 import com.openkm.servlet.frontend.util.KeywordComparator;
 import com.openkm.servlet.frontend.util.QueryParamsComparator;
 import com.openkm.util.GWTUtil;
@@ -150,7 +153,7 @@ public class SearchServlet extends OKMRemoteServiceServlet implements OKMSearchS
 			results = OKMSearch.getInstance().findPaginated(null, queryParams, offset, limit);
 			
 			for (QueryResult queryResult : results.getResults()) {
-				GWTQueryResult gwtQueryResult = GWTUtil.copy(queryResult);
+				GWTQueryResult gwtQueryResult = GWTUtil.copy(queryResult, getUserWorkspaceSession());
 				resultList.add(gwtQueryResult);
 			}
 			
@@ -191,8 +194,8 @@ public class SearchServlet extends OKMRemoteServiceServlet implements OKMSearchS
 			queryParams = GWTUtil.copy(params);
 			results = OKMSearch.getInstance().find(null, queryParams);
 			
-			for (QueryResult queryResult : results ) {
-				GWTQueryResult gwtQueryResult = GWTUtil.copy(queryResult);
+			for (QueryResult queryResult : results) {
+				GWTQueryResult gwtQueryResult = GWTUtil.copy(queryResult, getUserWorkspaceSession());
 				resultList.add(gwtQueryResult);
 			}
 			
@@ -291,38 +294,6 @@ public class SearchServlet extends OKMRemoteServiceServlet implements OKMSearchS
 	}
 	
 	@Override
-	public void share(long qpId) throws OKMException {
-		log.debug("share({})", qpId);
-		updateSessionManager();
-		
-		try {
-			QueryParamsDAO.share(qpId, getThreadLocalRequest().getRemoteUser());
-		} catch (DatabaseException e) {
-			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_Database),
-					e.getMessage());
-		}
-		
-		log.debug("share: void");
-	}
-	
-	@Override
-	public void unshare(long qpId) throws OKMException {
-		log.debug("share({})", qpId);
-		updateSessionManager();
-		
-		try {
-			QueryParamsDAO.unshare(qpId, getThreadLocalRequest().getRemoteUser());
-		} catch (DatabaseException e) {
-			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_Database),
-					e.getMessage());
-		}
-		
-		log.debug("share: void");
-	}
-	
-	@Override
 	public GWTResultSet findSimpleQueryPaginated(String statement, int offset, int limit) throws OKMException {
 		log.debug("findSimpleQueryPaginated({})", statement);
 		List<GWTQueryResult> resultList = new ArrayList<GWTQueryResult>();
@@ -333,7 +304,7 @@ public class SearchServlet extends OKMRemoteServiceServlet implements OKMSearchS
 		try {
 			results = OKMSearch.getInstance().findSimpleQueryPaginated(null, statement, offset, limit);
 			for (QueryResult queryResult : results.getResults()) {
-				GWTQueryResult gwtQueryResult = GWTUtil.copy(queryResult);
+				GWTQueryResult gwtQueryResult = GWTUtil.copy(queryResult, getUserWorkspaceSession());
 				resultList.add(gwtQueryResult);
 			}
 			
@@ -354,6 +325,53 @@ public class SearchServlet extends OKMRemoteServiceServlet implements OKMSearchS
 		}
 		
 		log.debug("findSimpleQueryPaginated: {}", resultList);
+		return gwtResultSet;
+	}
+	
+	@Override
+	public GWTResultSet findMoreLikeThis(String uuid) throws OKMException {
+		List<GWTQueryResult> resultList = new ArrayList<GWTQueryResult>();
+		GWTResultSet gwtResultSet = new GWTResultSet();
+		ResultSet results;
+		try {
+			results = OKMSearch.getInstance().findMoreLikeThis(null, uuid, 100);
+			for (QueryResult queryResult : results.getResults()) {
+				GWTQueryResult gwtQueryResult;
+				gwtQueryResult = GWTUtil.copy(queryResult, getUserWorkspaceSession());
+				resultList.add(gwtQueryResult);
+			}
+			
+			gwtResultSet.setTotal(results.getTotal());
+			gwtResultSet.setResults(resultList);
+		} catch (RepositoryException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_Repository),
+					e.getMessage());
+		} catch (DatabaseException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_Database),
+					e.getMessage());
+		} catch (PrincipalAdapterException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_PrincipalAdapter),
+					e.getMessage());
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_IO),
+					e.getMessage());
+		} catch (ParseException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_Parse),
+					e.getMessage());
+		} catch (NoSuchGroupException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_NoSuchGroup),
+					e.getMessage());
+		} catch (PathNotFoundException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMSearchService, ErrorCode.CAUSE_PathNotFound),
+					e.getMessage());
+		}
 		return gwtResultSet;
 	}
 }

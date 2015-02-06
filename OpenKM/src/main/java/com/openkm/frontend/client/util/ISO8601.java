@@ -33,7 +33,7 @@ import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
  *
  */
 public class ISO8601 {
-	private static final String BASIC_PATTER = "yyyyMMddHHmmss";
+	public static final String BASIC_PATTER = "yyyyMMddHHmmss";
 	
 	/**
 	 * Parse string date in format "YYYY-MM-DDThh:mm:ss.SSSTZD"

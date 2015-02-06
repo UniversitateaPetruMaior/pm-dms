@@ -32,17 +32,20 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.core.DatabaseException;
 import com.openkm.core.PathNotFoundException;
+import com.openkm.dao.ConfigDAO;
 import com.openkm.dao.UserConfigDAO;
 import com.openkm.dao.bean.MailAccount;
 import com.openkm.dao.bean.Profile;
 import com.openkm.dao.bean.UserConfig;
 import com.openkm.frontend.client.OKMException;
+import com.openkm.frontend.client.bean.GWTConfig;
 import com.openkm.frontend.client.bean.GWTConverterStatus;
 import com.openkm.frontend.client.bean.GWTFileUploadingStatus;
-import com.openkm.frontend.client.bean.GWTTestImap;
+import com.openkm.frontend.client.bean.GWTTestMail;
 import com.openkm.frontend.client.constants.service.ErrorCode;
 import com.openkm.frontend.client.service.OKMGeneralService;
 import com.openkm.module.jcr.stuff.JCRUtils;
+import com.openkm.util.GWTUtil;
 import com.openkm.util.MailUtils;
 
 /**
@@ -89,7 +92,7 @@ public class GeneralServlet extends OKMRemoteServiceServlet implements OKMGenera
 			cos.setStatus(listener.getStatus());
 			cos.setConversionFinish(listener.isConversionFinish());
 			cos.setError(listener.getError());
-			if (listener.getError()!=null) {
+			if (listener.getError() != null) {
 				cos.setConversionFinish(true);
 			}
 			if (listener.isConversionFinish()) {
@@ -102,19 +105,19 @@ public class GeneralServlet extends OKMRemoteServiceServlet implements OKMGenera
 	}
 	
 	@Override
-	public GWTTestImap testImapConnection(String host, String user, String password, String imapFolder) {
-		log.debug("testImapConnection({}, {}, {}, {})", new Object[] { host, user, password, imapFolder });
-		GWTTestImap test = new GWTTestImap();
+	public GWTTestMail testMailConnection(String protocol, String host, String user, String password, String mailFolder) {
+		log.debug("testMailConnection({}, {}, {}, {}, {})", new Object[] { protocol, host, user, password, mailFolder });
+		GWTTestMail test = new GWTTestMail();
 		updateSessionManager();
 		
 		try {
 			test.setError(false);
 			MailAccount ma = new MailAccount();
-			ma.setMailProtocol(MailAccount.PROTOCOL_IMAP);
+			ma.setMailProtocol(protocol);
 			ma.setMailHost(host);
 			ma.setMailUser(user);
 			ma.setMailPassword(password);
-			ma.setMailFolder(imapFolder);
+			ma.setMailFolder(mailFolder);
 			ma.setMailMarkSeen(true);
 			MailUtils.testConnection(ma);
 		} catch (IOException e) {
@@ -123,7 +126,7 @@ public class GeneralServlet extends OKMRemoteServiceServlet implements OKMGenera
 			e.printStackTrace();
 		}
 		
-		log.debug("testImapConnection: {}", test);
+		log.debug("testMailConnection: {}", test);
 		return test;
 	}
 	
@@ -141,16 +144,31 @@ public class GeneralServlet extends OKMRemoteServiceServlet implements OKMGenera
 			extensions = new ArrayList<String>(up.getPrfMisc().getExtensions());
 		} catch (PathNotFoundException e) {
 			log.warn(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMGeneralService, ErrorCode.CAUSE_PathNotFound),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMGeneralService, ErrorCode.CAUSE_PathNotFound), e.getMessage());
 		} catch (DatabaseException e) {
 			log.warn(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMGeneralService, ErrorCode.CAUSE_Database),
-					e.getMessage());
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMGeneralService, ErrorCode.CAUSE_Database), e.getMessage());
 		} finally {
 			JCRUtils.logout(session);
 		}
 		
 		return extensions;
+	}
+	
+	@Override
+	public GWTConfig getConfigValue(String key) throws OKMException {
+		com.openkm.dao.bean.Config config;
+		try {
+			config = ConfigDAO.findByPk(key);
+			
+			if (config != null) {
+				return GWTUtil.copy(config);
+			}
+			
+		} catch (DatabaseException e) {
+			log.warn(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMGeneralService, ErrorCode.CAUSE_Database), e.getMessage());
+		}
+		return null;
 	}
 }

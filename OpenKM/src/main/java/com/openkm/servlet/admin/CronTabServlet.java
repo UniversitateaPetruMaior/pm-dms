@@ -21,6 +21,7 @@
 
 package com.openkm.servlet.admin;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
@@ -66,7 +67,7 @@ public class CronTabServlet extends BaseServlet {
 			ServletException {
 		String method = request.getMethod();
 		
-		if (isAdmin(request)) {
+		if (checkMultipleInstancesAccess(request, response)) {
 			if (method.equals(METHOD_GET)) {
 				doGet(request, response);
 			} else if (method.equals(METHOD_POST)) {
@@ -85,8 +86,8 @@ public class CronTabServlet extends BaseServlet {
 		
 		try {
 			Map<String, String> types = new LinkedHashMap<String, String>();
-			types.put(CronTab.BSH, "BSH");
-			types.put(CronTab.JAR, "JAR");
+			types.put(MimeTypeConfig.MIME_BSH, "BSH");
+			types.put(MimeTypeConfig.MIME_JAR, "JAR");
 			
 			if (action.equals("create")) {
 				ServletContext sc = getServletContext();
@@ -114,6 +115,8 @@ public class CronTabServlet extends BaseServlet {
 			} else if (action.equals("execute")) {
 				execute(request, response);
 				list(request, response);
+			} else if (action.equals("download")) {
+				download(request, response);
 			} else {
 				list(request, response);
 			}
@@ -125,7 +128,7 @@ public class CronTabServlet extends BaseServlet {
 			sendErrorRedirect(request, response, e);
 		}
 	}
-	
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException,
@@ -221,11 +224,11 @@ public class CronTabServlet extends BaseServlet {
 		int ctId = WebUtils.getInt(request, "ct_id");
 		CronTab ct = CronTabDAO.findByPk(ctId);
 		
-		if (CronTab.BSH.equals(ct.getFileMime())) {
+		if (MimeTypeConfig.MIME_BSH.equals(ct.getFileMime())) {
 			Cron.RunnerBsh runner = new Cron.RunnerBsh(ct.getId(), ct.getName(), ct.getMail(),  
 					new String(SecureStore.b64Decode(ct.getFileContent())));
 			runner.run();
-		} else if (CronTab.JAR.equals(ct.getFileMime())) {
+		} else if (MimeTypeConfig.MIME_JAR.equals(ct.getFileMime())) {
 			Cron.RunnerJar runner = new Cron.RunnerJar(ct.getId(), ct.getName(), ct.getMail(), 
 					SecureStore.b64Decode(ct.getFileContent()));
 			runner.run();
@@ -234,5 +237,28 @@ public class CronTabServlet extends BaseServlet {
 		// Activity log
 		UserActivity.log(request.getRemoteUser(), "ADMIN_CRONTAB_EXECUTE", Integer.toString(ctId), null, ct.toString());
 		log.debug("execute: void");
+	}
+	
+	/**
+	 * Download script or jar
+	 */
+	private void download(HttpServletRequest request, HttpServletResponse response) throws IOException,
+			DatabaseException {
+		log.debug("download({}, {})", new Object[] { request, response });
+		int ctId = WebUtils.getInt(request, "ct_id");
+		CronTab ct = CronTabDAO.findByPk(ctId);
+		ByteArrayInputStream bais = null;
+		
+		try {
+			byte[] content = SecureStore.b64Decode(ct.getFileContent());
+			bais = new ByteArrayInputStream(content);
+			WebUtils.sendFile(request, response, ct.getFileName(), ct.getFileMime(), false, bais);
+		} finally {
+			IOUtils.closeQuietly(bais);	
+		}
+		
+		// Activity log
+		UserActivity.log(request.getRemoteUser(), "ADMIN_CRONTAB_DOWNLOAD", Integer.toString(ctId), null, ct.toString());
+		log.debug("download: void");
 	}
 }

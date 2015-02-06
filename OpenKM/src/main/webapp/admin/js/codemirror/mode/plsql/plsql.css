@@ -1,33 +1,43 @@
 span.plsql-keyword {
-    color: blue;
+	color: blue;
 }
+
 span.plsql-var {
-    color: red;
+	color: red;
 }
+
 span.plsql-comment {
-    color: #AA7700;
+	color: #AA7700;
 }
+
 span.plsql-string {
-    color: green;
+	color: green;
 }
+
 span.plsql-operator {
-    color: blue;
+	color: blue;
 }
+
 span.plsql-word {
-    color: black;
+	color: black;
 }
+
 span.plsql-function {
-    color: darkorange;
+	color: darkorange;
 }
+
 span.plsql-sqlplus {
-    color: darkorange;
+	color: darkorange;
 }
+
 span.plsql-type {
-    color: purple;
+	color: purple;
 }
+
 span.plsql-separator {
-    color: #666666;
+	color: #666666;
 }
+
 span.plsql-number {
-    color: darkcyan;
+	color: darkcyan;
 }

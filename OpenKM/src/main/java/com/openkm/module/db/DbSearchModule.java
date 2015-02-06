@@ -23,22 +23,13 @@ package com.openkm.module.db;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.StringTokenizer;
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
@@ -54,7 +45,6 @@ import com.openkm.bean.Folder;
 import com.openkm.bean.Mail;
 import com.openkm.bean.PropertyGroup;
 import com.openkm.bean.QueryResult;
-import com.openkm.bean.Repository;
 import com.openkm.bean.ResultSet;
 import com.openkm.bean.form.FormElement;
 import com.openkm.bean.form.Input;
@@ -62,7 +52,6 @@ import com.openkm.bean.form.Select;
 import com.openkm.bean.form.TextArea;
 import com.openkm.bean.nr.NodeQueryResult;
 import com.openkm.bean.nr.NodeResultSet;
-import com.openkm.cache.UserNodeKeywordsManager;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
@@ -81,13 +70,13 @@ import com.openkm.dao.bean.NodeDocument;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeMail;
 import com.openkm.dao.bean.QueryParams;
-import com.openkm.dao.bean.cache.UserNodeKeywords;
 import com.openkm.module.SearchModule;
 import com.openkm.module.db.base.BaseDocumentModule;
 import com.openkm.module.db.base.BaseFolderModule;
 import com.openkm.module.db.base.BaseMailModule;
 import com.openkm.spring.PrincipalUtils;
 import com.openkm.util.FormUtils;
+import com.openkm.util.FormatUtil;
 import com.openkm.util.ISO8601;
 import com.openkm.util.PathUtils;
 import com.openkm.util.UserActivity;
@@ -195,27 +184,6 @@ public class DbSearchModule implements SearchModule {
 		boolean mail = (params.getDomain() & QueryParams.MAIL) != 0;
 		log.debug("doc={}, fld={}, mail={}", new Object[] { document, folder, mail });
 		
-		// Path to UUID conversion and in depth recursion
-		List<String> pathInDepth = new ArrayList<String>();
-		
-		if (!params.getPath().equals("") && !params.getPath().equals("/" + Repository.ROOT)
-				&& !params.getPath().equals("/" + Repository.CATEGORIES) && !params.getPath().equals("/" + Repository.TEMPLATES)
-				&& !params.getPath().equals("/" + Repository.PERSONAL) && !params.getPath().equals("/" + Repository.MAIL)
-				&& !params.getPath().equals("/" + Repository.TRASH)) {
-			try {
-				String uuid = NodeBaseDAO.getInstance().getUuidFromPath(params.getPath());
-				log.debug("Path in depth: {} => {}", uuid, NodeBaseDAO.getInstance().getPathFromUuid(uuid));
-				pathInDepth.add(uuid);
-				
-				for (String uuidChild : SearchDAO.getInstance().findFoldersInDepth(uuid)) {
-					log.debug("Path in depth: {} => {}", uuidChild, NodeBaseDAO.getInstance().getPathFromUuid(uuidChild));
-					pathInDepth.add(uuidChild);
-				}
-			} catch (PathNotFoundException e) {
-				throw new RepositoryException("Path Not Found: " + e.getMessage());
-			}
-		}
-		
 		/**
 		 * DOCUMENT
 		 */
@@ -236,24 +204,8 @@ public class DbSearchModule implements SearchModule {
 					params.setName("*" + params.getName() + "*");
 				}
 				
-				Term t = new Term("name", params.getName().toLowerCase());
+				Term t = new Term("name", PathUtils.encodeEntities(params.getName().toLowerCase()));
 				queryDocument.add(new WildcardQuery(t), BooleanClause.Occur.MUST);
-			}
-			
-			if (!params.getPath().equals("")) {
-				if (pathInDepth.isEmpty()) {
-					Term t = new Term("context", PathUtils.fixContext(params.getPath()));
-					queryDocument.add(new WildcardQuery(t), BooleanClause.Occur.MUST);
-				} else {
-					BooleanQuery parent = new BooleanQuery();
-					
-					for (String uuid : pathInDepth) {
-						Term tChild = new Term("parent", uuid);
-						parent.add(new TermQuery(tChild), BooleanClause.Occur.SHOULD);
-					}
-					
-					queryDocument.add(parent, BooleanClause.Occur.MUST);
-				}
 			}
 			
 			if (!params.getMimeType().equals("")) {
@@ -287,24 +239,8 @@ public class DbSearchModule implements SearchModule {
 			queryFolder.add(new TermQuery(tEntity), BooleanClause.Occur.MUST);
 			
 			if (!params.getName().equals("")) {
-				Term t = new Term("name", params.getName().toLowerCase());
+				Term t = new Term("name", PathUtils.encodeEntities(params.getName().toLowerCase()));
 				queryFolder.add(new WildcardQuery(t), BooleanClause.Occur.MUST);
-			}
-			
-			if (!params.getPath().equals("")) {
-				if (pathInDepth.isEmpty()) {
-					Term t = new Term("context", PathUtils.fixContext(params.getPath()));
-					queryFolder.add(new WildcardQuery(t), BooleanClause.Occur.MUST);
-				} else {
-					BooleanQuery parent = new BooleanQuery();
-					
-					for (String uuid : pathInDepth) {
-						Term tChild = new Term("parent", uuid);
-						parent.add(new TermQuery(tChild), BooleanClause.Occur.SHOULD);
-					}
-					
-					queryFolder.add(parent, BooleanClause.Occur.MUST);
-				}
 			}
 			
 			appendCommon(params, queryFolder);
@@ -318,22 +254,6 @@ public class DbSearchModule implements SearchModule {
 			BooleanQuery queryMail = new BooleanQuery();
 			Term tEntity = new Term("_hibernate_class", NodeMail.class.getCanonicalName());
 			queryMail.add(new TermQuery(tEntity), BooleanClause.Occur.MUST);
-			
-			if (!params.getPath().equals("")) {
-				if (pathInDepth.isEmpty()) {
-					Term t = new Term("context", PathUtils.fixContext(params.getPath()));
-					queryMail.add(new WildcardQuery(t), BooleanClause.Occur.MUST);
-				} else {
-					BooleanQuery parent = new BooleanQuery();
-					
-					for (String uuid : pathInDepth) {
-						Term tChild = new Term("parent", uuid);
-						parent.add(new TermQuery(tChild), BooleanClause.Occur.SHOULD);
-					}
-					
-					queryMail.add(parent, BooleanClause.Occur.MUST);
-				}
-			}
 			
 			if (!params.getContent().equals("")) {
 				for (StringTokenizer st = new StringTokenizer(params.getContent(), " "); st.hasMoreTokens();) {
@@ -362,6 +282,15 @@ public class DbSearchModule implements SearchModule {
 				queryMail.add(new TermQuery(t), BooleanClause.Occur.MUST);
 			}
 			
+			// We also use the getLastModifiedFrom and getLastModifiedTo also to filter mails by sentDate
+			if (params.getLastModifiedFrom() != null && params.getLastModifiedTo() != null) {
+				Date from = params.getLastModifiedFrom().getTime();
+				String sFrom = DAY_FORMAT.format(from);
+				Date to = params.getLastModifiedTo().getTime();
+				String sTo = DAY_FORMAT.format(to);
+				queryMail.add(new TermRangeQuery("sentDate", sFrom, sTo, true, true), BooleanClause.Occur.MUST);
+			}
+			
 			appendCommon(params, queryMail);
 			query.add(queryMail, BooleanClause.Occur.SHOULD);
 		}
@@ -373,10 +302,41 @@ public class DbSearchModule implements SearchModule {
 	/**
 	 * Add common fields
 	 */
-	private void appendCommon(QueryParams params, BooleanQuery query) throws IOException, ParseException {
+	private void appendCommon(QueryParams params, BooleanQuery query) throws IOException, ParseException, DatabaseException, RepositoryException {
+		if (!params.getPath().equals("")) {
+			if (Config.STORE_NODE_PATH) {
+				Term t = new Term("path", params.getPath() + "/");
+				query.add(new PrefixQuery(t), BooleanClause.Occur.MUST);
+			} else {
+				String context = PathUtils.getContext(params.getPath());
+				Term t = new Term("context", PathUtils.fixContext(context));
+				query.add(new TermQuery(t), BooleanClause.Occur.MUST);
+				
+				if (!params.getPath().equals(context)) {
+					try {
+						String parentUuid = NodeBaseDAO.getInstance().getUuidFromPath(params.getPath());
+						BooleanQuery parent = new BooleanQuery();
+						Term tFld = new Term("parent", parentUuid);
+						parent.add(new TermQuery(tFld), BooleanClause.Occur.SHOULD);
+
+						for (String uuidChild : SearchDAO.getInstance().findFoldersInDepth(parentUuid)) {
+							Term tChild = new Term("parent", uuidChild);
+							parent.add(new TermQuery(tChild), BooleanClause.Occur.SHOULD);
+						}
+
+						query.add(parent, BooleanClause.Occur.MUST);
+					} catch (BooleanQuery.TooManyClauses e) {
+							throw new RepositoryException("Max clauses reached, please search from a deeper folder", e);
+					} catch (PathNotFoundException e) {
+						throw new RepositoryException("Path Not Found: " + e.getMessage());
+					}
+				}
+			}
+		}
+		
 		if (!params.getKeywords().isEmpty()) {
 			for (String keyword : params.getKeywords()) {
-				Term t = new Term("keyword", keyword);
+				Term t = new Term("keyword", PathUtils.encodeEntities(keyword));
 				query.add(new WildcardQuery(t), BooleanClause.Occur.MUST);
 			}
 		}
@@ -398,7 +358,7 @@ public class DbSearchModule implements SearchModule {
 				if (fe != null && ent.getValue() != null) {
 					String valueTrimmed = ent.getValue().trim().toLowerCase();
 					
-					if (!valueTrimmed.equals("")) {
+					if (!valueTrimmed.isEmpty()) {
 						if (fe instanceof Select) {
 							if (((Select) fe).getType().equals(Select.TYPE_SIMPLE)) {
 								Term t = new Term(ent.getKey(), valueTrimmed);
@@ -445,6 +405,7 @@ public class DbSearchModule implements SearchModule {
 	private ResultSet findByStatementPaginated(Authentication auth, Query query, int offset, int limit) throws RepositoryException,
 			DatabaseException {
 		log.debug("findByStatementPaginated({}, {}, {}, {}, {})", new Object[] { auth, query, offset, limit });
+		long begin = System.currentTimeMillis();
 		List<QueryResult> results = new ArrayList<QueryResult>();
 		ResultSet rs = new ResultSet();
 		
@@ -484,6 +445,7 @@ public class DbSearchModule implements SearchModule {
 			throw e;
 		}
 		
+		log.trace("findByStatementPaginated.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 		log.debug("findByStatementPaginated: {}", rs);
 		return rs;
 	}
@@ -671,31 +633,13 @@ public class DbSearchModule implements SearchModule {
 	@Override
 	public Map<String, Integer> getKeywordMap(String token, List<String> filter) throws RepositoryException, DatabaseException {
 		log.debug("getKeywordMap({}, {})", token, filter);
-		Map<String, Integer> cloud = null;
-		
-		if (Config.USER_KEYWORDS_CACHE) {
-			cloud = getKeywordMapCached(token, filter);
-		} else {
-			cloud = getKeywordMapLive(token, filter);
-		}
-		
-		log.debug("getKeywordMap: {}", cloud);
-		return cloud;
-	}
-	
-	/**
-	 * Get keyword map
-	 */
-	@SuppressWarnings("unchecked")
-	private Map<String, Integer> getKeywordMapLive(String token, List<String> filter) throws RepositoryException, DatabaseException {
-		log.debug("getKeywordMapLive({}, {})", token, filter);
 		String qs = "select elements(nb.keywords) from NodeBase nb";
 		HashMap<String, Integer> cloud = new HashMap<String, Integer>();
 		org.hibernate.Session hSession = null;
 		Transaction tx = null;
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
-		
+
 		try {
 			if (token == null) {
 				auth = PrincipalUtils.getAuthentication();
@@ -703,12 +647,12 @@ public class DbSearchModule implements SearchModule {
 				oldAuth = PrincipalUtils.getAuthentication();
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
-			
+
 			hSession = HibernateUtil.getSessionFactory().openSession();
 			tx = hSession.beginTransaction();
 			org.hibernate.Query hq = hSession.createQuery(qs);
 			List<String> nodeKeywords = hq.list();
-			
+
 			if (filter != null && nodeKeywords.containsAll(filter)) {
 				for (String keyword : nodeKeywords) {
 					if (!filter.contains(keyword)) {
@@ -717,68 +661,27 @@ public class DbSearchModule implements SearchModule {
 					}
 				}
 			}
-			
+
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);
 			throw new DatabaseException(e.getMessage(), e);
 		} finally {
 			HibernateUtil.close(hSession);
-			
+
 			if (token != null) {
 				PrincipalUtils.setAuthentication(oldAuth);
 			}
 		}
 		
-		log.debug("getKeywordMapLive: {}", cloud);
+		log.debug("getKeywordMap: {}", cloud);
 		return cloud;
-	}
-	
-	/**
-	 * Get keyword map
-	 */
-	private Map<String, Integer> getKeywordMapCached(String token, List<String> filter) throws RepositoryException, DatabaseException {
-		log.debug("getKeywordMapCached({}, {})", token, filter);
-		HashMap<String, Integer> keywordMap = new HashMap<String, Integer>();
-		Authentication auth = null, oldAuth = null;
-		
-		try {
-			if (token == null) {
-				auth = PrincipalUtils.getAuthentication();
-			} else {
-				oldAuth = PrincipalUtils.getAuthentication();
-				auth = PrincipalUtils.getAuthenticationByToken(token);
-			}
-			
-			Collection<UserNodeKeywords> userDocKeywords = UserNodeKeywordsManager.get(auth.getName()).values();
-			
-			for (Iterator<UserNodeKeywords> kwIt = userDocKeywords.iterator(); kwIt.hasNext();) {
-				Set<String> docKeywords = kwIt.next().getKeywords();
-				
-				if (filter != null && docKeywords.containsAll(filter)) {
-					for (Iterator<String> itDocKeywords = docKeywords.iterator(); itDocKeywords.hasNext();) {
-						String keyword = itDocKeywords.next();
-						
-						if (!filter.contains(keyword)) {
-							Integer occurs = keywordMap.get(keyword) != null ? keywordMap.get(keyword) : 0;
-							keywordMap.put(keyword, occurs + 1);
-						}
-					}
-				}
-			}
-		} finally {
-			if (token != null) {
-				PrincipalUtils.setAuthentication(oldAuth);
-			}
-		}
-		
-		log.debug("getKeywordMapCached: {}", keywordMap);
-		return keywordMap;
 	}
 	
 	@Override
 	public List<Document> getCategorizedDocuments(String token, String categoryId) throws RepositoryException, DatabaseException {
 		log.debug("getCategorizedDocuments({}, {})", token, categoryId);
+		long begin = System.currentTimeMillis();
 		List<Document> documents = new ArrayList<Document>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -803,6 +706,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getCategorizedDocuments.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getCategorizedDocuments: {}", documents);
 		return documents;
 	}
@@ -810,6 +714,7 @@ public class DbSearchModule implements SearchModule {
 	@Override
 	public List<Folder> getCategorizedFolders(String token, String categoryId) throws RepositoryException, DatabaseException {
 		log.debug("getCategorizedFolders({}, {})", token, categoryId);
+		long begin = System.currentTimeMillis();
 		List<Folder> folders = new ArrayList<Folder>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -834,6 +739,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getCategorizedFolders.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getCategorizedFolders: {}", folders);
 		return folders;
 	}
@@ -841,6 +747,7 @@ public class DbSearchModule implements SearchModule {
 	@Override
 	public List<Mail> getCategorizedMails(String token, String categoryId) throws RepositoryException, DatabaseException {
 		log.debug("getCategorizedMails({}, {})", token, categoryId);
+		long begin = System.currentTimeMillis();
 		List<Mail> mails = new ArrayList<Mail>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -865,6 +772,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getCategorizedMails.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getCategorizedMails: {}", mails);
 		return mails;
 	}
@@ -872,6 +780,7 @@ public class DbSearchModule implements SearchModule {
 	@Override
 	public List<Document> getDocumentsByKeyword(String token, String keyword) throws RepositoryException, DatabaseException {
 		log.debug("getDocumentsByKeyword({}, {})", token, keyword);
+		long begin = System.currentTimeMillis();
 		List<Document> documents = new ArrayList<Document>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -896,6 +805,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getDocumentsByKeyword.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getDocumentsByKeyword: {}", documents);
 		return documents;
 	}
@@ -903,6 +813,7 @@ public class DbSearchModule implements SearchModule {
 	@Override
 	public List<Folder> getFoldersByKeyword(String token, String keyword) throws RepositoryException, DatabaseException {
 		log.debug("getFoldersByKeyword({}, {})", token, keyword);
+		long begin = System.currentTimeMillis();
 		List<Folder> folders = new ArrayList<Folder>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -927,6 +838,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getFoldersByKeyword.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getFoldersByKeyword: {}", folders);
 		return folders;
 	}
@@ -934,6 +846,7 @@ public class DbSearchModule implements SearchModule {
 	@Override
 	public List<Mail> getMailsByKeyword(String token, String keyword) throws RepositoryException, DatabaseException {
 		log.debug("getMailsByKeyword({}, {})", token, keyword);
+		long begin = System.currentTimeMillis();
 		List<Mail> mails = new ArrayList<Mail>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -958,6 +871,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getMailsByKeyword.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getMailsByKeyword: {}", mails);
 		return mails;
 	}
@@ -966,6 +880,7 @@ public class DbSearchModule implements SearchModule {
 	public List<Document> getDocumentsByPropertyValue(String token, String group, String property, String value)
 			throws RepositoryException, DatabaseException {
 		log.debug("getDocumentsByPropertyValue({}, {}, {}, {})", new Object[] { token, group, property, value });
+		long begin = System.currentTimeMillis();
 		List<Document> documents = new ArrayList<Document>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -990,6 +905,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getDocumentsByPropertyValue.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getDocumentsByPropertyValue: {}", documents);
 		return documents;
 	}
@@ -998,6 +914,7 @@ public class DbSearchModule implements SearchModule {
 	public List<Folder> getFoldersByPropertyValue(String token, String group, String property, String value) throws RepositoryException,
 			DatabaseException {
 		log.debug("getFoldersByPropertyValue({}, {}, {}, {})", new Object[] { token, group, property, value });
+		long begin = System.currentTimeMillis();
 		List<Folder> folders = new ArrayList<Folder>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -1022,6 +939,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getFoldersByPropertyValue.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getFoldersByPropertyValue: {}", folders);
 		return folders;
 	}
@@ -1030,6 +948,7 @@ public class DbSearchModule implements SearchModule {
 	public List<Mail> getMailsByPropertyValue(String token, String group, String property, String value) throws RepositoryException,
 			DatabaseException {
 		log.debug("getMailsByPropertyValue({}, {}, {}, {})", new Object[] { token, group, property, value });
+		long begin = System.currentTimeMillis();
 		List<Mail> mails = new ArrayList<Mail>();
 		Authentication auth = null, oldAuth = null;
 		
@@ -1054,6 +973,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("getMailsByPropertyValue.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getMailsByPropertyValue: {}", mails);
 		return mails;
 	}
@@ -1070,6 +990,7 @@ public class DbSearchModule implements SearchModule {
 	public ResultSet findSimpleQueryPaginated(String token, String statement, int offset, int limit) throws RepositoryException,
 			DatabaseException {
 		log.debug("findSimpleQueryPaginated({}, {}, {}, {})", new Object[] { token, statement, offset, limit });
+		long begin = System.currentTimeMillis();
 		List<QueryResult> results = new ArrayList<QueryResult>();
 		ResultSet rs = new ResultSet();
 		Authentication auth = null, oldAuth = null;
@@ -1084,9 +1005,20 @@ public class DbSearchModule implements SearchModule {
 			
 			if (statement != null && !statement.equals("")) {
 				// Only search in Taxonomy
-				statement = statement.concat(" AND context:okm_root");
-				
-				NodeResultSet nrs = SearchDAO.getInstance().findBySimpleQuery(statement, offset, limit);
+				BooleanQuery nodeQuery = new BooleanQuery();
+				nodeQuery.add(new WildcardQuery(new Term("keyword", PathUtils.encodeEntities(statement.toLowerCase()))), BooleanClause.Occur.SHOULD);
+				nodeQuery.add(new WildcardQuery(new Term("name", PathUtils.encodeEntities("*" + statement.toLowerCase() + "*"))), BooleanClause.Occur.SHOULD);
+				nodeQuery.add(new WildcardQuery(new Term("subject", statement.toLowerCase())), BooleanClause.Occur.SHOULD);
+				nodeQuery.add(new WildcardQuery(new Term("content", statement.toLowerCase())), BooleanClause.Occur.SHOULD);
+				nodeQuery.add(new WildcardQuery(new Term("notes", statement.toLowerCase())), BooleanClause.Occur.SHOULD);
+				nodeQuery.add(new WildcardQuery(new Term("title", statement.toLowerCase())), BooleanClause.Occur.SHOULD);
+				nodeQuery.add(new WildcardQuery(new Term("text", statement.toLowerCase())), BooleanClause.Occur.SHOULD);
+
+				BooleanQuery query = new BooleanQuery();
+				query.add(nodeQuery, BooleanClause.Occur.MUST);
+				query.add(new TermQuery(new Term("context", PathUtils.fixContext("/okm:root"))), BooleanClause.Occur.MUST);
+
+				NodeResultSet nrs = SearchDAO.getInstance().findByQuery(query, offset, limit);
 				rs.setTotal(nrs.getTotal());
 				
 				for (NodeQueryResult nqr : nrs.getResults()) {
@@ -1124,6 +1056,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("findSimpleQueryPaginated.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("findSimpleQueryPaginated: {}", rs);
 		return rs;
 	}
@@ -1131,6 +1064,7 @@ public class DbSearchModule implements SearchModule {
 	@Override
 	public ResultSet findMoreLikeThis(String token, String uuid, int maxResults) throws RepositoryException, DatabaseException {
 		log.debug("findMoreLikeThis({}, {}, {})", new Object[] { token, uuid, maxResults });
+		long begin = System.currentTimeMillis();
 		List<QueryResult> results = new ArrayList<QueryResult>();
 		ResultSet rs = new ResultSet();
 		Authentication auth = null, oldAuth = null;
@@ -1176,6 +1110,7 @@ public class DbSearchModule implements SearchModule {
 			}
 		}
 		
+		log.trace("findMoreLikeThis.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("findMoreLikeThis: {}", rs);
 		return rs;
 	}

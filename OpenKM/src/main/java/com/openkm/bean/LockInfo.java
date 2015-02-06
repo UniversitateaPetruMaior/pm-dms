@@ -23,8 +23,11 @@ package com.openkm.bean;
 
 import java.io.Serializable;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "lockInfo")
 public class LockInfo implements Serializable {
-	private static final long serialVersionUID = -8508210196484243712L;
+	private static final long serialVersionUID = 1L;
 
 	private String owner;
 	private String nodePath;

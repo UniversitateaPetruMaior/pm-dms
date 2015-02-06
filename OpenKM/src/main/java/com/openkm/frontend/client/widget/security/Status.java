@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.frontend.client.widget.security;
@@ -33,7 +33,7 @@ import com.openkm.frontend.client.util.OKMBundleResources;
  * Status
  * 
  * @author jllort
- *
+ * 
  */
 public class Status extends PopupPanel {
 	private HorizontalPanel hPanel;
@@ -47,7 +47,7 @@ public class Status extends PopupPanel {
 	 * Status
 	 */
 	public Status() {
-		super(false,true);
+		super(false, true);
 		hPanel = new HorizontalPanel();
 		image = new Image(OKMBundleResources.INSTANCE.indicator());
 		msg = new HTML("");
@@ -76,10 +76,13 @@ public class Status extends PopupPanel {
 	 */
 	public void refresh() {
 		if (flag_update) {
-			int left = ((Main.get().securityPopup.getOffsetWidth()-200)/2) + Main.get().securityPopup.getAbsoluteLeft();
-			int top =  ((Main.get().securityPopup.getOffsetHeight()-40)/2) + Main.get().securityPopup.getAbsoluteTop();
-			setPopupPosition(left,top);
-			show();
+			int left = ((Main.get().securityPopup.getOffsetWidth() - 200) / 2) + Main.get().securityPopup.getAbsoluteLeft();
+			int top = ((Main.get().securityPopup.getOffsetHeight() - 40) / 2) + Main.get().securityPopup.getAbsoluteTop();
+			
+			if (left > 0 && top > 0) {
+				setPopupPosition(left, top);
+				show();
+			}
 		} else {
 			hide();
 		}

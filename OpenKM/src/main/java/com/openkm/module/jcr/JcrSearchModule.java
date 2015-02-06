@@ -1,29 +1,28 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.jcr;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -64,7 +63,6 @@ import com.openkm.bean.ResultSet;
 import com.openkm.bean.form.FormElement;
 import com.openkm.bean.form.Input;
 import com.openkm.bean.form.Select;
-import com.openkm.cache.UserNodeKeywordsManager;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
@@ -74,7 +72,6 @@ import com.openkm.core.RepositoryException;
 import com.openkm.dao.DashboardDAO;
 import com.openkm.dao.QueryParamsDAO;
 import com.openkm.dao.bean.QueryParams;
-import com.openkm.dao.bean.cache.UserNodeKeywords;
 import com.openkm.module.SearchModule;
 import com.openkm.module.jcr.base.BaseDocumentModule;
 import com.openkm.module.jcr.base.BaseFolderModule;
@@ -88,8 +85,8 @@ public class JcrSearchModule implements SearchModule {
 	private static Logger log = LoggerFactory.getLogger(JcrSearchModule.class);
 	
 	@Override
-	public List<QueryResult> findByContent(String token, String words) throws IOException, ParseException,
-			RepositoryException, DatabaseException {
+	public List<QueryResult> findByContent(String token, String words) throws IOException, ParseException, RepositoryException,
+			DatabaseException {
 		log.debug("findByContent({}, {})", token, words);
 		QueryParams params = new QueryParams();
 		params.setContent(words);
@@ -99,8 +96,8 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public List<QueryResult> findByName(String token, String words) throws IOException, ParseException,
-			RepositoryException, DatabaseException {
+	public List<QueryResult> findByName(String token, String words) throws IOException, ParseException, RepositoryException,
+			DatabaseException {
 		log.debug("findByName({}, {})", token, words);
 		QueryParams params = new QueryParams();
 		params.setName(words);
@@ -110,8 +107,8 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public List<QueryResult> findByKeywords(String token, Set<String> words) throws IOException, ParseException,
-			RepositoryException, DatabaseException {
+	public List<QueryResult> findByKeywords(String token, Set<String> words) throws IOException, ParseException, RepositoryException,
+			DatabaseException {
 		log.debug("findByKeywords({}, {})", token, words);
 		QueryParams params = new QueryParams();
 		params.setKeywords(words);
@@ -121,8 +118,8 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public List<QueryResult> find(String token, QueryParams params) throws IOException, ParseException,
-			RepositoryException, DatabaseException {
+	public List<QueryResult> find(String token, QueryParams params) throws IOException, ParseException, RepositoryException,
+			DatabaseException {
 		log.debug("find({}, {})", token, params);
 		List<QueryResult> ret = findPaginated(token, params, 0, Config.MAX_SEARCH_RESULTS).getResults();
 		log.debug("find: {}", ret);
@@ -130,8 +127,8 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public ResultSet findPaginated(String token, QueryParams params, int offset, int limit) throws IOException,
-			ParseException, RepositoryException, DatabaseException {
+	public ResultSet findPaginated(String token, QueryParams params, int offset, int limit) throws IOException, ParseException,
+			RepositoryException, DatabaseException {
 		log.debug("findPaginated({}, {}, {}, {})", new Object[] { token, params, offset, limit });
 		String type = null;
 		String query = null;
@@ -153,8 +150,9 @@ public class JcrSearchModule implements SearchModule {
 	/**
 	 * Escape jcr:contains searchExp (view 6.6.5.2) Text.escapeIllegalXpathSearchChars(searchTerm).replaceAll("'", "''")
 	 * 
-	 * @see http 
-	 *      ://svn.apache.org/repos/asf/jackrabbit/branches/2.2/jackrabbit-jcr-commons/src/main/java/org/apache/jackrabbit
+	 * @see http
+	 *      ://svn.apache.org/repos/asf/jackrabbit/branches/2.2/jackrabbit-jcr-commons/src/main/java/org/apache/
+	 *      jackrabbit
 	 *      /util/Text.java
 	 * @see http://wiki.apache.org/jackrabbit/EncodingAndEscaping
 	 * @param str The String to be escaped.
@@ -166,8 +164,7 @@ public class JcrSearchModule implements SearchModule {
 		for (int i = 0; i < str.length(); i++) {
 			char c = str.charAt(i);
 			
-			if (c == '!' || c == '(' || c == ':' || c == '^' || c == '"' || c == '[' || c == ']' || c == '{'
-					|| c == '}' || c == '?') {
+			if (c == '!' || c == '(' || c == ':' || c == '^' || c == '"' || c == '[' || c == ']' || c == '{' || c == '}' || c == '?') {
 				sb.append('\\');
 			}
 			
@@ -225,9 +222,8 @@ public class JcrSearchModule implements SearchModule {
 		}
 		
 		if (!params.getContent().isEmpty() || !params.getName().isEmpty() || !params.getKeywords().isEmpty()
-				|| !params.getMimeType().isEmpty() || !params.getAuthor().isEmpty()
-				|| !params.getProperties().isEmpty() || !params.getMailSubject().isEmpty()
-				|| !params.getMailFrom().isEmpty() || !params.getMailTo().isEmpty()
+				|| !params.getMimeType().isEmpty() || !params.getAuthor().isEmpty() || !params.getProperties().isEmpty()
+				|| !params.getMailSubject().isEmpty() || !params.getMailFrom().isEmpty() || !params.getMailTo().isEmpty()
 				|| (params.getLastModifiedFrom() != null && params.getLastModifiedTo() != null)) {
 			
 			// Construct the query
@@ -276,11 +272,9 @@ public class JcrSearchModule implements SearchModule {
 				if (params.getLastModifiedFrom() != null && params.getLastModifiedTo() != null) {
 					sb.append(" " + params.getOperator() + " ");
 					sb.append("(");
-					sb.append("@okm:content/jcr:lastModified >= xs:dateTime('"
-							+ ISO8601.format(params.getLastModifiedFrom()) + "')");
+					sb.append("@okm:content/jcr:lastModified >= xs:dateTime('" + ISO8601.format(params.getLastModifiedFrom()) + "')");
 					sb.append(" and ");
-					sb.append("@okm:content/jcr:lastModified <= xs:dateTime('"
-							+ ISO8601.format(params.getLastModifiedTo()) + "')");
+					sb.append("@okm:content/jcr:lastModified <= xs:dateTime('" + ISO8601.format(params.getLastModifiedTo()) + "')");
 					sb.append(")");
 				}
 				
@@ -421,11 +415,9 @@ public class JcrSearchModule implements SearchModule {
 		return sb.toString();
 	}
 	
-	public List<QueryResult> findByStatement(String token, String statement, String type) throws RepositoryException,
-			DatabaseException {
+	public List<QueryResult> findByStatement(String token, String statement, String type) throws RepositoryException, DatabaseException {
 		log.debug("findByStatement({}, {})", token, statement);
-		List<QueryResult> ret = findByStatementPaginated(token, statement, type, 0, Config.MAX_SEARCH_RESULTS)
-				.getResults();
+		List<QueryResult> ret = findByStatementPaginated(token, statement, type, 0, Config.MAX_SEARCH_RESULTS).getResults();
 		log.debug("findByStatement: {}", ret);
 		return ret;
 	}
@@ -456,8 +448,9 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("findByStatement: {}", rs);
@@ -500,14 +493,13 @@ public class JcrSearchModule implements SearchModule {
 	/**
 	 * Execute simple query
 	 */
-	private ResultSet executeSimpleQuery(Session session, String statement, int offset, int limit)
-			throws RepositoryException {
+	private ResultSet executeSimpleQuery(Session session, String statement, int offset, int limit) throws RepositoryException {
 		log.debug("executeSimpleQuery({}, {}, {}, {})", new Object[] { session, statement, offset, limit });
 		ResultSet rs = new ResultSet();
 		
 		if (statement != null && !statement.equals("")) {
 			if (!statement.contains("path:")) {
-				statement = "path:\"/"+Repository.ROOT+"\" " + statement;
+				statement = "path:\"/" + Repository.ROOT + "\" " + statement;
 			}
 			
 			if (!statement.contains("limit:") && limit < Config.MAX_SEARCH_RESULTS) {
@@ -583,8 +575,7 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public long saveSearch(String token, QueryParams params) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public long saveSearch(String token, QueryParams params) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("saveSearch({}, {})", token, params);
 		Session session = null;
 		long id = 0;
@@ -611,8 +602,9 @@ public class JcrSearchModule implements SearchModule {
 		} catch (DatabaseException e) {
 			throw e;
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("saveSearch: {}", id);
@@ -620,8 +612,7 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public void updateSearch(String token, QueryParams params) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public void updateSearch(String token, QueryParams params) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("updateSearch({}, {})", token, params);
 		Session session = null;
 		
@@ -647,16 +638,16 @@ public class JcrSearchModule implements SearchModule {
 		} catch (DatabaseException e) {
 			throw e;
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("updateSearch: void");
 	}
 	
 	@Override
-	public QueryParams getSearch(String token, int qpId) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public QueryParams getSearch(String token, int qpId) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getSearch({}, {})", token, qpId);
 		QueryParams qp = new QueryParams();
 		Session session = null;
@@ -686,8 +677,9 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getSearch: {}", qp);
@@ -725,8 +717,9 @@ public class JcrSearchModule implements SearchModule {
 		} catch (DatabaseException e) {
 			throw e;
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getAllSearchs: {}", ret);
@@ -734,8 +727,7 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public void deleteSearch(String token, long qpId) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public void deleteSearch(String token, long qpId) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("deleteSearch({}, {})", token, qpId);
 		Session session = null;
 		
@@ -768,64 +760,46 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("deleteSearch: void");
 	}
 	
 	@Override
-	public Map<String, Integer> getKeywordMap(String token, List<String> filter) throws RepositoryException,
-			DatabaseException {
+	public Map<String, Integer> getKeywordMap(String token, List<String> filter) throws RepositoryException, DatabaseException {
 		log.debug("getKeywordMap({}, {})", token, filter);
-		Map<String, Integer> cloud = null;
-		
-		if (Config.USER_KEYWORDS_CACHE) {
-			cloud = getKeywordMapCached(token, filter);
-		} else {
-			cloud = getKeywordMapLive(token, filter);
-		}
-		
-		log.debug("getKeywordMap: {}", cloud);
-		return cloud;
-	}
-	
-	/**
-	 * Get keyword map
-	 */
-	private Map<String, Integer> getKeywordMapLive(String token, List<String> filter) throws RepositoryException,
-			DatabaseException {
-		log.debug("getKeywordMapLive({}, {})", token, filter);
 		String statement = "/jcr:root//*[@jcr:primaryType eq 'okm:document' or @jcr:primaryType eq 'okm:mail' or @jcr:primaryType eq 'okm:folder']";
 		HashMap<String, Integer> cloud = new HashMap<String, Integer>();
 		Session session = null;
-		
+
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
 			} else {
 				session = JcrSessionManager.getInstance().get(token);
 			}
-			
+
 			Workspace workspace = session.getWorkspace();
 			QueryManager queryManager = workspace.getQueryManager();
 			Query query = queryManager.createQuery(statement, Query.XPATH);
 			javax.jcr.query.QueryResult qResult = query.execute();
-			
+
 			for (NodeIterator nit = qResult.getNodes(); nit.hasNext();) {
 				Node doc = nit.nextNode();
 				Value[] keywordsValue = doc.getProperty(com.openkm.bean.Property.KEYWORDS).getValues();
 				ArrayList<String> keywordCollection = new ArrayList<String>();
-				
+
 				for (int i = 0; i < keywordsValue.length; i++) {
 					keywordCollection.add(keywordsValue[i].getString());
 				}
-				
+
 				if (filter != null && keywordCollection.containsAll(filter)) {
 					for (Iterator<String> it = keywordCollection.iterator(); it.hasNext();) {
 						String keyword = it.next();
-						
+
 						if (!filter.contains(keyword)) {
 							Integer occurs = cloud.get(keyword) != null ? cloud.get(keyword) : 0;
 							cloud.put(keyword, occurs + 1);
@@ -837,62 +811,17 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
-		log.debug("getKeywordMapLive: {}", cloud);
+		log.debug("getKeywordMap: {}", cloud);
 		return cloud;
 	}
 	
-	/**
-	 * Get keyword map
-	 */
-	private Map<String, Integer> getKeywordMapCached(String token, List<String> filter) throws RepositoryException,
-			DatabaseException {
-		log.debug("getKeywordMapCached({}, {})", token, filter);
-		HashMap<String, Integer> keywordMap = new HashMap<String, Integer>();
-		Session session = null;
-		
-		try {
-			// TODO This JCR Session could be removed
-			if (token == null) {
-				session = JCRUtils.getSession();
-			} else {
-				session = JcrSessionManager.getInstance().get(token);
-			}
-			
-			Collection<UserNodeKeywords> userDocKeywords = UserNodeKeywordsManager.get(session.getUserID()).values();
-			
-			for (Iterator<UserNodeKeywords> kwIt = userDocKeywords.iterator(); kwIt.hasNext();) {
-				Set<String> docKeywords = kwIt.next().getKeywords();
-				
-				if (filter != null && docKeywords.containsAll(filter)) {
-					for (Iterator<String> itDocKeywords = docKeywords.iterator(); itDocKeywords.hasNext();) {
-						String keyword = itDocKeywords.next();
-						
-						if (!filter.contains(keyword)) {
-							Integer occurs = keywordMap.get(keyword) != null ? keywordMap.get(keyword) : 0;
-							keywordMap.put(keyword, occurs + 1);
-						}
-					}
-				}
-			}
-		} catch (javax.jcr.RepositoryException e) {
-			log.error(e.getMessage(), e);
-			throw new RepositoryException(e.getMessage(), e);
-		} finally {
-			if (token == null)
-				JCRUtils.logout(session);
-		}
-		
-		log.debug("getKeywordMapCached: {}", keywordMap);
-		return keywordMap;
-	}
-	
 	@Override
-	public List<Document> getCategorizedDocuments(String token, String categoryId) throws RepositoryException,
-			DatabaseException {
+	public List<Document> getCategorizedDocuments(String token, String categoryId) throws RepositoryException, DatabaseException {
 		log.debug("getCategorizedDocuments({}, {})", token, categoryId);
 		List<Document> documents = new ArrayList<Document>();
 		Session session = null;
@@ -922,8 +851,9 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getCategorizedDocuments: {}", documents);
@@ -931,8 +861,7 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public List<Folder> getCategorizedFolders(String token, String categoryId) throws RepositoryException,
-			DatabaseException {
+	public List<Folder> getCategorizedFolders(String token, String categoryId) throws RepositoryException, DatabaseException {
 		log.debug("getCategorizedFolders({}, {})", token, categoryId);
 		List<Folder> folders = new ArrayList<Folder>();
 		Session session = null;
@@ -962,8 +891,9 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getCategorizedFolders: {}", folders);
@@ -971,8 +901,7 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public List<Mail> getCategorizedMails(String token, String categoryId) throws RepositoryException,
-			DatabaseException {
+	public List<Mail> getCategorizedMails(String token, String categoryId) throws RepositoryException, DatabaseException {
 		log.debug("getCategorizedMails({}, {})", token, categoryId);
 		List<Mail> mails = new ArrayList<Mail>();
 		Session session = null;
@@ -1002,8 +931,9 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getCategorizedMails: {}", mails);
@@ -1011,8 +941,7 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public List<Document> getDocumentsByKeyword(String token, String keyword) throws RepositoryException,
-			DatabaseException {
+	public List<Document> getDocumentsByKeyword(String token, String keyword) throws RepositoryException, DatabaseException {
 		throw new NotImplementedException("getDocumentsByKeyword");
 	}
 	
@@ -1033,20 +962,19 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public List<Folder> getFoldersByPropertyValue(String token, String group, String property, String value)
-			throws RepositoryException, DatabaseException {
+	public List<Folder> getFoldersByPropertyValue(String token, String group, String property, String value) throws RepositoryException,
+			DatabaseException {
 		throw new NotImplementedException("getFoldersByPropertyValue");
 	}
 	
 	@Override
-	public List<Mail> getMailsByPropertyValue(String token, String group, String property, String value)
-			throws RepositoryException, DatabaseException {
+	public List<Mail> getMailsByPropertyValue(String token, String group, String property, String value) throws RepositoryException,
+			DatabaseException {
 		throw new NotImplementedException("getMailsByPropertyValue");
 	}
 	
 	@Override
-	public List<QueryResult> findSimpleQuery(String token, String statement) throws RepositoryException,
-			DatabaseException {
+	public List<QueryResult> findSimpleQuery(String token, String statement) throws RepositoryException, DatabaseException {
 		log.debug("findSimpleQuery({}, {})", token, statement);
 		List<QueryResult> ret = findSimpleQueryPaginated(token, statement, 0, Config.MAX_SEARCH_RESULTS).getResults();
 		log.debug("findSimpleQuery: {}", ret);
@@ -1055,8 +983,8 @@ public class JcrSearchModule implements SearchModule {
 	}
 	
 	@Override
-	public ResultSet findSimpleQueryPaginated(String token, String statement, int offset, int limit)
-			throws RepositoryException, DatabaseException {
+	public ResultSet findSimpleQueryPaginated(String token, String statement, int offset, int limit) throws RepositoryException,
+			DatabaseException {
 		log.debug("findSimpleQueryPaginated({}, {}, {}, {})", new Object[] { token, statement, offset, limit });
 		ResultSet rs = new ResultSet();
 		Session session = null;
@@ -1073,17 +1001,17 @@ public class JcrSearchModule implements SearchModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("findSimpleQueryPaginated: {}", rs);
 		return rs;
 	}
-
+	
 	@Override
-	public ResultSet findMoreLikeThis(String token, String uuid, int maxResults) throws RepositoryException,
-			DatabaseException {
+	public ResultSet findMoreLikeThis(String token, String uuid, int maxResults) throws RepositoryException, DatabaseException {
 		throw new NotImplementedException("findMoreLikeThis");
 	}
 }

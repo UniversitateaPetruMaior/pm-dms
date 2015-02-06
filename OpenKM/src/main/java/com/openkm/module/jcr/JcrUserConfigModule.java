@@ -21,8 +21,7 @@ public class JcrUserConfigModule implements UserConfigModule {
 	private static Logger log = LoggerFactory.getLogger(JcrUserConfigModule.class);
 	
 	@Override
-	public void setHome(String token, String nodePath) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public void setHome(String token, String nodePath) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("setHome({}, {})", token, nodePath);
 		Session session = null;
 		
@@ -53,9 +52,11 @@ public class JcrUserConfigModule implements UserConfigModule {
 		} catch (DatabaseException e) {
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("setHome: void");
 	}
 	
@@ -79,9 +80,11 @@ public class JcrUserConfigModule implements UserConfigModule {
 		} catch (javax.jcr.RepositoryException e) {
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getConfig: {}", ret);
 		return ret;
 	}

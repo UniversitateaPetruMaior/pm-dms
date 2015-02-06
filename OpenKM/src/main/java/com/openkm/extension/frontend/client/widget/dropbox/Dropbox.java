@@ -3,6 +3,7 @@ package com.openkm.extension.frontend.client.widget.dropbox;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -32,8 +33,7 @@ import com.openkm.frontend.client.extension.event.handler.MailHandlerExtension;
  * @author sochoa
  *
  */
-public class Dropbox implements DocumentHandlerExtension, FolderHandlerExtension, MailHandlerExtension,
-		LanguageHandlerExtension {
+public class Dropbox implements DocumentHandlerExtension, FolderHandlerExtension, MailHandlerExtension, LanguageHandlerExtension {
 	
 	private final OKMDropboxServiceAsync dropboxService = (OKMDropboxServiceAsync) GWT.create(OKMDropboxService.class);
 	
@@ -117,7 +117,7 @@ public class Dropbox implements DocumentHandlerExtension, FolderHandlerExtension
 				return TabFolderComunicator.getFolder().getUuid();
 				
 			case TAB_MAIL:
-				return TabMailComunicator.getMail().getUuid();				
+				return TabMailComunicator.getMail().getUuid();
 				
 			default:
 				return null;

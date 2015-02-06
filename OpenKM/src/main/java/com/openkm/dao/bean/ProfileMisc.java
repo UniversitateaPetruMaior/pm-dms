@@ -33,6 +33,9 @@ public class ProfileMisc implements Serializable {
 	private boolean printPreview;
 	private boolean keywordsEnabled;
 	private boolean uploadNotifyUsers;
+	private boolean notifyExternalUsers;
+	private boolean acrobatPluginPreview;
+	private boolean increaseVersion;
 	private Set<String> extensions = new HashSet<String>();
 	private Set<Long> reports = new HashSet<Long>();
 	private Set<String> workflows = new HashSet<String>();
@@ -85,6 +88,30 @@ public class ProfileMisc implements Serializable {
 		this.uploadNotifyUsers = uploadNotifyUsers;
 	}
 	
+	public boolean isNotifyExternalUsers() {
+		return notifyExternalUsers;
+	}
+
+	public void setNotifyExternalUsers(boolean notifyExternalUsers) {
+		this.notifyExternalUsers = notifyExternalUsers;
+	}
+
+	public boolean isAcrobatPluginPreview() {
+		return acrobatPluginPreview;
+	}
+
+	public void setAcrobatPluginPreview(boolean acrobatPluginPreview) {
+		this.acrobatPluginPreview = acrobatPluginPreview;
+	}
+	
+	public boolean isIncreaseVersion() {
+		return increaseVersion;
+	}
+
+	public void setIncreaseVersion(boolean increaseVersion) {
+		this.increaseVersion = increaseVersion;
+	}
+
 	public Set<String> getExtensions() {
 		return extensions;
 	}

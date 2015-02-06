@@ -30,6 +30,7 @@ import com.openkm.frontend.client.util.Util;
 import com.openkm.frontend.client.widget.categories.CategoriesTree;
 import com.openkm.frontend.client.widget.foldertree.Status;
 import com.openkm.frontend.client.widget.mail.MailTree;
+import com.openkm.frontend.client.widget.metadata.MetadataTree;
 import com.openkm.frontend.client.widget.personal.PersonalTree;
 import com.openkm.frontend.client.widget.taxonomy.TaxonomyTree;
 import com.openkm.frontend.client.widget.template.TemplateTree;
@@ -47,6 +48,7 @@ public class Navigator extends Composite {
 	public ExtendedStackPanel stackPanel;
 	public ExtendedScrollPanel scrollTaxonomyPanel;
 	public ScrollPanel scrollCategoriesPanel;
+	public ScrollPanel scrollMetadataPanel;
 	public ScrollPanel scrollThesaurusPanel;
 	private ScrollPanel scrollTrashPanel;
 	private ExtendedScrollPanel scrollTemplatePanel;
@@ -54,6 +56,7 @@ public class Navigator extends Composite {
 	private ExtendedScrollPanel scrollMailPanel;
 	public VerticalPanel verticalTaxonomyPanel;
 	public VerticalPanel verticalCategoriesPanel;
+	public VerticalPanel verticalMetadataPanel;
 	public VerticalPanel verticalThesaurusPanel;
 	public VerticalPanel verticalTrashPanel;
 	public VerticalPanel verticalTemplatePanel;
@@ -61,6 +64,7 @@ public class Navigator extends Composite {
 	public VerticalPanel verticalMailPanel;
 	public TaxonomyTree taxonomyTree;
 	public CategoriesTree categoriesTree;
+	public MetadataTree metadataTree;
 	public ThesaurusTree thesaurusTree;
 	public TemplateTree templateTree;
 	public PersonalTree personalTree;
@@ -70,13 +74,15 @@ public class Navigator extends Composite {
 	private int width = 0;
 	private int height = 0;
 	private int skinExtrStackSize = 0;
-	
+
 	public Navigator() {
 		stackPanel = new ExtendedStackPanel();
 		scrollTaxonomyPanel = new ExtendedScrollPanel();
 		scrollTaxonomyPanel.setSize("100%", "100%");
 		scrollCategoriesPanel = new ScrollPanel();
 		scrollCategoriesPanel.setSize("100%", "100%");
+		scrollMetadataPanel = new ScrollPanel();
+		scrollMetadataPanel.setSize("100%", "100%");
 		scrollThesaurusPanel = new ScrollPanel();
 		scrollThesaurusPanel.setSize("100%", "100%");
 		scrollTrashPanel = new ScrollPanel();
@@ -91,6 +97,8 @@ public class Navigator extends Composite {
 		verticalTaxonomyPanel.setSize("100%", "100%");
 		verticalCategoriesPanel = new VerticalPanel();
 		verticalCategoriesPanel.setSize("100%", "100%");
+		verticalMetadataPanel = new VerticalPanel();
+		verticalMetadataPanel.setSize("100%", "100%");
 		verticalThesaurusPanel = new VerticalPanel();
 		verticalThesaurusPanel.setSize("100%", "100%");
 		verticalTrashPanel = new VerticalPanel();
@@ -114,6 +122,8 @@ public class Navigator extends Composite {
 		personalTree.setSize("100%", "100%");
 		thesaurusTree = new ThesaurusTree();
 		thesaurusTree.setSize("100%", "100%");
+		metadataTree = new MetadataTree();
+		metadataTree.setSize("100%", "100%");
 		categoriesTree = new CategoriesTree();
 		categoriesTree.setSize("100%", "100%");
 		taxonomyTree = new TaxonomyTree();
@@ -123,6 +133,8 @@ public class Navigator extends Composite {
 		scrollTaxonomyPanel.add(verticalTaxonomyPanel);
 		verticalCategoriesPanel.add(categoriesTree);
 		scrollCategoriesPanel.add(verticalCategoriesPanel);
+		verticalMetadataPanel.add(metadataTree);
+		scrollMetadataPanel.add(verticalMetadataPanel);
 		verticalThesaurusPanel.add(thesaurusTree);
 		scrollThesaurusPanel.add(verticalThesaurusPanel);
 		verticalTrashPanel.add(trashTree);
@@ -152,6 +164,10 @@ public class Navigator extends Composite {
 		if (stackPanel.isCategoriesVisible()) {
 			stackPanel.setStackText(count++, Util.createHeaderHTML("img/icon/stackpanel/table_key.gif", Main.i18n("leftpanel.label.categories")), true);
 			categoriesTree.langRefresh();
+		}
+		if (stackPanel.isMetadataVisible()) {
+			stackPanel.setStackText(count++, Util.createHeaderHTML("img/icon/stackpanel/metadata.png", Main.i18n("leftpanel.label.metadata")), true);
+			metadataTree.langRefresh();
 		}
 		if (stackPanel.isThesaurusVisible()) {
 			stackPanel.setStackText(count++, Util.createHeaderHTML("img/icon/stackpanel/book_open.gif", Main.i18n("leftpanel.label.thesaurus")), true);
@@ -197,6 +213,9 @@ public class Navigator extends Composite {
 		if (stackPanel.isCategoriesVisible()) {
 			scrollCategoriesPanel.setSize(""+(width-2), ""+(height-2-((UIDesktopConstants.NUMBER_OF_STACKS-hiddenStacks) * (UIDesktopConstants.STACK_HEIGHT+skinExtrStackSize))));
 		}
+		if (stackPanel.isMetadataVisible()) {
+			scrollMetadataPanel.setSize(""+(width-2), ""+(height-2-((UIDesktopConstants.NUMBER_OF_STACKS-hiddenStacks) * (UIDesktopConstants.STACK_HEIGHT+skinExtrStackSize))));
+		}
 		if (stackPanel.isThesaurusVisible()) {
 			scrollThesaurusPanel.setSize(""+(width-2), ""+(height-2-((UIDesktopConstants.NUMBER_OF_STACKS-hiddenStacks) * (UIDesktopConstants.STACK_HEIGHT+skinExtrStackSize))));
 		}
@@ -226,6 +245,13 @@ public class Navigator extends Composite {
 	 */
 	public void showCategories() {
 		stackPanel.showCategories();
+	}
+	
+	/**
+	 * showMetadata
+	 */
+	public void showMetadata() {
+		stackPanel.showMetadata();
 	}
 	
 	/**
@@ -276,7 +302,9 @@ public class Navigator extends Composite {
 		if (stackPanel.isCategoriesVisible()) {
 			stackPanel.add(scrollCategoriesPanel, Util.createHeaderHTML("img/icon/stackpanel/table_key.gif", Main.i18n("leftpanel.label.categories")), true);
 		}
-		
+		if (stackPanel.isMetadataVisible()) {
+			stackPanel.add(scrollMetadataPanel, Util.createHeaderHTML("img/icon/stackpanel/metadata.png", Main.i18n("leftpanel.label.metadata")), true);
+		}
 		if (stackPanel.isThesaurusVisible()) {
 			stackPanel.add(scrollThesaurusPanel, Util.createHeaderHTML("img/icon/stackpanel/book_open.gif", Main.i18n("leftpanel.label.thesaurus")), true);
 		}

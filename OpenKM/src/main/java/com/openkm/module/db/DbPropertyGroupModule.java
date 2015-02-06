@@ -21,12 +21,14 @@
 
 package com.openkm.module.db;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -58,17 +60,20 @@ import com.openkm.dao.NodeBaseDAO;
 import com.openkm.dao.RegisteredPropertyGroupDAO;
 import com.openkm.dao.bean.AutomationRule;
 import com.openkm.dao.bean.RegisteredPropertyGroup;
+import com.openkm.form.suggestion.Suggestion;
+import com.openkm.form.suggestion.SuggestionException;
 import com.openkm.module.PropertyGroupModule;
 import com.openkm.spring.PrincipalUtils;
 import com.openkm.util.FormUtils;
+import com.openkm.util.PathUtils;
 import com.openkm.util.UserActivity;
 
 public class DbPropertyGroupModule implements PropertyGroupModule {
 	private static Logger log = LoggerFactory.getLogger(DbPropertyGroupModule.class);
 	
 	@Override
-	public void addGroup(String token, String nodePath, String grpName) throws NoSuchGroupException, LockException,
-			PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException, AutomationException {
+	public void addGroup(String token, String nodePath, String grpName) throws NoSuchGroupException, LockException, PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException, AutomationException {
 		log.debug("addGroup({}, {}, {})", new Object[] { token, nodePath, grpName });
 		Authentication auth = null, oldAuth = null;
 		
@@ -90,6 +95,7 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 			Map<String, Object> env = new HashMap<String, Object>();
 			env.put(AutomationUtils.NODE_UUID, nodeUuid);
 			env.put(AutomationUtils.NODE_PATH, nodePath);
+			env.put(AutomationUtils.PARENT_PATH, PathUtils.getParent(nodePath));
 			env.put(AutomationUtils.PROPERTY_GROUP_NAME, grpName);
 			AutomationManager.getInstance().fireEvent(AutomationRule.EVENT_PROPERTY_GROUP_ADD, AutomationRule.AT_PRE, env);
 			
@@ -112,8 +118,8 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	}
 	
 	@Override
-	public void removeGroup(String token, String nodePath, String grpName) throws AccessDeniedException,
-			NoSuchGroupException, LockException, PathNotFoundException, RepositoryException, DatabaseException {
+	public void removeGroup(String token, String nodePath, String grpName) throws AccessDeniedException, NoSuchGroupException,
+			LockException, PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("removeGroup({}, {}, {})", new Object[] { token, nodePath, grpName });
 		Authentication auth = null, oldAuth = null;
 		
@@ -146,8 +152,8 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	}
 	
 	@Override
-	public List<PropertyGroup> getGroups(String token, String nodePath) throws IOException, ParseException,
-			PathNotFoundException, RepositoryException, DatabaseException {
+	public List<PropertyGroup> getGroups(String token, String nodePath) throws IOException, ParseException, PathNotFoundException,
+			RepositoryException, DatabaseException {
 		log.debug("getGroups({})", token);
 		ArrayList<PropertyGroup> ret = new ArrayList<PropertyGroup>();
 		@SuppressWarnings("unused")
@@ -186,8 +192,7 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	}
 	
 	@Override
-	public List<PropertyGroup> getAllGroups(String token) throws IOException, ParseException, RepositoryException,
-			DatabaseException {
+	public List<PropertyGroup> getAllGroups(String token) throws IOException, ParseException, RepositoryException, DatabaseException {
 		log.debug("getAllGroups({})", token);
 		ArrayList<PropertyGroup> ret = new ArrayList<PropertyGroup>();
 		@SuppressWarnings("unused")
@@ -224,10 +229,13 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	}
 	
 	@Override
-	public List<FormElement> getProperties(String token, String nodePath, String grpName) throws IOException,
-			ParseException, NoSuchGroupException, PathNotFoundException, RepositoryException, DatabaseException {
-		log.debug("getProperties({}, {}, {})", new Object[] { token, nodePath, grpName });
+	public List<FormElement> getProperties(String token, String nodeId, String grpName) throws IOException, ParseException,
+			NoSuchGroupException, PathNotFoundException, RepositoryException, DatabaseException {
+		log.debug("getProperties({}, {}, {})", new Object[] { token, nodeId, grpName });
+		long begin = System.currentTimeMillis();
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -237,9 +245,16 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			Map<PropertyGroup, List<FormElement>> pgfs = FormUtils.parsePropertyGroupsForms(Config.PROPERTY_GROUPS_XML);
 			List<FormElement> pgf = FormUtils.getPropertyGroupForms(pgfs, grpName);
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
 			List<FormElement> nodeProperties = new ArrayList<FormElement>();
 			
 			if (pgf != null) {
@@ -301,9 +316,9 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 			}
 			
 			// Activity log
-			UserActivity.log(auth.getName(), "GET_PROPERTY_GROUP_PROPERTIES", nodeUuid, nodePath, grpName + ", "
-					+ nodeProperties);
+			UserActivity.log(auth.getName(), "GET_PROPERTY_GROUP_PROPERTIES", nodeUuid, nodePath, grpName + ", " + nodeProperties);
 			
+			log.trace("getProperties.Time: {}", System.currentTimeMillis() - begin);
 			log.debug("getProperties: {}", nodeProperties);
 			return nodeProperties;
 		} catch (DatabaseException e) {
@@ -318,10 +333,13 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	/**
 	 * Convenient method for GWTUtil.getExtraColumn()
 	 */
-	public FormElement getProperty(String token, String nodePath, String grpName, String propName) throws IOException,
-			ParseException, NoSuchGroupException, PathNotFoundException, RepositoryException, DatabaseException {
-		log.debug("getProperty({}, {}, {}, {})", new Object[] { token, nodePath, grpName, propName });
+	public FormElement getProperty(String token, String nodeId, String grpName, String propName) throws IOException, ParseException,
+			NoSuchGroupException, PathNotFoundException, RepositoryException, DatabaseException {
+		log.debug("getProperty({}, {}, {}, {})", new Object[] { token, nodeId, grpName, propName });
+		long begin = System.currentTimeMillis();
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -331,9 +349,16 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			Map<PropertyGroup, List<FormElement>> pgfs = FormUtils.parsePropertyGroupsForms(Config.PROPERTY_GROUPS_XML);
 			Map<String, FormElement> pgfMap = FormUtils.getPropertyGroupFormsMap(pgfs, grpName);
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
 			FormElement nodeProperty = null;
 			
 			if (pgfMap != null) {
@@ -392,9 +417,9 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 			}
 			
 			// Activity log
-			UserActivity.log(auth.getName(), "GET_PROPERTY_GROUP_PROPERTY", nodeUuid, nodePath, grpName + ", "
-					+ nodeProperty);
+			UserActivity.log(auth.getName(), "GET_PROPERTY_GROUP_PROPERTY", nodeUuid, nodePath, grpName + ", " + nodeProperty);
 			
+			log.trace("getProperty.Time: {}", System.currentTimeMillis() - begin);
 			log.debug("getProperty: {}", nodeProperty);
 			return nodeProperty;
 		} catch (DatabaseException e) {
@@ -407,11 +432,13 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	}
 	
 	@Override
-	public void setProperties(String token, String nodePath, String grpName, List<FormElement> properties)
-			throws IOException, ParseException, NoSuchPropertyException, NoSuchGroupException, LockException,
-			PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException, AutomationException {
-		log.debug("setProperties({}, {}, {}, {})", new Object[] { token, nodePath, grpName, properties });
+	public void setProperties(String token, String nodeId, String grpName, List<FormElement> properties) throws IOException,
+			ParseException, NoSuchPropertyException, NoSuchGroupException, LockException, PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException, AutomationException {
+		log.debug("setProperties({}, {}, {}, {})", new Object[] { token, nodeId, grpName, properties });
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
@@ -425,7 +452,14 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			Map<String, String> nodProps = new HashMap<String, String>();
 			Gson gson = new Gson();
 			
@@ -468,6 +502,7 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 			Map<String, Object> env = new HashMap<String, Object>();
 			env.put(AutomationUtils.NODE_UUID, nodeUuid);
 			env.put(AutomationUtils.NODE_PATH, nodePath);
+			env.put(AutomationUtils.PARENT_PATH, PathUtils.getParent(nodePath));
 			env.put(AutomationUtils.PROPERTY_GROUP_NAME, grpName);
 			env.put(AutomationUtils.PROPERTY_GROUP_PROPERTIES, nodProps);
 			AutomationManager.getInstance().fireEvent(AutomationRule.EVENT_PROPERTY_GROUP_SET, AutomationRule.AT_PRE, env);
@@ -478,8 +513,7 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 			AutomationManager.getInstance().fireEvent(AutomationRule.EVENT_PROPERTY_GROUP_SET, AutomationRule.AT_POST, env);
 			
 			// Activity log
-			UserActivity.log(auth.getName(), "SET_PROPERTY_GROUP_PROPERTIES", nodeUuid, nodePath, grpName + ", "
-					+ properties);
+			UserActivity.log(auth.getName(), "SET_PROPERTY_GROUP_PROPERTIES", nodeUuid, nodePath, grpName + ", " + properties);
 		} catch (DatabaseException e) {
 			throw e;
 		} finally {
@@ -492,8 +526,8 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	}
 	
 	@Override
-	public List<FormElement> getPropertyGroupForm(String token, String grpName) throws ParseException, IOException,
-			RepositoryException, DatabaseException {
+	public List<FormElement> getPropertyGroupForm(String token, String grpName) throws ParseException, IOException, RepositoryException,
+			DatabaseException {
 		log.debug("getPropertyGroupForm({}, {})", token, grpName);
 		List<FormElement> ret = new ArrayList<FormElement>();
 		@SuppressWarnings("unused")
@@ -532,12 +566,13 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 	}
 	
 	@Override
-	public boolean hasGroup(String token, String nodePath, String grpName) throws IOException, ParseException,
-			PathNotFoundException, RepositoryException, DatabaseException {
-		log.debug("hasGroup({}, {}, {})", new Object[] { token, nodePath, grpName });
+	public boolean hasGroup(String token, String nodeId, String grpName) throws IOException, ParseException, PathNotFoundException,
+			RepositoryException, DatabaseException {
+		log.debug("hasGroup({}, {}, {})", new Object[] { token, nodeId, grpName });
 		boolean ret = false;
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -547,7 +582,12 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodeUuid = nodeId;
+			}
+			
 			List<String> propGroups = NodeBaseDAO.getInstance().getPropertyGroups(nodeUuid);
 			
 			if (propGroups.contains(grpName)) {
@@ -563,5 +603,101 @@ public class DbPropertyGroupModule implements PropertyGroupModule {
 		
 		log.debug("hasGroup: {}", ret);
 		return ret;
+	}
+	
+	@Override
+	public List<String> getSuggestions(String token, String nodeId, String grpName, String propName) throws PathNotFoundException,
+			IOException, ParseException, NoSuchGroupException, SuggestionException, DatabaseException {
+		log.debug("getSuggestions({}, {}, {}, {})", new Object[] { token, nodeId, grpName, propName });
+		long begin = System.currentTimeMillis();
+		List<String> list = new ArrayList<String>();
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
+			Map<PropertyGroup, List<FormElement>> pgfs = FormUtils.parsePropertyGroupsForms(Config.PROPERTY_GROUPS_XML);
+			Map<String, FormElement> pgfMap = FormUtils.getPropertyGroupFormsMap(pgfs, grpName);
+			
+			if (pgfMap != null) {
+				FormElement fe = pgfMap.get(propName);
+				
+				if (fe instanceof Select) {
+					Select sel = (Select) fe;
+					
+					if (sel.getSuggestion() != null && !sel.getSuggestion().isEmpty()) {
+						try {
+							Object obj = Class.forName(sel.getSuggestion()).newInstance();
+							list = ((Suggestion) obj).getSuggestions(nodeUuid, nodePath, sel);
+						} catch (ClassNotFoundException e) {
+							log.warn("ClassNotFoundException: " + sel.getSuggestion(), e);
+						} catch (InstantiationException e) {
+							log.warn("InstantiationException: " + sel.getSuggestion(), e);
+						} catch (IllegalAccessException e) {
+							log.warn("IllegalAccessException: " + sel.getSuggestion(), e);
+						}
+					}
+				} else {
+					throw new ParseException("Unknown property definition: " + fe.getName());
+				}
+			} else {
+				throw new NoSuchGroupException(grpName);
+			}
+		} catch (DatabaseException e) {
+			throw e;
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+		
+		log.trace("getSuggestions.Time: {}", System.currentTimeMillis() - begin);
+		log.debug("getSuggestions: {}", list);
+		return list;
+	}
+	
+	@Override
+	public void registerDefinition(String token, String pgDef) throws ParseException, DatabaseException, IOException {
+		log.debug("registerDefinition({}, {})", new Object[] { token, pgDef });
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		long begin = System.currentTimeMillis();
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			FileUtils.writeStringToFile(new File(Config.PROPERTY_GROUPS_XML), pgDef, "UTF-8");
+			DbRepositoryModule.registerPropertyGroups(Config.PROPERTY_GROUPS_XML);
+		} catch (DatabaseException e) {
+			throw e;
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+		
+		log.trace("registerDefinition.Time: {}", System.currentTimeMillis() - begin);
+		log.debug("registerDefinition: void");
 	}
 }

@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.api;
@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.bean.AppVersion;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Folder;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.DatabaseException;
@@ -91,8 +92,7 @@ public class OKMRepository implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getPersonalFolderBase(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getPersonalFolderBase(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getPersonalFolderBase({})", token);
 		RepositoryModule rm = ModuleManager.getRepositoryModule();
 		Folder personalFolder = rm.getPersonalFolderBase(token);
@@ -128,8 +128,7 @@ public class OKMRepository implements RepositoryModule {
 	}
 	
 	@Override
-	public Folder getCategoriesFolder(String token) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public Folder getCategoriesFolder(String token) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getCategoriesFolder({})", token);
 		RepositoryModule rm = ModuleManager.getRepositoryModule();
 		Folder categoriesFolder = rm.getCategoriesFolder(token);
@@ -138,8 +137,8 @@ public class OKMRepository implements RepositoryModule {
 	}
 	
 	@Override
-	public void purgeTrash(String token) throws PathNotFoundException, AccessDeniedException, LockException,
-			RepositoryException, DatabaseException {
+	public void purgeTrash(String token) throws PathNotFoundException, AccessDeniedException, LockException, RepositoryException,
+			DatabaseException {
 		log.debug("purgeTrash({})", token);
 		RepositoryModule rm = ModuleManager.getRepositoryModule();
 		rm.purgeTrash(token);
@@ -174,8 +173,7 @@ public class OKMRepository implements RepositoryModule {
 	}
 	
 	@Override
-	public String getNodePath(String token, String uuid) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public String getNodePath(String token, String uuid) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getNodePath({}, {})", token, uuid);
 		RepositoryModule rm = ModuleManager.getRepositoryModule();
 		String ret = rm.getNodePath(token, uuid);
@@ -184,8 +182,7 @@ public class OKMRepository implements RepositoryModule {
 	}
 	
 	@Override
-	public String getNodeUuid(String token, String path) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public String getNodeUuid(String token, String path) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getNodeUuid({}, {})", token, path);
 		RepositoryModule rm = ModuleManager.getRepositoryModule();
 		String ret = rm.getNodeUuid(token, path);
@@ -199,5 +196,14 @@ public class OKMRepository implements RepositoryModule {
 		AppVersion ret = rm.getAppVersion(token);
 		log.debug("getAppVersion: {}", ret);
 		return ret;
+	}
+	
+	@Override
+	public void copyAttributes(String token, String srcId, String dstId, ExtendedAttributes extAttr) throws AccessDeniedException,
+			PathNotFoundException, DatabaseException {
+		log.debug("copyAttributes({}, {}, {}, {})", new Object[] { token, srcId, dstId, extAttr });
+		RepositoryModule rm = ModuleManager.getRepositoryModule();
+		rm.copyAttributes(token, srcId, dstId, extAttr);
+		log.debug("copyAttributes: void");
 	}
 }

@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.frontend.client.panel.top;
@@ -50,10 +50,10 @@ import com.openkm.frontend.client.widget.toolbar.ToolBar;
  * Top panel
  * 
  * @author jllort
- *
+ * 
  */
 public class TopPanel extends Composite {
-	public static final int PANEL_HEIGHT = 55 + (Util.getUserAgent().equals("gecko")?2:0);
+	public static final int PANEL_HEIGHT = 55 + (Util.getUserAgent().equals("gecko") ? 2 : 0);
 	
 	private VerticalPanel panel;
 	private HorizontalPanel toolsPanel;
@@ -74,7 +74,6 @@ public class TopPanel extends Composite {
 	private HTML percentage;
 	public HTML openkmVersion;
 	private int number = 0;
-	
 	
 	/**
 	 * Top panel
@@ -133,7 +132,7 @@ public class TopPanel extends Composite {
 					searchImage.setResource(OKMBundleResources.INSTANCE.searchDisabled());
 				}
 				
-				if ((char)KeyCodes.KEY_ENTER == event.getNativeKeyCode()) {
+				if ((char) KeyCodes.KEY_ENTER == event.getNativeKeyCode()) {
 					executeQuickSearch();
 				}
 			}
@@ -166,7 +165,7 @@ public class TopPanel extends Composite {
 		horizontalPanelMenu.add(separator);
 		horizontalPanelMenu.add(uploadingPanel);
 		horizontalPanelMenu.add(quickSearchPanel);
-		Image logo = new Image("img/logo_openkm_tiny.gif");
+		Image logo = new Image("../logo/tiny");
 		horizontalPanelMenu.add(logo);
 		horizontalPanelMenu.setCellHorizontalAlignment(uploadingPanel, HasAlignment.ALIGN_RIGHT);
 		horizontalPanelMenu.setCellVerticalAlignment(uploadingPanel, HasAlignment.ALIGN_MIDDLE);
@@ -199,7 +198,7 @@ public class TopPanel extends Composite {
 		horizontalPanel.setCellWidth(panel, "100%");
 		horizontalPanel.setCellWidth(rightLabel, "10px");
 		
-		horizontalPanel.setHeight(""+PANEL_HEIGHT);
+		horizontalPanel.setHeight("" + PANEL_HEIGHT);
 		
 		initWidget(horizontalPanel);
 	}
@@ -211,18 +210,16 @@ public class TopPanel extends Composite {
 	 */
 	public void setPendingFilesToUpload(int number) {
 		this.number = number;
-		uploadingPanel.setVisible(number>0);
-		pendingInfo.setVisible((number-1)>0);
-		pendingInfo.setHTML((number-1) + " " + Main.i18n("fileupload.upload.queued"));
+		uploadingPanel.setVisible(number > 0);
+		pendingInfo.setVisible((number - 1) > 0);
+		pendingInfo.setHTML((number - 1) + " " + Main.i18n("fileupload.upload.queued"));
 	}
 	
 	/**
 	 * setPercentageUploading
-	 * 
-	 * @param percentage
 	 */
 	public void setPercentageUploading(int percentage) {
-		if (percentage==0) {
+		if (percentage == 0) {
 			arrowUp.setVisible(false);
 			this.percentage.setHTML("");
 		} else {
@@ -235,7 +232,7 @@ public class TopPanel extends Composite {
 	 * executeQuickSearch
 	 */
 	private void executeQuickSearch() {
-		if (quickSearch.getText().length()>=3) {
+		if (quickSearch.getText().length() >= 3) {
 			Main.get().mainPanel.topPanel.tabWorkspace.changeSelectedTab(UIDockPanelConstants.SEARCH);
 			Main.get().mainPanel.search.searchBrowser.searchIn.setQuickSearch(quickSearch.getText());
 			quickSearch.setText("");
@@ -253,7 +250,7 @@ public class TopPanel extends Composite {
 		setPendingFilesToUpload(number);
 	}
 	
-	public class ExtendedHorizontalPanel extends HorizontalPanel implements HasClickHandlers {		
+	public class ExtendedHorizontalPanel extends HorizontalPanel implements HasClickHandlers {
 		/**
 		 * ExtendedHorizontalPanel
 		 */

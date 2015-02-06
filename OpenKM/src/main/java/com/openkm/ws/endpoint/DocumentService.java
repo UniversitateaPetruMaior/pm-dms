@@ -32,7 +32,6 @@ import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.xml.bind.annotation.XmlMimeType;
-import javax.xml.ws.BindingType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +57,7 @@ import com.openkm.module.ModuleManager;
 import com.openkm.principal.PrincipalAdapterException;
 
 @WebService(name = "OKMDocument", serviceName = "OKMDocument", targetNamespace = "http://ws.openkm.com")
-@BindingType(javax.xml.ws.soap.SOAPBinding.SOAP11HTTP_MTOM_BINDING)
+// @BindingType(javax.xml.ws.soap.SOAPBinding.SOAP11HTTP_MTOM_BINDING)
 public class DocumentService {
 	private static Logger log = LoggerFactory.getLogger(DocumentService.class);
 	
@@ -243,7 +242,7 @@ public class DocumentService {
 			@WebParam(name = "content") @XmlMimeType("application/octet-stream") DataHandler content,
 			@WebParam(name = "comment") String comment) throws FileSizeExceededException, UserQuotaExceededException,
 			VirusDetectedException, LockException, VersionException, PathNotFoundException, AccessDeniedException, RepositoryException,
-			IOException, DatabaseException, ExtensionException {
+			IOException, DatabaseException, ExtensionException, AutomationException {
 		log.debug("checkin({}, {} ,{})", new Object[] { token, docPath, comment });
 		DocumentModule dm = ModuleManager.getDocumentModule();
 		InputStream bais = content.getInputStream();

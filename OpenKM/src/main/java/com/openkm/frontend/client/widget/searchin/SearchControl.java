@@ -76,8 +76,8 @@ public class SearchControl extends Composite {
 	HorizontalPanel searchTypePanel;
 	public final CheckBox searchTypeAnd;
 	public final CheckBox searchTypeOr;
-	private CheckBox advancedView;
-	private CheckBox compactResultsView;
+	public CheckBox advancedView;
+	public CheckBox compactResultsView;
 	public CheckBox showPropertyGroups;
 	public CheckBox saveUserNews;
 	private HTML resultsPageText;
@@ -308,10 +308,10 @@ public class SearchControl extends Composite {
 		table.getCellFormatter().setVisible(4, 0, false);
 		table.getCellFormatter().setVisible(4, 1, false);
 		
-		searchButton.setStyleName("okm-YesButton");
-		saveSearchButton.setStyleName("okm-AddButton");
+		searchButton.setStyleName("okm-SearchButton");
+		saveSearchButton.setStyleName("okm-SaveButton");
 		saveSearchButton.addStyleName("okm-NoWrap");
-		cleanButton.setStyleName("okm-NoButton");
+		cleanButton.setStyleName("okm-CleanButton");
 		searchSavedName.setStyleName("okm-Input");
 		resultPage.setStyleName("okm-Input");
 		

@@ -47,7 +47,7 @@ public class Status extends PopupPanel {
 	private boolean flag_exporting = false;
 	private boolean flag_importing = false;
 	private boolean flag_search = false;
-	private boolean flag_getChilds = false;
+	private boolean flag_getChildren = false;
 	
 	/**
 	 * The status
@@ -81,9 +81,9 @@ public class Status extends PopupPanel {
 	 * Refreshing the panel
 	 */
 	public void refresh() {
-		if (flag_exporting || flag_importing || flag_search || flag_getChilds) {
+		if (flag_exporting || flag_importing || flag_search || flag_getChildren) {
 			Widget widgetBaseToCenter = Main.get().mainPanel;
-			if (flag_getChilds && widget!=null) {
+			if (flag_getChildren && widget!=null) {
 				widgetBaseToCenter = widget;
 			} 
 			
@@ -153,20 +153,20 @@ public class Status extends PopupPanel {
 	}
 	
 	/**
-	 * Sets the get childs flag
+	 * Sets the get children flag
 	 */
 	public void setGetChilds(Widget widget) {
 		this.widget = widget;
 		msg.setHTML(Main.i18n("status.dropbox.refresh.folder"));
-		flag_getChilds = true;
+		flag_getChildren = true;
 		refresh();
 	}
 	
 	/**
-	 * Unset the get childs flag
+	 * Unset the get children flag
 	 */
 	public void unsetGetChilds() {
-		flag_getChilds = false;
+		flag_getChildren = false;
 		refresh();
 	}
 	

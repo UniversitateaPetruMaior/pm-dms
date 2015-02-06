@@ -37,7 +37,10 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
+import com.openkm.core.PathNotFoundException;
+import com.openkm.core.RepositoryException;
 import com.openkm.dao.HibernateUtil;
+import com.openkm.dao.NodeDocumentVersionDAO;
 import com.openkm.dao.bean.NodeDocumentVersion;
 import com.openkm.util.SecureStore;
 
@@ -76,7 +79,11 @@ public class FsDataStore {
 		File fs = resolveFile(uuid);
 		
 		if (!fs.delete()) {
-			throw new IOException("Could not delete file '" + fs.getParent() + "/" + uuid + "'");
+			if (fs.exists()) {
+				throw new IOException("Can't delete file (locked) '" + fs.getParent() + File.separator + uuid + "'");
+			} else {
+				throw new IOException("Cant' delete file (not exists) '" + fs.getParent() + File.separator + uuid + "'");
+			}
 		}
 	}
 	
@@ -126,6 +133,32 @@ public class FsDataStore {
 		}
 		
 		log.debug("persist: void");
+	}
+	
+	/**
+	 * Verify checksum
+	 */
+	public static void verifyChecksum(String docUuid, String verName, File fsRaw) throws RepositoryException,
+			DatabaseException, IOException {
+		log.debug("verifyChecksum({}, {}, {})", new Object[] { docUuid, verName, fsRaw });
+		Session session = null;
+		
+		try {
+			String stChecksum = NodeDocumentVersionDAO.getInstance().getVersionContentChecksumByParent(docUuid, verName);
+			String clCheckSum = SecureStore.md5Encode(fsRaw);
+			
+			if (!clCheckSum.equals(stChecksum)) {
+				throw new RepositoryException("Checksum failure for node '" + docUuid + "' and version '" + verName + "'");
+			}
+		} catch (NoSuchAlgorithmException e) {
+			log.warn(e.getMessage(), e);
+		} catch (PathNotFoundException e) {
+			throw new RepositoryException("PathNotFound: " + docUuid);
+		} finally {
+			HibernateUtil.close(session);
+		}
+		
+		log.debug("verifyChecksum: void");
 	}
 	
 	/**

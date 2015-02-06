@@ -34,6 +34,9 @@ import com.openkm.extension.frontend.client.bean.GWTDropboxEntry;
 import com.openkm.extension.frontend.client.service.OKMDropboxService;
 import com.openkm.extension.frontend.client.service.OKMDropboxServiceAsync;
 import com.openkm.frontend.client.Main;
+import com.openkm.frontend.client.bean.GWTFolder;
+import com.openkm.frontend.client.bean.GWTPermission;
+import com.openkm.frontend.client.extension.comunicator.GeneralComunicator;
 import com.openkm.frontend.client.util.Util;
 
 /**
@@ -46,7 +49,7 @@ public class FolderSelectTree extends Composite {
 	private Tree tree;
 	private TreeItem actualItem;
 	private final OKMDropboxServiceAsync dropboxService = (OKMDropboxServiceAsync) GWT.create(OKMDropboxService.class);
-	TreeItem rootItem = new TreeItem(Util.imageItemHTML("img/menuitem_childs.gif", "Dropbox", "top"));
+	TreeItem rootItem = new TreeItem();
 	
 	/**
 	 * Folder Tree
@@ -106,7 +109,7 @@ public class FolderSelectTree extends Composite {
 		public void onSuccess(List<GWTDropboxEntry> result) {
 			boolean directAdd = true;
 			
-			// If has no childs directly add values is permited
+			// If has no children directly add values is permited
 			if (actualItem.getChildCount() > 0) {
 				directAdd = false;
 				// to prevent remote folder remove it disables all tree branch
@@ -115,21 +118,22 @@ public class FolderSelectTree extends Composite {
 			}
 			
 			// On refreshing not refreshed the actual item values but must
-			// ensure that has childs value is consistent
+			// ensure that has children value is consistent
 			if (result.isEmpty()) {
 				((GWTDropboxEntry) actualItem.getUserObject()).setChildren(false);
 			} else {
 				((GWTDropboxEntry) actualItem.getUserObject()).setChildren(true);
 			}
 			
-			// Ads folders childs if exists
+			// Ads folders children if exists
 			for (Iterator<GWTDropboxEntry> it = result.iterator(); it.hasNext();) {
 				GWTDropboxEntry entry = it.next();
-				TreeItem folderItem = new TreeItem(entry.getFileName());
+				TreeItem folderItem = new TreeItem();
+				folderItem.setHTML(entry.getFileName());
 				folderItem.setUserObject(entry);
 				folderItem.setStyleName("okm-TreeItem");
 				
-				// If has no childs directly add values is permited, else
+				// If has no children directly add values is permited, else
 				// evalues each node to refresh, remove or add
 				if (directAdd) {
 					evaluesFolderIcon(folderItem);
@@ -165,7 +169,7 @@ public class FolderSelectTree extends Composite {
 			actualItem.setSelected(true);
 			
 			Dropbox.get().status.unsetGetChilds();
-			getChilds(result.getPath());
+			getChildren(result.getPath());
 		}
 		
 		@Override
@@ -180,7 +184,7 @@ public class FolderSelectTree extends Composite {
 	 * 
 	 * @param path The folder path selected to list items
 	 */
-	private void getChilds(String path) {
+	private void getChildren(String path) {
 		Dropbox.get().status.setGetChilds(Dropbox.get().folderSelectPopup);
 		dropboxService.getChildren(path, callbackGetChilds);
 	}
@@ -198,7 +202,7 @@ public class FolderSelectTree extends Composite {
 	 */
 	public void refresh(boolean reset) {
 		String path = ((GWTDropboxEntry) actualItem.getUserObject()).getPath();
-		getChilds(path);
+		getChildren(path);
 	}
 	
 	/**
@@ -264,11 +268,10 @@ public class FolderSelectTree extends Composite {
 		preventFolderInconsitences(item);
 		
 		String name = (item.equals(rootItem))?"Dropbox":folderItem.getFileName();
-		if (folderItem.isChildren()) {
-			item.setHTML(Util.imageItemHTML("img/menuitem_childs.gif", name, "top"));
-		} else {
-			item.setHTML(Util.imageItemHTML("img/menuitem_empty.gif", name, "top"));
-		}
+		GWTFolder folder = new GWTFolder();
+		folder.setPermissions(GWTPermission.READ | GWTPermission.WRITE);
+		folder.setHasChildren(folderItem.isChildren());
+		item.setHTML(Util.imageItemHTML(GeneralComunicator.getFolderIcon(folder), name, "top"));
 	}
 	
 	/**

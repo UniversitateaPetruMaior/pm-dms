@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.openkm.dao.bean.*;
+import com.openkm.frontend.client.bean.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,13 +48,13 @@ import com.openkm.bean.DashboardDocumentResult;
 import com.openkm.bean.DashboardFolderResult;
 import com.openkm.bean.DashboardMailResult;
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Folder;
 import com.openkm.bean.LockInfo;
 import com.openkm.bean.Mail;
 import com.openkm.bean.Note;
 import com.openkm.bean.PropertyGroup;
 import com.openkm.bean.QueryResult;
-import com.openkm.bean.Signature;
 import com.openkm.bean.Version;
 import com.openkm.bean.form.Button;
 import com.openkm.bean.form.CheckBox;
@@ -82,44 +84,6 @@ import com.openkm.core.ParseException;
 import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
 import com.openkm.dao.KeyValueDAO;
-import com.openkm.dao.bean.Bookmark;
-import com.openkm.dao.bean.KeyValue;
-import com.openkm.dao.bean.Language;
-import com.openkm.dao.bean.Omr;
-import com.openkm.dao.bean.QueryParams;
-import com.openkm.dao.bean.Report;
-import com.openkm.dao.bean.UserConfig;
-import com.openkm.frontend.client.bean.GWTAppVersion;
-import com.openkm.frontend.client.bean.GWTBookmark;
-import com.openkm.frontend.client.bean.GWTComment;
-import com.openkm.frontend.client.bean.GWTDashboardDocumentResult;
-import com.openkm.frontend.client.bean.GWTDashboardFolderResult;
-import com.openkm.frontend.client.bean.GWTDashboardMailResult;
-import com.openkm.frontend.client.bean.GWTDocument;
-import com.openkm.frontend.client.bean.GWTFolder;
-import com.openkm.frontend.client.bean.GWTKeyValue;
-import com.openkm.frontend.client.bean.GWTLanguage;
-import com.openkm.frontend.client.bean.GWTLockInfo;
-import com.openkm.frontend.client.bean.GWTMail;
-import com.openkm.frontend.client.bean.GWTNote;
-import com.openkm.frontend.client.bean.GWTOmr;
-import com.openkm.frontend.client.bean.GWTProcessDefinition;
-import com.openkm.frontend.client.bean.GWTProcessInstance;
-import com.openkm.frontend.client.bean.GWTProcessInstanceLogEntry;
-import com.openkm.frontend.client.bean.GWTPropertyGroup;
-import com.openkm.frontend.client.bean.GWTPropertyParams;
-import com.openkm.frontend.client.bean.GWTQueryParams;
-import com.openkm.frontend.client.bean.GWTQueryResult;
-import com.openkm.frontend.client.bean.GWTReport;
-import com.openkm.frontend.client.bean.GWTSignature;
-import com.openkm.frontend.client.bean.GWTTaskInstance;
-import com.openkm.frontend.client.bean.GWTToken;
-import com.openkm.frontend.client.bean.GWTTransition;
-import com.openkm.frontend.client.bean.GWTUser;
-import com.openkm.frontend.client.bean.GWTUserConfig;
-import com.openkm.frontend.client.bean.GWTVersion;
-import com.openkm.frontend.client.bean.GWTWorkflowComment;
-import com.openkm.frontend.client.bean.GWTWorkspace;
 import com.openkm.frontend.client.bean.form.GWTButton;
 import com.openkm.frontend.client.bean.form.GWTCheckBox;
 import com.openkm.frontend.client.bean.form.GWTDownload;
@@ -236,15 +200,6 @@ public class GWTUtil {
 		}
 		
 		doc.setCategories(categories);
-
-		// from Util.java in OpenKM 5.0
-		List<Signature> signatures = new ArrayList<Signature>();
-		
-		for (Iterator<GWTSignature> it = gWTDoc.getSignatures().iterator(); it.hasNext();) {
-			signatures.add(copy(it.next()));
-		}
-		doc.setSignatures(signatures);
-		
 		gWTDoc.setActualVersion(copy(doc.getActualVersion()));
 		
 		log.debug("copy: {}", gWTDoc);
@@ -323,28 +278,6 @@ public class GWTUtil {
 		
 		log.debug("copy: {}", folder);
 		return folder;
-	}
-	
-	/**
-	 * Copy the GWTFolder data to Folder data.
-	 * 
-	 * @param doc The original GWTFolder object.
-	 * @return A Folder object with the data from the original Document.
-	 */
-	public static Signature copy(GWTSignature sig) {
-		log.debug("copy({})", sig);
-		Signature signature = new Signature();
-		Calendar created = Calendar.getInstance();
-		created.setTimeInMillis(sig.getDate().getTime());
-		signature.setDate(created);
-		signature.setUser(sig.getUser());
-		signature.setPath(sig.getPath());
-		signature.setSignSHA1(sig.getSha1());
-		signature.setValid(sig.isValid());
-		
-		
-		log.debug("copy: {}", signature);
-		return signature;
 	}
 	
 	/**
@@ -524,26 +457,20 @@ public class GWTUtil {
 	 * 
 	 * @param queryResult The original QueryResult
 	 * @return The GWTQueryResult object with data values from de origina QueryResult
-	 * @throws DatabaseException
-	 * @throws RepositoryException
-	 * @throws PathNotFoundException
-	 * @throws NoSuchGroupException
-	 * @throws ParseException
-	 * @throws IOException
 	 */
-	public static GWTQueryResult copy(QueryResult queryResult) throws PrincipalAdapterException, IOException, ParseException,
-			NoSuchGroupException, PathNotFoundException, RepositoryException, DatabaseException {
+	public static GWTQueryResult copy(QueryResult queryResult, GWTWorkspace workspace) throws PrincipalAdapterException, IOException,
+			ParseException, NoSuchGroupException, PathNotFoundException, RepositoryException, DatabaseException {
 		GWTQueryResult gwtQueryResult = new GWTQueryResult();
 		
 		if (queryResult.getDocument() != null) {
-			gwtQueryResult.setDocument(copy(queryResult.getDocument(), null));
+			gwtQueryResult.setDocument(copy(queryResult.getDocument(), workspace));
 			gwtQueryResult.getDocument().setAttachment(false);
 		} else if (queryResult.getFolder() != null) {
-			gwtQueryResult.setFolder(copy(queryResult.getFolder(), null));
+			gwtQueryResult.setFolder(copy(queryResult.getFolder(), workspace));
 		} else if (queryResult.getMail() != null) {
-			gwtQueryResult.setMail(copy(queryResult.getMail(), null));
+			gwtQueryResult.setMail(copy(queryResult.getMail(), workspace));
 		} else if (queryResult.getAttachment() != null) {
-			gwtQueryResult.setAttachment(copy(queryResult.getAttachment(), null));
+			gwtQueryResult.setAttachment(copy(queryResult.getAttachment(), workspace));
 			gwtQueryResult.getAttachment().setAttachment(true);
 		}
 		
@@ -558,7 +485,6 @@ public class GWTUtil {
 	 * 
 	 * @param GWTQueryParams The original QueryParams
 	 * @return The GWTQueryParams object with the data from de original QueryParams
-	 * @throws NoSuchGroupException
 	 */
 	public static GWTQueryParams copy(QueryParams params) throws RepositoryException, IOException, PathNotFoundException,
 			ParseException, DatabaseException, PrincipalAdapterException, NoSuchGroupException {
@@ -762,7 +688,7 @@ public class GWTUtil {
 			if (obj instanceof FormElement) {
 				variables.put(key, copy((FormElement) obj));
 			} else {
-				variables.put(key, obj);
+				variables.put(key, String.valueOf(obj));
 			}
 		}
 		
@@ -927,7 +853,11 @@ public class GWTUtil {
 			}
 			
 			if (input.getType().equals(Input.TYPE_FOLDER) && !gWTInput.getValue().equals("")) {
-				gWTInput.setFolder(copy(OKMFolder.getInstance().getProperties(null, ((Input) formElement).getValue()), null));
+				try {
+					gWTInput.setFolder(copy(OKMFolder.getInstance().getProperties(null, ((Input) formElement).getValue()), null));
+				} catch (PathNotFoundException e) {
+					log.warn("Folder not found: {}", e.getMessage(), e);
+				}
 			}
 			
 			gWTInput.setType(((Input) formElement).getType());
@@ -990,6 +920,8 @@ public class GWTUtil {
 			gWTselect.setValidators(copyValidators(select.getValidators()));
 			gWTselect.setData(select.getData());
 			gWTselect.setOptionsData(select.getOptionsData());
+			gWTselect.setSuggestion(select.getSuggestion());
+			gWTselect.setClassName(select.getClassName());
 			return gWTselect;
 		} else if (formElement instanceof TextArea) {
 			GWTTextArea gWTTextArea = new GWTTextArea();
@@ -1501,7 +1433,7 @@ public class GWTUtil {
 		gWTlang.setId(language.getId());
 		gWTlang.setName(language.getName());
 		return gWTlang;
-	}	
+	}
 	
 	/**
 	 * Copy KeyValue to GWTKeyValue
@@ -1533,7 +1465,7 @@ public class GWTUtil {
 		gWTReport.setFormElements(gWTFormElemets);
 		return gWTReport;
 	}
-	
+
 	/**
 	 * Copy Omr to GWTOmr
 	 */
@@ -1565,5 +1497,38 @@ public class GWTUtil {
 	public static GWTAppVersion copy(AppVersion appVersion) {
 		GWTAppVersion gwtAppVersion = MappingUtils.getMapper().map(appVersion, GWTAppVersion.class);
 		return gwtAppVersion;
+	}
+	
+	/**
+	 * Copy GWTExtendedAttributes to ExtendedAttributes
+	 */
+	public static ExtendedAttributes copy(GWTExtendedAttributes attributes) {
+		ExtendedAttributes extendedAttributes = new ExtendedAttributes();
+		extendedAttributes.setCategories(attributes.isCategories());
+		extendedAttributes.setKeywords(attributes.isKeywords());
+		extendedAttributes.setNotes(attributes.isNotes());
+		extendedAttributes.setPropertyGroups(attributes.isPropertyGroups());
+		return extendedAttributes;
+	}
+	
+	/**
+	 * Copy MimeType to GWTMimeType
+	 */
+	public static GWTMimeType copy(MimeType mt) {
+		GWTMimeType gWTmt = new GWTMimeType();
+		gWTmt.setName(mt.getName());
+		gWTmt.setDescription(mt.getDescription());
+		return gWTmt;
+	}
+	
+	/**
+	 * Copy Config to GWTConfig
+	 */
+	public static GWTConfig copy(com.openkm.dao.bean.Config config) {
+		GWTConfig gWTConfig = new GWTConfig();
+		gWTConfig.setKey(config.getKey());
+		gWTConfig.setType(config.getType());
+		gWTConfig.setValue(config.getValue());
+		return gWTConfig;
 	}
 }

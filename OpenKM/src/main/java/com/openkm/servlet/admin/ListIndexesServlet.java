@@ -33,6 +33,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.IndexReader;
@@ -42,6 +43,7 @@ import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.hibernate.Session;
 import org.hibernate.search.FullTextQuery;
@@ -55,11 +57,11 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.core.Config;
 import com.openkm.dao.HibernateUtil;
-import com.openkm.dao.SearchDAO;
 import com.openkm.dao.bean.NodeBase;
 import com.openkm.dao.bean.NodeDocument;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeMail;
+import com.openkm.util.FormatUtil;
 import com.openkm.util.WebUtils;
 
 /**
@@ -73,7 +75,7 @@ public class ListIndexesServlet extends BaseServlet {
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String method = request.getMethod();
 		
-		if (isAdmin(request)) {
+		if (checkMultipleInstancesAccess(request, response)) {
 			if (method.equals(METHOD_GET)) {
 				doGet(request, response);
 			} else if (method.equals(METHOD_POST)) {
@@ -148,11 +150,11 @@ public class ListIndexesServlet extends BaseServlet {
 				if (showTerms && NodeDocument.class.getCanonicalName().equals(hibClass)) {
 					List<String> terms = new ArrayList<String>();
 					
-					for (TermEnum te = idx.terms(); te.next(); ) {
+					for (TermEnum te = idx.terms(); te.next();) {
 						Term t = te.term();
 						
 						if ("text".equals(t.field())) {
-							for (TermDocs tds = idx.termDocs(t); tds.next(); ) {
+							for (TermDocs tds = idx.termDocs(t); tds.next();) {
 								if (id == tds.doc()) {
 									terms.add(t.text());
 								}
@@ -189,8 +191,8 @@ public class ListIndexesServlet extends BaseServlet {
 	 * Search Lucene indexes
 	 */
 	@SuppressWarnings("unchecked")
-	private void searchLuceneDocuments(HttpServletRequest request, HttpServletResponse response) throws ServletException,
-			IOException, ParseException {
+	private void searchLuceneDocuments(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException,
+			ParseException {
 		String exp = WebUtils.getString(request, "exp");
 		FullTextSession ftSession = null;
 		Session session = null;
@@ -201,9 +203,15 @@ public class ListIndexesServlet extends BaseServlet {
 			ftSession = Search.getFullTextSession(session);
 			
 			if (exp != null && !exp.isEmpty()) {
-				QueryParser parser = new QueryParser(Config.LUCENE_VERSION, NodeDocument.TEXT_FIELD, SearchDAO.analyzer);
-				Query query = parser.parse(exp);
-				log.info("Query: {}", query);
+				Analyzer analyzer = new org.apache.lucene.analysis.WhitespaceAnalyzer(Config.LUCENE_VERSION);
+				QueryParser parser = new QueryParser(Config.LUCENE_VERSION, NodeBase.UUID_FIELD, analyzer);
+				Query query = null;
+				
+				if (FormatUtil.isValidUUID(exp)) {
+					query = new TermQuery(new Term(NodeBase.UUID_FIELD, exp));
+				} else {
+					query = parser.parse(exp);
+				}
 				
 				FullTextQuery ftq = ftSession.createFullTextQuery(query, NodeDocument.class, NodeFolder.class, NodeMail.class);
 				ftq.setProjection(FullTextQuery.DOCUMENT_ID, FullTextQuery.SCORE, FullTextQuery.THIS);
@@ -235,7 +243,7 @@ public class ListIndexesServlet extends BaseServlet {
 			
 			ServletContext sc = getServletContext();
 			sc.setAttribute("results", results);
-			sc.setAttribute("exp", exp);
+			sc.setAttribute("exp", exp.replaceAll("\"", "&quot;"));
 			sc.getRequestDispatcher("/admin/search_indexes.jsp").forward(request, response);
 		} finally {
 			HibernateUtil.close(ftSession);

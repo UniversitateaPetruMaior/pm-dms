@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.automation.AutomationException;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Mail;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.DatabaseException;
@@ -57,7 +58,7 @@ public class OKMMail implements MailModule {
 	@Override
 	public Mail create(String token, Mail mail) throws PathNotFoundException, ItemExistsException,
 			VirusDetectedException, AccessDeniedException, RepositoryException, DatabaseException,
-			UserQuotaExceededException {
+			UserQuotaExceededException, AutomationException {
 		log.debug("create({}, {})", token, mail);
 		MailModule mm = ModuleManager.getMailModule();
 		Mail newMail = mm.create(token, mail);
@@ -66,11 +67,11 @@ public class OKMMail implements MailModule {
 	}
 	
 	@Override
-	public Mail getProperties(String token, String mailPath) throws PathNotFoundException,
+	public Mail getProperties(String token, String mailId) throws PathNotFoundException,
 			RepositoryException, DatabaseException {
-		log.debug("getProperties({}, {})", token, mailPath);
+		log.debug("getProperties({}, {})", token, mailId);
 		MailModule mm = ModuleManager.getMailModule();
-		Mail mail = mm.getProperties(token, mailPath);
+		Mail mail = mm.getProperties(token, mailId);
 		log.debug("getProperties: {}", mail);
 		return mail;
 	}
@@ -123,32 +124,42 @@ public class OKMMail implements MailModule {
 	}
 	
 	@Override
-	@Deprecated
-	public List<Mail> getChilds(String token, String fldPath) throws PathNotFoundException,
-			RepositoryException, DatabaseException {
-		log.debug("getChilds({}, {})", token, fldPath);
+	public void extendedCopy(String token, String mailPath, String dstPath, ExtendedAttributes extAttr)
+			throws PathNotFoundException, ItemExistsException, AccessDeniedException, RepositoryException, IOException,
+			AutomationException, DatabaseException, UserQuotaExceededException {
+		log.debug("extendedCopy({}, {}, {}, {})", new Object[] { token, mailPath, dstPath, extAttr });
 		MailModule mm = ModuleManager.getMailModule();
-		List<Mail> col = mm.getChilds(token, fldPath);
+		mm.extendedCopy(token, mailPath, dstPath, extAttr);
+		log.debug("extendedCopy: void");
+	}
+	
+	@Override
+	@Deprecated
+	public List<Mail> getChilds(String token, String fldId) throws PathNotFoundException,
+			RepositoryException, DatabaseException {
+		log.debug("getChilds({}, {})", token, fldId);
+		MailModule mm = ModuleManager.getMailModule();
+		List<Mail> col = mm.getChilds(token, fldId);
 		log.debug("getChilds: {}", col);
 		return col;
 	}
 	
 	@Override
-	public List<Mail> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException,
+	public List<Mail> getChildren(String token, String fldId) throws PathNotFoundException, RepositoryException,
 			DatabaseException {
-		log.debug("getChildren({}, {})", token, fldPath);
+		log.debug("getChildren({}, {})", token, fldId);
 		MailModule mm = ModuleManager.getMailModule();
-		List<Mail> col = mm.getChildren(token, fldPath);
+		List<Mail> col = mm.getChildren(token, fldId);
 		log.debug("getChildren: {}", col);
 		return col;
 	}
 	
 	@Override
-	public boolean isValid(String token, String mailPath) throws PathNotFoundException,
+	public boolean isValid(String token, String mailId) throws PathNotFoundException,
 			AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("isValid({}, {})", token, mailPath);
+		log.debug("isValid({}, {})", token, mailId);
 		MailModule mm = ModuleManager.getMailModule();
-		boolean valid = mm.isValid(token, mailPath);
+		boolean valid = mm.isValid(token, mailId);
 		log.debug("isValid: {}", valid);
 		return valid;
 	}

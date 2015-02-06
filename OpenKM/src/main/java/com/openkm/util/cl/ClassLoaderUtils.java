@@ -46,7 +46,7 @@ public class ClassLoaderUtils {
 	 * Invoke static methodName from className.
 	 */
 	public static Object invokeMethodFromClass(String className, String methodName, ClassLoader classLoader)
-			throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+			throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalArgumentException, InstantiationException, SecurityException {
 		Class<?> c = classLoader.loadClass(className);
 		return invokeMethodFromClass(c, methodName);
 	}
@@ -98,18 +98,23 @@ public class ClassLoaderUtils {
 	 * Invoke static methodName from class.
 	 */
 	public static Object invokeMethodFromClass(Class<?> c, String methodName) throws ClassNotFoundException,
-			NoSuchMethodException, InvocationTargetException {
+			NoSuchMethodException, InvocationTargetException, IllegalArgumentException, InstantiationException, SecurityException {
 		log.debug("invokeMethodFromClass({}, {})", new Object[] { c, methodName });
 		Method m = c.getMethod(methodName);
 		m.setAccessible(true);
 		int mods = m.getModifiers();
 		
-		if (!Modifier.isStatic(mods) || !Modifier.isPublic(mods)) {
+		if (!Modifier.isPublic(mods)) {
 			throw new NoSuchMethodException(methodName);
 		}
 		
 		try {
-			return m.invoke(null);
+			if (Modifier.isStatic(mods)) {
+				return m.invoke(null);
+			} else {
+				return m.invoke(c.getConstructor().newInstance());
+			}
+			
 		} catch (IllegalAccessException e) {
 			// This should not happen, as we have disabled access checks
 		}

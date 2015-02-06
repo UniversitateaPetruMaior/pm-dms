@@ -38,7 +38,7 @@ public class BranchVersionNumerationAdapter implements VersionNumerationAdapter 
 	}
 
 	@Override
-	public String getNextVersionNumber(Session session, NodeDocument nDoc, NodeDocumentVersion nDocVer) {
+	public String getNextVersionNumber(Session session, NodeDocument nDoc, NodeDocumentVersion nDocVer, int increment) {
 		String curVersionName = nDocVer.getName();
 		String nextVersionName = curVersionName;
 		Query q = session.createQuery(qs);

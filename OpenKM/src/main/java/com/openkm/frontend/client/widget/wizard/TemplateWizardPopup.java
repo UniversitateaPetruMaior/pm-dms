@@ -150,7 +150,7 @@ public class TemplateWizardPopup extends DialogBox {
 		vPanelFired.setCellVerticalAlignment(propertyGroupWidget, HasAlignment.ALIGN_TOP);
 		vPanelFired.setCellHorizontalAlignment(hPanel, HasAlignment.ALIGN_RIGHT);
 		vPanelFired.setCellHeight(space2, "5");
-		propertyGroupWidget.getProperties();
+		propertyGroupWidget.getProperties(false);
 	}
 	
 	/**

@@ -21,10 +21,15 @@
 
 package com.openkm.dao;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import javax.servlet.ServletContext;
+
+import org.apache.commons.io.IOUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -34,10 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.openkm.bean.ConfigStoredFile;
 import com.openkm.bean.ConfigStoredOption;
 import com.openkm.bean.ConfigStoredSelect;
 import com.openkm.core.DatabaseException;
+import com.openkm.core.MimeTypeConfig;
 import com.openkm.dao.bean.Config;
+import com.openkm.util.PathUtils;
+import com.openkm.util.SecureStore;
 
 public class ConfigDAO  {
 	private static Logger log = LoggerFactory.getLogger(ConfigDAO.class);
@@ -209,6 +218,82 @@ public class ConfigDAO  {
 	 */
 	public static long getLong(String key, long defaultValue) throws DatabaseException {
 		return Long.parseLong(getProperty(key, Long.toString(defaultValue), Config.LONG));
+	}
+	
+	/**
+	 * Find by pk with a default value
+	 */
+	public static ConfigStoredFile getFile(String key, String path, ServletContext sc) throws DatabaseException,
+			IOException {
+		InputStream is = null;
+		
+		try {
+			if (sc == null) {
+				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
+			} else {
+				is = sc.getResourceAsStream(path);
+			}
+			
+			ConfigStoredFile stFile = new ConfigStoredFile();
+			
+			if (is == null) {
+				stFile.setContent("");
+			} else {
+				stFile.setContent(SecureStore.b64Encode(IOUtils.toByteArray(is)));				
+			}
+			
+			stFile.setName(PathUtils.getName(path));
+			stFile.setMime(MimeTypeConfig.mimeTypes.getContentType(stFile.getName()));
+			
+			// MIME still are not initialized from database
+			if (MimeTypeConfig.MIME_UNDEFINED.equals(stFile.getMime())) {
+				if (stFile.getName().toLowerCase().endsWith(".ico")) {
+					stFile.setMime(MimeTypeConfig.MIME_ICO);
+				}
+			}
+			
+			String value = getProperty(key, new Gson().toJson(stFile), Config.FILE);
+			return new Gson().fromJson(value, ConfigStoredFile.class);
+		} finally {
+			IOUtils.closeQuietly(is);
+		}
+	}
+
+	/**
+	 * Find by pk with a default value
+	 */
+	public static ConfigStoredFile getFile(String path, ServletContext sc) throws DatabaseException, IOException {
+		InputStream is = null;
+
+		try {
+			if (sc == null) {
+				is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
+			} else {
+				is = sc.getResourceAsStream(path);
+			}
+
+			ConfigStoredFile stFile = new ConfigStoredFile();
+
+			if (is == null) {
+				stFile.setContent("");
+			} else {
+				stFile.setContent(SecureStore.b64Encode(IOUtils.toByteArray(is)));
+			}
+
+			stFile.setName(PathUtils.getName(path));
+			stFile.setMime(MimeTypeConfig.mimeTypes.getContentType(stFile.getName()));
+
+			// MIME still are not initialized from database
+			if (MimeTypeConfig.MIME_UNDEFINED.equals(stFile.getMime())) {
+				if (stFile.getName().toLowerCase().endsWith(".ico")) {
+					stFile.setMime(MimeTypeConfig.MIME_ICO);
+				}
+			}
+
+			return stFile;
+		} finally {
+			IOUtils.closeQuietly(is);
+		}
 	}
 	
 	/**

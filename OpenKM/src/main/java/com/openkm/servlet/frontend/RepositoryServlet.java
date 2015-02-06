@@ -21,14 +21,21 @@
 
 package com.openkm.servlet.frontend;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openkm.api.OKMPropertyGroup;
 import com.openkm.api.OKMRepository;
 import com.openkm.bean.Folder;
+import com.openkm.bean.PropertyGroup;
+import com.openkm.bean.Repository;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
+import com.openkm.core.ParseException;
 import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
 import com.openkm.frontend.client.OKMException;
@@ -278,6 +285,34 @@ public class RepositoryServlet extends OKMRemoteServiceServlet implements OKMRep
 		}
 		
 		log.debug("getCategoriesFolder: {}", gWTFolder);
+		return gWTFolder;
+	}
+	
+	@Override
+	public GWTFolder getMetadataFolder() throws OKMException {
+		log.debug("getMetadataFolder()");
+		GWTFolder gWTFolder = new GWTFolder();
+		updateSessionManager();
+		
+		try {
+			List<PropertyGroup> pGroups = OKMPropertyGroup.getInstance().getAllGroups(null);
+			gWTFolder.initMetadata("/" + Repository.METADATA, pGroups.size() > 0);
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMRepositoryService, ErrorCode.CAUSE_IO), e.getMessage());
+		} catch (ParseException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMRepositoryService, ErrorCode.CAUSE_Parse), e.getMessage());
+		} catch (RepositoryException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMRepositoryService, ErrorCode.CAUSE_Repository), e.getMessage());
+		} catch (DatabaseException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMRepositoryService, ErrorCode.CAUSE_Database), e.getMessage());
+		}
+
+		
+		log.debug("getMetadataFolder: {}", gWTFolder);
 		return gWTFolder;
 	}
 	

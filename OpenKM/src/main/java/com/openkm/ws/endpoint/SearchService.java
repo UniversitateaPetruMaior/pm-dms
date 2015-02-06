@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.bean.Document;
 import com.openkm.bean.QueryResult;
+import com.openkm.bean.ResultSet;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.ParseException;
@@ -64,8 +65,8 @@ public class SearchService {
 	}
 	
 	@WebMethod
-	public QueryResult[] findByName(@WebParam(name = "token") String token, @WebParam(name = "name") String name)
-			throws IOException, ParseException, RepositoryException, DatabaseException {
+	public QueryResult[] findByName(@WebParam(name = "token") String token, @WebParam(name = "name") String name) throws IOException,
+			ParseException, RepositoryException, DatabaseException {
 		log.debug("findByName({}, {})", token, name);
 		SearchModule sm = ModuleManager.getSearchModule();
 		List<QueryResult> col = sm.findByName(token, name);
@@ -87,14 +88,47 @@ public class SearchService {
 	}
 	
 	@WebMethod
-	public QueryResult[] find(@WebParam(name = "token") String token, @WebParam(name = "params") QueryParams params)
-			throws IOException, ParseException, RepositoryException, DatabaseException {
+	public QueryResult[] find(@WebParam(name = "token") String token, @WebParam(name = "params") QueryParams params) throws IOException,
+			ParseException, RepositoryException, DatabaseException {
 		log.debug("find({}, {})", token, params);
 		SearchModule sm = ModuleManager.getSearchModule();
 		List<QueryResult> col = sm.find(token, params);
 		QueryResult[] result = (QueryResult[]) col.toArray(new QueryResult[col.size()]);
 		log.debug("find: {}", result);
 		return result;
+	}
+	
+	@WebMethod
+	public ResultSet findPaginated(@WebParam(name = "token") String token, @WebParam(name = "params") QueryParams params,
+			@WebParam(name = "offset") int offset, @WebParam(name = "limit") int limit) throws IOException, ParseException,
+			RepositoryException, DatabaseException {
+		log.debug("findPaginated({}, {}, {}, {})", new Object[] {token, params, offset, limit});
+		SearchModule sm = ModuleManager.getSearchModule();
+		ResultSet rs = sm.findPaginated(token, params, offset, limit);
+		log.debug("findPaginated: {}", rs);
+		return rs;
+	}
+	
+	@WebMethod
+	public ResultSet findSimpleQueryPaginated(@WebParam(name = "token") String token, @WebParam(name = "statement") String statement,
+			@WebParam(name = "offset") int offset, @WebParam(name = "limit") int limit) throws IOException, ParseException,
+			RepositoryException, DatabaseException {
+		log.debug("findSimpleQueryPaginated({}, {}, {}, {})", new Object[] {token, statement, offset, limit});
+		SearchModule sm = ModuleManager.getSearchModule();
+		ResultSet rs = sm.findSimpleQueryPaginated(token, statement, offset, limit);
+		log.debug("findSimpleQueryPaginated: {}", rs);
+		return rs;
+	}
+	
+	@WebMethod
+	public ResultSet findMoreLikeThis(@WebParam(name = "token") String token, @WebParam(name = "uuid") String uuid,
+			@WebParam(name = "max") int max) throws IOException, ParseException,
+			RepositoryException, DatabaseException {
+		log.debug("findMoreLikeThis({}, {}, {})", new Object[] {token, uuid, max});
+		SearchModule sm = ModuleManager.getSearchModule();
+		ResultSet rs = sm.findMoreLikeThis(token, uuid, max);
+		log.debug("findMoreLikeThis: {}", rs);
+		return rs;
 	}
 	
 	@WebMethod
@@ -122,8 +156,8 @@ public class SearchService {
 	}
 	
 	@WebMethod
-	public Document[] getCategorizedDocuments(@WebParam(name = "token") String token,
-			@WebParam(name = "categoryId") String categoryId) throws RepositoryException, DatabaseException {
+	public Document[] getCategorizedDocuments(@WebParam(name = "token") String token, @WebParam(name = "categoryId") String categoryId)
+			throws RepositoryException, DatabaseException {
 		log.debug("getCategorizedDocuments({}, {})", token, categoryId);
 		SearchModule sm = ModuleManager.getSearchModule();
 		List<Document> col = sm.getCategorizedDocuments(token, categoryId);
@@ -152,8 +186,8 @@ public class SearchService {
 	}
 	
 	@WebMethod
-	public QueryParams getSearch(@WebParam(name = "token") String token, @WebParam(name = "qpId") int qpId)
-			throws PathNotFoundException, RepositoryException, DatabaseException {
+	public QueryParams getSearch(@WebParam(name = "token") String token, @WebParam(name = "qpId") int qpId) throws PathNotFoundException,
+			RepositoryException, DatabaseException {
 		log.debug("getSearch({}, {})", token, qpId);
 		SearchModule sm = ModuleManager.getSearchModule();
 		QueryParams qp = sm.getSearch(token, qpId);
@@ -172,8 +206,8 @@ public class SearchService {
 	}
 	
 	@WebMethod
-	public void deleteSearch(@WebParam(name = "token") String token, @WebParam(name = "qpId") int qpId)
-			throws AccessDeniedException, RepositoryException, DatabaseException {
+	public void deleteSearch(@WebParam(name = "token") String token, @WebParam(name = "qpId") int qpId) throws AccessDeniedException,
+			RepositoryException, DatabaseException {
 		log.debug("deleteSearch({}, {})", token, qpId);
 		SearchModule sm = ModuleManager.getSearchModule();
 		sm.deleteSearch(token, qpId);

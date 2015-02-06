@@ -499,7 +499,7 @@ public class FolderTree extends Composite implements OriginPanel {
 	 *            The folder path selected to list items
 	 */
 	public void getChilds(String path) {
-		folderService.getChilds(path, false, callbackGetChilds);
+		folderService.getChilds(path, false, null, callbackGetChilds);
 		Main.get().mainPanel.desktop.navigator.status.setFlagChilds();
 	}
 
@@ -512,7 +512,7 @@ public class FolderTree extends Composite implements OriginPanel {
 	 *            The folder path selected to list items
 	 */
 	public void getOnlyChilds(String path) {
-		folderService.getChilds(path, false, callbackGetOnlyChilds);
+		folderService.getChilds(path, false, null, callbackGetOnlyChilds);
 	}
 
 	/**

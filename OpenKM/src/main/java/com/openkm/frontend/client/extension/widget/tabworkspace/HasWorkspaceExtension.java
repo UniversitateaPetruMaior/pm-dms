@@ -21,6 +21,8 @@
 
 package com.openkm.frontend.client.extension.widget.tabworkspace;
 
+import com.google.gwt.user.client.ui.TabBar;
+
 /**
  * HasWorkspaceExtension
  * 
@@ -30,5 +32,6 @@ package com.openkm.frontend.client.extension.widget.tabworkspace;
 public interface HasWorkspaceExtension {
 	
 	public abstract String getTabText();
+	public abstract void setTab(TabBar tabBar, int tabIndex);
 	
 }

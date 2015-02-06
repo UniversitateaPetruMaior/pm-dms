@@ -53,7 +53,7 @@ import com.openkm.frontend.client.service.OKMMailServiceAsync;
 import com.openkm.frontend.client.service.OKMMassiveService;
 import com.openkm.frontend.client.service.OKMMassiveServiceAsync;
 import com.openkm.frontend.client.util.Util;
-import com.openkm.frontend.client.widget.popup.Status;
+import com.openkm.frontend.client.widget.massive.Status;
 
 public class FolderSelectPopup extends DialogBox  {
 	public static final int ENTRYPOINT_NONE   		= -1;
@@ -200,7 +200,7 @@ public class FolderSelectPopup extends DialogBox  {
 		cancelButton.setStyleName("okm-NoButton");
 		actionButton.setStyleName("okm-YesButton");
 		
-		massiveStatus = new com.openkm.frontend.client.widget.popup.Status(this);
+		massiveStatus = new com.openkm.frontend.client.widget.massive.Status(this);
 		massiveStatus.setStyleName("okm-StatusPopup");
 
 		super.hide();
@@ -309,7 +309,8 @@ public class FolderSelectPopup extends DialogBox  {
 					
 					case ACTION_COPY:
 						// Only copy when origin and destination path are not equals
-						if ( !((GWTFolder) node).getPath().equals(actualPath) ) {
+						if (actualPath.indexOf(((GWTFolder) node).getPath()) == -1 
+								&& !((GWTFolder) node).getPath().equals(actualPath) ) {
 							setActionView();
 							folderService.copy( ((GWTFolder) node).getPath(),actualPath, callbackCopy);
 						} else {

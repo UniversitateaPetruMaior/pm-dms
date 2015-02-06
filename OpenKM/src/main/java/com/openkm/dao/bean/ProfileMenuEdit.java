@@ -35,6 +35,7 @@ public class ProfileMenuEdit implements Serializable {
 	private boolean copyVisible;
 	private boolean moveVisible;
 	private boolean addPropertyGroupVisible;
+	private boolean updatePropertyGroupVisible;
 	private boolean removePropertyGroupVisible;
 	private boolean addNoteVisible;
 	private boolean removeNoteVisible;
@@ -124,6 +125,14 @@ public class ProfileMenuEdit implements Serializable {
 
 	public void setAddPropertyGroupVisible(boolean addPropertyGroupVisible) {
 		this.addPropertyGroupVisible = addPropertyGroupVisible;
+	}
+
+	public boolean isUpdatePropertyGroupVisible() {
+		return updatePropertyGroupVisible;
+	}
+
+	public void setUpdatePropertyGroupVisible(boolean updatePropertyGroupVisible) {
+		this.updatePropertyGroupVisible = updatePropertyGroupVisible;
 	}
 
 	public boolean isRemovePropertyGroupVisible() {

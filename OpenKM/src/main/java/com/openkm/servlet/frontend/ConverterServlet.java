@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.servlet.frontend;
@@ -61,6 +61,7 @@ import com.openkm.module.db.DbDocumentModule;
 import com.openkm.module.jcr.JcrDocumentModule;
 import com.openkm.util.DocConverter;
 import com.openkm.util.FileUtils;
+import com.openkm.util.PDFUtils;
 import com.openkm.util.PathUtils;
 import com.openkm.util.WebUtils;
 
@@ -72,12 +73,12 @@ public class ConverterServlet extends OKMHttpServlet {
 	private static final long serialVersionUID = 1L;
 	public static final String FILE_CONVERTER_STATUS = "file_converter_status";
 	
-	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException,
-			IOException {
+	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		log.debug("service({}, {})", request, response);
 		request.setCharacterEncoding("UTF-8");
 		String uuid = WebUtils.getString(request, "uuid");
 		boolean inline = WebUtils.getBoolean(request, "inline");
+		boolean print = WebUtils.getBoolean(request, "print");
 		boolean toPdf = WebUtils.getBoolean(request, "toPdf");
 		boolean toSwf = WebUtils.getBoolean(request, "toSwf");
 		CharsetDetector detector = new CharsetDetector();
@@ -101,7 +102,7 @@ public class ConverterServlet extends OKMHttpServlet {
 				
 				if (Config.REPOSITORY_NATIVE) {
 					// If is used to preview, it should workaround the DOWNLOAD extended permission.
-					is = new DbDocumentModule().getContent(null, path, false, !toSwf);
+					is = new DbDocumentModule().getContent(null, path, false, !(toSwf));
 				} else {
 					is = new JcrDocumentModule().getContent(null, path, false);
 				}
@@ -151,6 +152,10 @@ public class ConverterServlet extends OKMHttpServlet {
 					}
 				}
 				
+				if (toPdf && print) {
+					cd.file = PDFUtils.markToPrint(cd.file);
+				}
+				
 				// Send back converted document
 				listener.setStatus(ConverterListener.STATUS_SENDING_FILE);
 				WebUtils.sendFile(request, response, cd.fileName, cd.mimeType, inline, cd.file);
@@ -197,8 +202,7 @@ public class ConverterServlet extends OKMHttpServlet {
 	/**
 	 * Handles PDF conversion
 	 */
-	private void toPDF(ConversionData cd) throws ConversionException, AutomationException, DatabaseException,
-			IOException {
+	private void toPDF(ConversionData cd) throws ConversionException, AutomationException, DatabaseException, IOException {
 		log.debug("toPDF({})", cd);
 		File pdfCache = new File(Config.REPOSITORY_CACHE_PDF + File.separator + cd.uuid + ".pdf");
 		
@@ -207,13 +211,34 @@ public class ConverterServlet extends OKMHttpServlet {
 				try {
 					if (cd.mimeType.equals(MimeTypeConfig.MIME_PDF)) {
 						// Document already in PDF format
-					} else 	if (cd.mimeType.equals(MimeTypeConfig.MIME_ZIP)) {
+					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_ZIP)) {
 						// This is an internal conversion and does not need 3er party software
 						DocConverter.getInstance().zip2pdf(cd.file, pdfCache);
+					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_XML)) {
+						// This is an internal conversion and does not need 3er party software
+						DocConverter.getInstance().src2pdf(cd.file, pdfCache, "xml");
+					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_SQL)) {
+						// This is an internal conversion and does not need 3er party software
+						DocConverter.getInstance().src2pdf(cd.file, pdfCache, "sql");
+					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_JAVA) || cd.mimeType.equals(MimeTypeConfig.MIME_BSH)) {
+						// This is an internal conversion and does not need 3er party software
+						DocConverter.getInstance().src2pdf(cd.file, pdfCache, "java");
+					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_PHP)) {
+						// This is an internal conversion and does not need 3er party software
+						DocConverter.getInstance().src2pdf(cd.file, pdfCache, "php");
+					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_SH)) {
+						// This is an internal conversion and does not need 3er party software
+						DocConverter.getInstance().src2pdf(cd.file, pdfCache, "bash");
 					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_HTML)) {
 						// This is an internal conversion and does not need 3er party software
 						DocConverter.getInstance().html2pdf(cd.file, pdfCache);
-					} else 	if (cd.mimeType.equals(MimeTypeConfig.MIME_POSTSCRIPT)) {
+					// } else if (cd.mimeType.equals(MimeTypeConfig.MIME_TIFF)) {
+						// This is an internal conversion and does not need 3er party software
+						// DocConverter.getInstance().tiff2pdf(cd.file, pdfCache);
+					} else if (!Config.REMOTE_CONVERSION_SERVER.equals("")) {
+						DocConverter.getInstance().remoteConvert(Config.REMOTE_CONVERSION_SERVER, cd.file, cd.mimeType, pdfCache,
+								MimeTypeConfig.MIME_PDF);
+					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_POSTSCRIPT)) {
 						DocConverter.getInstance().ps2pdf(cd.file, pdfCache);
 					} else if (DocConverter.validImageMagick.contains(cd.mimeType)) {
 						DocConverter.getInstance().img2pdf(cd.file, cd.mimeType, pdfCache);
@@ -249,18 +274,21 @@ public class ConverterServlet extends OKMHttpServlet {
 	}
 	
 	/**
-	 * Handles SWF conversion 
+	 * Handles SWF conversion
 	 */
-	private void toSWF(ConversionData cd) throws ConversionException, AutomationException, DatabaseException,
-			IOException {
+	private void toSWF(ConversionData cd) throws ConversionException, AutomationException, DatabaseException, IOException {
 		log.debug("toSWF({})", cd);
 		File swfCache = new File(Config.REPOSITORY_CACHE_SWF + File.separator + cd.uuid + ".swf");
-		
+		boolean delTmp = true;
+
 		if (DocConverter.getInstance().convertibleToSwf(cd.mimeType)) {
 			if (!swfCache.exists()) {
 				try {
 					if (cd.mimeType.equals(MimeTypeConfig.MIME_SWF)) {
 						// Document already in SWF format
+					} else if (!Config.REMOTE_CONVERSION_SERVER.equals("")) {
+						DocConverter.getInstance().remoteConvert(Config.REMOTE_CONVERSION_SERVER, cd.file, cd.mimeType, swfCache,
+								MimeTypeConfig.MIME_SWF);
 					} else if (cd.mimeType.equals(MimeTypeConfig.MIME_PDF)) {
 						// AUTOMATION - PRE
 						Map<String, Object> env = new HashMap<String, Object>();
@@ -271,7 +299,8 @@ public class ConverterServlet extends OKMHttpServlet {
 						DocConverter.getInstance().pdf2swf(cd.file, swfCache);
 					} else if (DocConverter.getInstance().convertibleToPdf(cd.mimeType)) {
 						toPDF(cd);
-						
+						delTmp = false;
+
 						// AUTOMATION - PRE
 						Map<String, Object> env = new HashMap<String, Object>();
 						env.put(AutomationUtils.DOCUMENT_FILE, cd.file);
@@ -286,7 +315,9 @@ public class ConverterServlet extends OKMHttpServlet {
 					swfCache.delete();
 					throw e;
 				} finally {
-					FileUtils.deleteQuietly(cd.file);
+					if (delTmp) {
+						FileUtils.deleteQuietly(cd.file);
+					}
 					cd.mimeType = MimeTypeConfig.MIME_SWF;
 					cd.fileName = FileUtils.getFileName(cd.fileName) + ".swf";
 				}
@@ -314,10 +345,10 @@ public class ConverterServlet extends OKMHttpServlet {
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
 			sb.append("{");
-			sb.append("uuid="); sb.append(uuid);
-			sb.append(", fileName="); sb.append(fileName);
-			sb.append(", mimeType="); sb.append(mimeType);
-			sb.append(", file="); sb.append(file);
+			sb.append("uuid=").append(uuid);
+			sb.append(", fileName=").append(fileName);
+			sb.append(", mimeType=").append(mimeType);
+			sb.append(", file=").append(file);
 			sb.append("}");
 			return sb.toString();
 		}

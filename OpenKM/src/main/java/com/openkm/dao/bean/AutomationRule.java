@@ -47,8 +47,10 @@ public class AutomationRule implements Serializable {
 	public static final String AT_POST = AutomationMetadata.AT_POST;
 	
 	public static final String EVENT_DOCUMENT_CREATE = "doc_create";
+	public static final String EVENT_DOCUMENT_UPDATE = "doc_update";
 	public static final String EVENT_DOCUMENT_MOVE = "doc_move";
 	public static final String EVENT_FOLDER_CREATE = "fld_create";
+	public static final String EVENT_MAIL_CREATE = "mail_create";
 	public static final String EVENT_TEXT_EXTRACTOR = "text_extractor";
 	public static final String EVENT_CONVERSION_PDF = "convert_pdf";
 	public static final String EVENT_CONVERSION_SWF = "convert_swf";
@@ -72,11 +74,11 @@ public class AutomationRule implements Serializable {
 	@Column(name = "ARL_ORDER")
 	private int order;
 	
-	@Column(name = "ARL_EXCLUSIVE")
+	@Column(name = "ARL_EXCLUSIVE", nullable = false)
 	@Type(type = "true_false")
 	private boolean exclusive;
 	
-	@Column(name = "ARL_ACTIVE")
+	@Column(name = "ARL_ACTIVE", nullable = false)
 	@Type(type = "true_false")
 	private boolean active;
 	

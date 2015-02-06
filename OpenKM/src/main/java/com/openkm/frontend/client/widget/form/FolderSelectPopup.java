@@ -39,7 +39,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTWorkspace;
 import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
-import com.openkm.frontend.client.widget.searchin.HasSearch;
+import com.openkm.frontend.client.widget.searchin.HasPropertyHandler;
 
 /**
  * FolderSelectPopup
@@ -61,7 +61,7 @@ public class FolderSelectPopup extends DialogBox  {
 	private Button cancelButton;
 	private Button actionButton;
 	private TextBox textBox;
-	private HasSearch search;
+	private HasPropertyHandler propertyHandler;
 	private boolean categoriesVisible = false;
 	private boolean thesaurusVisible = false;
 	private boolean templatesVisible = false;
@@ -125,8 +125,8 @@ public class FolderSelectPopup extends DialogBox  {
 			@Override
 			public void onClick(ClickEvent event) {
 				textBox.setValue(folderSelectTree.getActualPath());
-				if (search!=null) {
-					search.metadataValueChanged();
+				if (propertyHandler!=null) {
+					propertyHandler.metadataValueChanged();
 				}
 				hide();
 			}	
@@ -189,9 +189,9 @@ public class FolderSelectPopup extends DialogBox  {
 	/**
 	 * Shows the popup 
 	 */
-	public void show(TextBox textBox, HasSearch search) {
+	public void show(TextBox textBox, HasPropertyHandler propertyHandler) {
 		this.textBox = textBox;
-		this.search = search;
+		this.propertyHandler = propertyHandler;
 		int left = (Window.getClientWidth()-300) / 2;
 		int top = (Window.getClientHeight()-200) / 2;
 		setPopupPosition(left, top);

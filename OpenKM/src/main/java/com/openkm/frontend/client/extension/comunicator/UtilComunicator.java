@@ -21,6 +21,7 @@
 
 package com.openkm.frontend.client.extension.comunicator;
 
+import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.user.client.ui.HTML;
 import com.openkm.frontend.client.util.Util;
 
@@ -164,5 +165,19 @@ public class UtilComunicator {
 	 */
 	public static HTML vSpace(String height) {
 		return Util.vSpace(height);
+	}
+	
+	/**
+	 * isSearchableKey
+	 * 
+	 * @param event
+	 * @return
+	 */
+	public static boolean isSearchableKey(KeyUpEvent event) {
+		if (event!=null) {
+			return Util.isSearchableKey(event);
+		} else {
+			return true;
+		}
 	}
 }

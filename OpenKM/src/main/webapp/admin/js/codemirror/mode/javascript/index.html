@@ -1,18 +1,24 @@
 <!doctype html>
 <html>
-  <head>
-    <title>CodeMirror 2: JavaScript mode</title>
-    <link rel="stylesheet" href="../../lib/codemirror.css">
-    <script src="../../lib/codemirror.js"></script>
-    <script src="javascript.js"></script>
-    <link rel="stylesheet" href="javascript.css">
-    <link rel="stylesheet" href="../../css/docs.css">
-    <style type="text/css">.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-  </head>
-  <body>
-    <h1>CodeMirror 2: JavaScript mode</h1>
+<head>
+<title>CodeMirror 2: JavaScript mode</title>
+<link rel="stylesheet" href="../../lib/codemirror.css">
+<script src="../../lib/codemirror.js"></script>
+<script src="javascript.js"></script>
+<link rel="stylesheet" href="javascript.css">
+<link rel="stylesheet" href="../../css/docs.css">
+<style type="text/css">
+.CodeMirror {
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+}
+</style>
+</head>
+<body>
+	<h1>CodeMirror 2: JavaScript mode</h1>
 
-<div><textarea id="code" name="code">
+	<div>
+		<textarea id="code" name="code">
 // Demo code (the actual new parser character stream implementation)
 
 function StringStream(string) {
@@ -60,19 +66,29 @@ StringStream.prototype = {
     }
   }
 };
-</textarea></div>
+</textarea>
+	</div>
 
-    <script>
+	<script>
       var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
         lineNumbers: true,
         matchBrackets: true
       });
     </script>
 
-    <p>JavaScript mode supports a single configuration
-    option, <code>json</code>, which will set the mode to expect JSON
-    data rather than a JavaScript program.</p>
+	<p>
+		JavaScript mode supports a single configuration option,
+		<code>json</code>
+		, which will set the mode to expect JSON data rather than a JavaScript
+		program.
+	</p>
 
-    <p><strong>MIME types defined:</strong> <code>text/javascript</code>, <code>application/json</code>.</p>
-  </body>
+	<p>
+		<strong>MIME types defined:</strong>
+		<code>text/javascript</code>
+		,
+		<code>application/json</code>
+		.
+	</p>
+</body>
 </html>

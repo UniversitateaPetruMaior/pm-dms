@@ -65,21 +65,6 @@ public class PropertyGroupWidget extends Composite implements HasPropertyGroupEv
 	private Map<String, GWTFormElement> propertyGroupVariablesMap = new HashMap<String, GWTFormElement>();
 	private GWTPropertyGroup propertyGroup;
 	private FormManager manager;
-
-	/**
-	 * PropertyGroup
-	 * 
-	 * @param path The document path
-	 * @param propertyGroup The group
-	 * @param widget Widget at first row
-	 * @param PropertyGroupWidgetToFire widget with methods to be fired
-	 * @param valuesMap map of initial values
-	 */
-	public PropertyGroupWidget(String path, GWTPropertyGroup propertyGroup, Widget widget,
-			PropertyGroupWidgetToFire propertyGroupWidgetToFire, Map<String, GWTFormElement> valuesMap) {
-		this.propertyGroupVariablesMap = valuesMap;
-		start(path, propertyGroup, widget, propertyGroupWidgetToFire);
-	}
 	
 	/**
 	 * PropertyGroup
@@ -92,7 +77,7 @@ public class PropertyGroupWidget extends Composite implements HasPropertyGroupEv
 	public PropertyGroupWidget(String path, GWTPropertyGroup propertyGroup, Widget widget, PropertyGroupWidgetToFire propertyGroupWidgetToFire) {	
 		start(path, propertyGroup, widget, propertyGroupWidgetToFire);
 	}
-	
+
 	/**
 	 * start
 	 * 
@@ -238,8 +223,8 @@ public class PropertyGroupWidget extends Composite implements HasPropertyGroupEv
 	/**
 	 * Gets all group properties 
 	 */
-	public void getProperties() {
-		propertyGroupService.getProperties(path, propertyGroup.getName(), callbackGetProperties);
+	public void getProperties(boolean suggestion) {
+		propertyGroupService.getProperties(path, propertyGroup.getName(), suggestion, callbackGetProperties);
 	}
 
 	/**

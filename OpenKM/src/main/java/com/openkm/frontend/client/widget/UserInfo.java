@@ -3,11 +3,13 @@ package com.openkm.frontend.client.widget;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.allen_sauer.gwt.log.client.Log;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.rpc.StatusCodeException;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -29,7 +31,7 @@ public class UserInfo extends Composite {
 	private final OKMChatServiceAsync chatService = (OKMChatServiceAsync) GWT.create(OKMChatService.class);
 	
 	public static final int USERS_IN_ROOM_REFRESHING_TIME = 1000;
-	private static final int NEW_ROOM_REFRESHING_TIME = 200;
+	private static final int NEW_ROOM_REFRESHING_TIME = 1000;
 	
 	private HorizontalPanel panel;
 	private Image advertisement;
@@ -63,7 +65,7 @@ public class UserInfo extends Composite {
 	private HTML quotaUsed;
 	private int percent = 0;
 	private List<UserInfoExtension> widgetExtensionList;
-	private boolean getLoggedUsers = false; 
+	private boolean getLoggedUsers = false;
 	private boolean getPendingChatRoomUser = false;
 	private boolean logoutDone = true;
 	
@@ -202,7 +204,7 @@ public class UserInfo extends Composite {
 		advertisement.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				Main.get().msgPopup.center();
+				Main.get().msgPopup.show();
 			}
 		});
 		
@@ -272,6 +274,7 @@ public class UserInfo extends Composite {
 	 */
 	public void setUser(String username, boolean isAdmin) {
 		this.user.setHTML("&nbsp;" + Main.i18n("general.connected") + " " + username + "&nbsp;");
+		
 		if (isAdmin) {
 			this.user.addStyleName("okm-Input-System");
 		}
@@ -380,13 +383,6 @@ public class UserInfo extends Composite {
 	}
 	
 	/**
-	 * reset
-	 */
-	public void reset() {
-		Main.get().msgPopup.reset();
-	}
-	
-	/**
 	 * addUINotification
 	 * 
 	 * Sets the msg value
@@ -441,27 +437,38 @@ public class UserInfo extends Composite {
 	 */
 	private void refreshConnectedUsers() {
 		getLoggedUsers = true;
+		
 		if (chatConnected) {
 			chatService.getLoggedUsers(new AsyncCallback<List<GWTUser>>() {
 				@Override
 				public void onSuccess(List<GWTUser> result) {
 					connectUsersList = result;
 					usersConnected.setHTML(connectUsersList.size() + "");
-					Timer timer = new Timer() {
+					getLoggedUsers = false;
+					
+					new Timer() {
 						@Override
 						public void run() {
 							refreshConnectedUsers();
 						}
-					};
-					
-					getLoggedUsers = false;
-					timer.schedule(USERS_IN_ROOM_REFRESHING_TIME); // Each minute seconds refreshing connected users
+					}.schedule(USERS_IN_ROOM_REFRESHING_TIME);
 				}
 				
 				@Override
 				public void onFailure(Throwable caught) {
+					Log.error(UserInfo.class + ".refreshConnectedUsers().onFailure(" + caught + ")");
 					getLoggedUsers = false;
-					Main.get().showError("GetLoggedUsers", caught);
+					
+					if (caught instanceof StatusCodeException && ((StatusCodeException) caught).getStatusCode() == 0) {
+						new Timer() {
+							@Override
+							public void run() {
+								refreshConnectedUsers();
+							}
+						}.schedule(USERS_IN_ROOM_REFRESHING_TIME);
+					} else {
+						Main.get().showError("UserInfo.refreshConnectedUsers", caught);
+					}
 				}
 			});
 		} else {
@@ -474,6 +481,7 @@ public class UserInfo extends Composite {
 	 */
 	private void getPendingChatRoomUser() {
 		getPendingChatRoomUser = true;
+		
 		if (chatConnected) {
 			chatService.getPendingChatRoomUser(new AsyncCallback<List<String>>() {
 				@Override
@@ -485,21 +493,31 @@ public class UserInfo extends Composite {
 						addChatRoom(chatRoomPopup);
 					}
 					
-					Timer timer = new Timer() {
+					getPendingChatRoomUser = false;
+					
+					new Timer() {
 						@Override
 						public void run() {
 							getPendingChatRoomUser();
 						}
-					};
-					
-					getPendingChatRoomUser = false;
-					timer.schedule(NEW_ROOM_REFRESHING_TIME); // Each minute seconds refreshing connected users
+					}.schedule(NEW_ROOM_REFRESHING_TIME);
 				}
 				
 				@Override
 				public void onFailure(Throwable caught) {
+					Log.error(UserInfo.class + ".getPendingChatRoomUser().onFailure(" + caught + ")");
 					getPendingChatRoomUser = false;
-					Main.get().showError("GetLoggedUsers", caught);
+					
+					if (caught instanceof StatusCodeException && ((StatusCodeException) caught).getStatusCode() == 0) {
+						new Timer() {
+							@Override
+							public void run() {
+								getPendingChatRoomUser();
+							}
+						}.schedule(NEW_ROOM_REFRESHING_TIME);
+					} else {
+						Main.get().showError("UserInfo.getPendingChatRoomUser", caught);
+					}
 				}
 			});
 		} else {
@@ -656,7 +674,8 @@ public class UserInfo extends Composite {
 				
 				if (logged) {
 					if (!autologin) {
-						Main.get().showError("GetLoginChat", new Throwable(Main.i18n("user.info.chat.user.yet.logged")));
+						Main.get().confirmPopup.setConfirm(ConfirmPopup.CONFIRM_FORCE_CHAT_LOGIN);
+						Main.get().confirmPopup.show();
 					}
 				} else {
 					chatService.login(new AsyncCallback<Object>() {
@@ -754,5 +773,22 @@ public class UserInfo extends Composite {
 	 */
 	public boolean isPendingToClose() {
 		return (chatConnected || !logoutDone);
+	}
+	
+	/**
+	 * forceLogin
+	 */
+	public void forceLogin() {
+		chatService.logout(new AsyncCallback<Object>() {
+			@Override
+			public void onSuccess(Object result) {
+				loginChat(false);
+			}
+			
+			@Override
+			public void onFailure(Throwable caught) {
+				Main.get().showError("logout", caught);
+			}
+		});
 	}
 }

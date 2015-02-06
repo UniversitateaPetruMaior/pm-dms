@@ -28,15 +28,15 @@ import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
+import com.auxilii.msgparser.Message;
+import com.auxilii.msgparser.MsgParser;
+import com.openkm.util.PathUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,6 +138,7 @@ public class RepositoryImporter {
 			RepositoryException, IOException, DatabaseException, ExtensionException, AutomationException {
 		log.debug("importDocumentsHelper({}, {}, {}, {}, {}, {}, {}, {})", new Object[] { token, fs, fldPath, metadata, history, uuid, out,
 				deco });
+		long begin = System.currentTimeMillis();
 		File[] files = fs.listFiles(new RepositoryImporter.NoVersionFilenameFilter());
 		ImpExpStats stats = new ImpExpStats();
 		FolderModule fm = ModuleManager.getFolderModule();
@@ -228,10 +229,10 @@ public class RepositoryImporter {
 				} else {
 					log.info("File: {}", files[i]);
 					
-					if (fileName.endsWith(".eml")) {
+					if (fileName.endsWith(".eml") || fileName.endsWith(".msg")) {
 						log.info("Mail: {}", files[i]);
-						ImpExpStats tmp = importMail(token, fs, fldPath, fileName, files[i], metadata, out, deco);
-						
+						ImpExpStats tmp = importMail(token, fldPath, fileName, files[i], metadata, out, deco);
+
 						// Stats
 						stats.setOk(stats.isOk() && tmp.isOk());
 						stats.setSize(stats.getSize() + tmp.getSize());
@@ -249,6 +250,7 @@ public class RepositoryImporter {
 			}
 		}
 		
+		log.trace("importDocumentsHelper.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("importDocumentsHelper: {}", stats);
 		return stats;
 	}
@@ -267,7 +269,10 @@ public class RepositoryImporter {
 		Document doc = new Document();
 		Gson gson = new Gson();
 		boolean api = false;
-		
+		log.info("Document history: {}", history);
+		log.info("Document fs: {}", fs);
+		log.info("Document metadata: {}", metadata);
+		log.info("Document deco: {}", deco);
 		try {
 			// Metadata
 			if (metadata) {
@@ -275,17 +280,25 @@ public class RepositoryImporter {
 				File jsFile = new File(fDoc.getPath() + Config.EXPORT_METADATA_EXT);
 				log.info("Document Metadata File: {}", jsFile.getPath());
 				
+				log.info("Document jsFile.exists(): {}", jsFile.exists());
+				log.info("Document jsFile.canRead(): {}", jsFile.canRead());
+				
 				if (jsFile.exists() && jsFile.canRead()) {
 					FileReader fr = new FileReader(jsFile);
+					log.info("Document fr: {}", fr);
+					
 					DocumentMetadata dmd = gson.fromJson(fr, DocumentMetadata.class);
 					doc.setPath(fldPath + "/" + fileName);
 					dmd.setPath(doc.getPath());
 					IOUtils.closeQuietly(fr);
 					log.info("Document Metadata: {}", dmd);
+					log.info("Document doc: {}", doc);
 					
 					if (history) {
 						File[] vhFiles = fs.listFiles(new RepositoryImporter.VersionFilenameFilter(fileName));
+						log.info("Document vhFiles: {}", vhFiles);
 						List<File> listFiles = Arrays.asList(vhFiles);
+						log.info("Document listFiles1: {}", listFiles);
 						Collections.sort(listFiles, FilenameVersionComparator.getInstance());
 						boolean first = true;
 						
@@ -322,6 +335,8 @@ public class RepositoryImporter {
 						}
 					} else {
 						// Apply metadata
+						log.info("Document fisContent: {}", fisContent);
+						log.info("Document dmd: {}", dmd);
 						ma.importWithMetadata(dmd, fisContent);
 						FileLogger.info(BASE_NAME, "Created document ''{0}''", doc.getPath());
 						log.info("Created document '{}'", doc.getPath());
@@ -333,7 +348,7 @@ public class RepositoryImporter {
 			} else {
 				api = true;
 			}
-			
+			log.info("Document api: {}", api);
 			if (api) {
 				doc.setPath(fldPath + "/" + fileName);
 				
@@ -343,7 +358,7 @@ public class RepositoryImporter {
 					List<File> listFiles = Arrays.asList(vhFiles);
 					Collections.sort(listFiles, FilenameVersionComparator.getInstance());
 					boolean first = true;
-					
+					log.info("Document listFiles2: {}", listFiles);
 					for (File vhf : vhFiles) {
 						String vhfName = vhf.getName();
 						int idx = vhfName.lastIndexOf('#', vhfName.length() - 2);
@@ -467,7 +482,7 @@ public class RepositoryImporter {
 	/**
 	 * Import mail.
 	 */
-	private static ImpExpStats importMail(String token, File fs, String fldPath, String fileName, File fDoc, boolean metadata,
+	private static ImpExpStats importMail(String token, String fldPath, String fileName, File fDoc, boolean metadata,
 			Writer out, InfoDecorator deco) throws IOException, PathNotFoundException, AccessDeniedException,
 			RepositoryException, DatabaseException, ExtensionException, AutomationException {
 		FileInputStream fisContent = new FileInputStream(fDoc);
@@ -501,12 +516,21 @@ public class RepositoryImporter {
 					ma.importWithMetadata(mmd);
 					
 					// Add attachments
-					Session mailSession = Session.getDefaultInstance(props, null);
-					MimeMessage msg = new MimeMessage(mailSession, fisContent);
-					mail = MailUtils.messageToMail(msg);
-					mail.setPath(fldPath + "/" + mmd.getName());
-					MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
-					
+					if (fileName.endsWith(".eml")) {
+						Session mailSession = Session.getDefaultInstance(props, null);
+						MimeMessage msg = new MimeMessage(mailSession, fisContent);
+						mail = MailUtils.messageToMail(msg);
+						mail.setPath(fldPath + "/" + mmd.getName());
+						MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
+					} else if (fileName.endsWith(".msg")) {
+						Message msg = new MsgParser().parseMsg(fisContent);
+						mail = MailUtils.messageToMail(msg);
+						mail.setPath(fldPath + "/" + mmd.getName());
+						MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
+					} else {
+						throw new MessagingException("Unknown mail format");
+					}
+
 					FileLogger.info(BASE_NAME, "Created document ''{0}''", mail.getPath());
 					log.info("Created document '{}'", mail.getPath());
 				} else {
@@ -518,13 +542,23 @@ public class RepositoryImporter {
 			}
 			
 			if (api) {
-				Session mailSession = Session.getDefaultInstance(props, null);
-				MimeMessage msg = new MimeMessage(mailSession, fisContent);
-				mail = MailUtils.messageToMail(msg);
-				mail.setPath(fldPath + "/" + fileName);
-				mm.create(token, mail);
-				MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
-				
+				if (fileName.endsWith(".eml")) {
+					Session mailSession = Session.getDefaultInstance(props, null);
+					MimeMessage msg = new MimeMessage(mailSession, fisContent);
+					mail = MailUtils.messageToMail(msg);
+					mail.setPath(fldPath + "/" + UUID.randomUUID().toString() + "-" + PathUtils.escape(mail.getSubject()));
+					mm.create(token, mail);
+					MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
+				} else if (fileName.endsWith(".msg")) {
+					Message msg = new MsgParser().parseMsg(fisContent);
+					mail = MailUtils.messageToMail(msg);
+					mail.setPath(fldPath + "/" + UUID.randomUUID().toString() + "-" + PathUtils.escape(mail.getSubject()));
+					mm.create(token, mail);
+					MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
+				} else {
+					throw new MessagingException("Unknown mail format");
+				}
+
 				FileLogger.info(BASE_NAME, "Created mail ''{0}''", mail.getPath());
 				log.info("Created mail ''{}''", mail.getPath());
 			}
@@ -601,12 +635,22 @@ public class RepositoryImporter {
 			log.warn("MessagingException: {}", e.getMessage());
 			
 			if (out != null) {
-				out.write(deco.print(fDoc.getPath(), fDoc.length(), "Json"));
+				out.write(deco.print(fDoc.getPath(), fDoc.length(), "Messaging"));
 				out.flush();
 			}
 			
 			stats.setOk(false);
 			FileLogger.error(BASE_NAME, "MessagingException ''{0}''", mail.getPath());
+		} catch (Exception e) {
+			log.warn("Exception: {}", e.getMessage());
+
+			if (out != null) {
+				out.write(deco.print(fDoc.getPath(), fDoc.length(), "General"));
+				out.flush();
+			}
+
+			stats.setOk(false);
+			FileLogger.error(BASE_NAME, "Exception ''{0}''", mail.getPath());
 		} finally {
 			IOUtils.closeQuietly(fisContent);
 		}

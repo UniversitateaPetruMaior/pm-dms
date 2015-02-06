@@ -48,12 +48,45 @@ public interface OKMBundleResources extends ClientBundle {
 	public ImageResource downloadPdfDisabled();
 	
 	@Source("com/openkm/extension/frontend/public/img/indicator.gif")
-	public ImageResource indicator();
+	public ImageResource indicator();	
+
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/delete.png")
+	public ImageResource delete();
+		
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/search.png")
+	public ImageResource search();
+	
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/chart_organisation.png")
+	public ImageResource chartOrganisation();
 	
 	@Source("com/openkm/extension/frontend/public/img/icon/actions/fast_action.png")
 	public ImageResource fastAction();
 	
 	@Source("com/openkm/extension/frontend/public/img/icon/actions/fast_action_disabled.png")
 	public ImageResource fastActionDisabled();
-
+	
+	@Source("com/openkm/extension/frontend/public/img/icon/toolbar/meeting.png")
+	public ImageResource meeting();
+	
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/room.png")
+	public ImageResource room();
+	
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/room_in.png")
+	public ImageResource roomIn();
+	
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/room_close.png")
+	public ImageResource roomClose();
+	
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/room_add_file.png")
+	public ImageResource roomAddFile();
+	
+	@Source("com/openkm/extension/frontend/public/img/zoom_out.gif")
+	public ImageResource zoomOut();
+	
+	@Source("com/openkm/extension/frontend/public/img/zoom_in.gif")
+	public ImageResource zoomIn();
+	
+	@Source("com/openkm/extension/frontend/public/img/icon/actions/user.png")
+	public ImageResource user();
+	
 }

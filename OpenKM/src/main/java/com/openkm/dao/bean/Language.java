@@ -83,11 +83,11 @@ public class Language implements Serializable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
-		sb.append("id="); sb.append(id);
-		sb.append(", name="); sb.append(name);
-		sb.append(", imageMime="); sb.append(imageMime);
-		sb.append(", imageContent="); sb.append("[BIG]");
-		sb.append(", translations="); sb.append(translations);
+		sb.append("id=").append(id);
+		sb.append(", name=").append(name);
+		sb.append(", imageMime=").append(imageMime);
+		sb.append(", imageContent=").append("[BIG]");
+		sb.append(", translations=").append(translations);
 		sb.append("}");
 		return sb.toString();
 	}	

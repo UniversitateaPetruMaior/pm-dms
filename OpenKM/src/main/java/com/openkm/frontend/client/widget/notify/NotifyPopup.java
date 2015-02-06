@@ -21,9 +21,14 @@
 
 package com.openkm.frontend.client.widget.notify;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyUpEvent;
+import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
@@ -33,7 +38,10 @@ import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.openkm.frontend.client.Main;
-import com.openkm.frontend.client.bean.GWTDocument;
+import com.openkm.frontend.client.service.OKMMailService;
+import com.openkm.frontend.client.service.OKMMailServiceAsync;
+import com.openkm.frontend.client.service.OKMMassiveService;
+import com.openkm.frontend.client.service.OKMMassiveServiceAsync;
 import com.openkm.frontend.client.service.OKMNotifyService;
 import com.openkm.frontend.client.service.OKMNotifyServiceAsync;
 import com.openkm.frontend.client.util.Util;
@@ -42,15 +50,17 @@ import com.openkm.frontend.client.util.Util;
  * NotifyPopup
  * 
  * @author jllort
- *
  */
-public class NotifyPopup extends DialogBox  {
+public class NotifyPopup extends DialogBox {
 	
-	private static final int NONE 					= -1;
-	public static final int NOTIFY_WITH_LINK 		= 0;
-	public static final int NOTIFY_WITH_ATTACHMENT 	= 1;
+	private static final int NONE = -1;
+	public static final int NOTIFY_WITH_LINK = 0;
+	public static final int NOTIFY_WITH_ATTACHMENT = 1;
+	public static final int FORWARD_MAIL = 2;
 	
 	private final OKMNotifyServiceAsync notifyService = (OKMNotifyServiceAsync) GWT.create(OKMNotifyService.class);
+	private final OKMMassiveServiceAsync massiveService = (OKMMassiveServiceAsync) GWT.create(OKMMassiveService.class);
+	private final OKMMailServiceAsync mailService = (OKMMailServiceAsync) GWT.create(OKMMailService.class);
 	
 	private VerticalPanel vPanel;
 	private HorizontalPanel hPanel;
@@ -61,24 +71,34 @@ public class NotifyPopup extends DialogBox  {
 	private NotifyPanel notifyPanel;
 	private HTML commentTXT;
 	private HTML errorNotify;
+	private String mails;
 	private String users;
 	private String roles;
-	private GWTDocument doc;
+	private String path;
+	private List<String> uuidList;
 	private int type = NONE;
+	private boolean isMassive = false;
 	
 	public NotifyPopup() {
 		// Establishes auto-close when click outside
-		super(false,true);
+		super(false, true);
 		
 		setText(Main.i18n("notify.label"));
+		mails = "";
 		users = "";
 		roles = "";
-		doc = new GWTDocument();
+		uuidList = new ArrayList<String>();
 		
 		vPanel = new VerticalPanel();
 		hPanel = new HorizontalPanel();
 		notifyPanel = new NotifyPanel();
 		message = new TextArea();
+		message.addKeyUpHandler(new KeyUpHandler() {
+			@Override
+			public void onKeyUp(KeyUpEvent event) {
+				sendButton.setEnabled(message.getText().trim().length()>0);
+			}
+		});
 		
 		errorNotify = new HTML(Main.i18n("fileupload.label.must.select.users"));
 		errorNotify.setWidth("364");
@@ -87,7 +107,7 @@ public class NotifyPopup extends DialogBox  {
 		
 		commentTXT = new HTML("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + Main.i18n("fileupload.label.notify.comment"));
 		
-		closeButton = new Button(Main.i18n("fileupload.button.close"), new ClickHandler() { 
+		closeButton = new Button(Main.i18n("fileupload.button.close"), new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				hide();
@@ -95,13 +115,15 @@ public class NotifyPopup extends DialogBox  {
 			}
 		});
 		
-		sendButton = new Button(Main.i18n("button.send"), new ClickHandler() { 
+		sendButton = new Button(Main.i18n("button.send"), new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				// Only sends if there's some user selected
+				mails = notifyPanel.getExternalMailAddress();
 				users = notifyPanel.getUsersToNotify();
 				roles = notifyPanel.getRolesToNotify();
-				if (!users.equals("") || !roles.equals("")) {
+				
+				if (!users.equals("") || !roles.equals("") || !mails.equals("")) {
 					errorNotify.setVisible(false);
 					sendLinkNotification();
 					hide();
@@ -119,12 +141,12 @@ public class NotifyPopup extends DialogBox  {
 		
 		hPanel.setCellWidth(space, "40");
 		
-		message.setSize("374","60");
+		message.setSize("374", "60");
 		message.setStyleName("okm-TextArea");
 		// TODO This is a workaround for a Firefox 2 bug
 		// http://code.google.com/p/google-web-toolkit/issues/detail?id=891
 		messageScroll = new ScrollPanel(message);
-		messageScroll.setAlwaysShowScrollBars(false);	
+		messageScroll.setAlwaysShowScrollBars(false);
 		
 		vPanel.add(new HTML("<br>"));
 		vPanel.add(commentTXT);
@@ -153,20 +175,24 @@ public class NotifyPopup extends DialogBox  {
 	}
 	
 	/**
-	 * langRefresh 
-	 * 
-	 * Refreshing lang
+	 * langRefresh Refreshing lang
 	 */
-	public void langRefresh(){
-		switch(type) {
+	public void langRefresh() {
+		switch (type) {
 			case NOTIFY_WITH_LINK:
 				setText(Main.i18n("notify.label"));
 				break;
+			
 			case NOTIFY_WITH_ATTACHMENT:
 				setText(Main.i18n("notify.label.attachment"));
 				break;
+			
+			case FORWARD_MAIL:
+				setText(Main.i18n("notify.label.forward.mail"));
+				break;
 		}
-		closeButton.setHTML(Main.i18n("button.close")); 
+		
+		closeButton.setHTML(Main.i18n("button.close"));
 		sendButton.setHTML(Main.i18n("button.send"));
 		commentTXT = new HTML("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + Main.i18n("fileupload.label.notify.comment"));
 		errorNotify.setHTML(Main.i18n("fileupload.label.must.select.users"));
@@ -175,20 +201,55 @@ public class NotifyPopup extends DialogBox  {
 	
 	/**
 	 * executeSendDocument
-	 * 
-	 * @param type
 	 */
 	public void executeSendDocument(int type) {
+		isMassive = (Main.get().mainPanel.desktop.browser.fileBrowser.isMassive() 
+				 		&& Main.get().mainPanel.desktop.browser.fileBrowser.table.getAllSelectedDocumentsUUIDs().size() > 0);
 		if (Main.get().mainPanel.desktop.browser.fileBrowser.isDocumentSelected()) {
 			reset(type);
-			doc = Main.get().mainPanel.desktop.browser.fileBrowser.getDocument();
-			super.center();
-			// Another pathetic IE bug ( apologies if anyone is offended )
-			if (Util.getUserAgent().startsWith("ie")) {
-				notifyPanel.tabPanel.setWidth("374");
-				notifyPanel.tabPanel.setWidth("375");
-				notifyPanel.correcIEBug();
+			
+			if (!isMassive) {
+				path = Main.get().mainPanel.desktop.browser.fileBrowser.getDocument().getPath();
+			} else {
+				uuidList.addAll(Main.get().mainPanel.desktop.browser.fileBrowser.table.getAllSelectedDocumentsUUIDs());
 			}
+			
+			super.center();
+			message.setFocus(true);
+			IEBugCorrection();
+		}
+	}
+	
+	/**
+	 * executeSendDocument
+	 */
+	public void executeForwardMail() {
+		isMassive = (Main.get().mainPanel.desktop.browser.fileBrowser.isMassive() 
+					 && Main.get().mainPanel.desktop.browser.fileBrowser.table.getAllSelectedMailUUIDs().size() > 0);
+		if (Main.get().mainPanel.desktop.browser.fileBrowser.isMailSelected()) {
+			reset(FORWARD_MAIL);
+			
+			if (!isMassive) {
+				path = Main.get().mainPanel.desktop.browser.fileBrowser.getMail().getPath();
+			} else {
+				uuidList.addAll(Main.get().mainPanel.desktop.browser.fileBrowser.table.getAllSelectedMailUUIDs());
+			}
+			
+			super.center();
+			message.setFocus(true);
+			IEBugCorrection();
+		}
+	}
+	
+	/**
+	 * IEBugCorrection
+	 */
+	private void IEBugCorrection() {
+		// Another pathetic IE bug ( apologies if anyone is offended )
+		if (Util.getUserAgent().startsWith("ie")) {
+			notifyPanel.tabPanel.setWidth("374");
+			notifyPanel.tabPanel.setWidth("375");
+			notifyPanel.correcIEBug();
 		}
 	}
 	
@@ -198,22 +259,57 @@ public class NotifyPopup extends DialogBox  {
 	final AsyncCallback<Object> callbackNotify = new AsyncCallback<Object>() {
 		public void onSuccess(Object result) {
 		}
-
+		
 		public void onFailure(Throwable caught) {
 			Main.get().showError("notify", caught);
 		}
-	};	
-
+	};
+	
 	/**
 	 * Sens the link notification
 	 */
-	private void sendLinkNotification() {	
-		switch(type) {
+	private void sendLinkNotification() {
+		switch (type) {
 			case NOTIFY_WITH_LINK:
-				notifyService.notify(doc.getPath(), users, roles, message.getText(), false, callbackNotify);
+				if (!isMassive) {
+					notifyService.notify(path, mails, users, roles, message.getText(), false, callbackNotify);
+				} else {
+					massiveService.notify(uuidList, mails, users, roles, message.getText(), false, callbackNotify);
+				}
 				break;
+			
 			case NOTIFY_WITH_ATTACHMENT:
-				notifyService.notify(doc.getPath(), users, roles, message.getText(), true, callbackNotify);
+				if (!isMassive) {
+					notifyService.notify(path, mails, users, roles, message.getText(), true, callbackNotify);
+				} else {
+					massiveService.notify(uuidList, mails, users, roles, message.getText(), true, callbackNotify);
+				}
+				break;
+			
+			case FORWARD_MAIL:
+				if (!isMassive) {
+					mailService.forwardMail(path, mails, users, roles, message.getText(), new AsyncCallback<Object>() {
+						@Override
+						public void onSuccess(Object result) {
+						}
+						
+						@Override
+						public void onFailure(Throwable caught) {
+							Main.get().showError("forwardMail", caught);
+						}
+					});
+				} else {
+					massiveService.forwardMail(uuidList, mails, users, roles, message.getText(), new AsyncCallback<Object>() {
+						@Override
+						public void onSuccess(Object result) {
+						}
+						
+						@Override
+						public void onFailure(Throwable caught) {
+							Main.get().showError("forwardMail", caught);
+						}
+					});
+				}
 				break;
 		}
 	}
@@ -223,21 +319,31 @@ public class NotifyPopup extends DialogBox  {
 	 */
 	private void reset(int type) {
 		this.type = type;
-		switch(type) {
+		
+		switch (type) {
 			case NOTIFY_WITH_LINK:
 				setText(Main.i18n("notify.label"));
 				break;
+			
 			case NOTIFY_WITH_ATTACHMENT:
 				setText(Main.i18n("notify.label.attachment"));
 				break;
+			
+			case FORWARD_MAIL:
+				setText(Main.i18n("notify.label.forward.mail"));
+				break;
 		}
+		
+		mails = "";
 		users = "";
 		roles = "";
 		message.setText("");
 		notifyPanel.reset();
 		notifyPanel.getAll();
-		doc = new GWTDocument();
+		path = "";
+		uuidList.clear();
 		errorNotify.setVisible(false);
+		sendButton.setEnabled(false);
 	}
 	
 	/**
@@ -245,6 +351,13 @@ public class NotifyPopup extends DialogBox  {
 	 */
 	public void enableAdvancedFilter() {
 		notifyPanel.enableAdvancedFilter();
+	}
+	
+	/**
+	 * enableNotifyExternalUsers
+	 */
+	public void enableNotifyExternalUsers() {
+		notifyPanel.enableNotifyExternalUsers();
 	}
 	
 	/**

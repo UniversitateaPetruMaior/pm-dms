@@ -1,27 +1,28 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.servlet;
 
 import java.io.File;
+import java.io.FileReader;
 import java.util.Calendar;
 import java.util.Properties;
 import java.util.Timer;
@@ -32,6 +33,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.SessionImpl;
 import org.jbpm.JbpmContext;
@@ -41,11 +43,8 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.cybozu.labs.langdetect.DetectorFactory;
 import com.cybozu.labs.langdetect.LangDetectException;
-import com.openkm.cache.UserItemsManager;
-import com.openkm.cache.UserNodeKeywordsManager;
 import com.openkm.core.Config;
 import com.openkm.core.Cron;
-import com.openkm.core.DatabaseException;
 import com.openkm.core.MimeTypeConfig;
 import com.openkm.core.UINotification;
 import com.openkm.core.UpdateInfo;
@@ -63,6 +62,7 @@ import com.openkm.util.FormUtils;
 import com.openkm.util.JBPMUtils;
 import com.openkm.util.UserActivity;
 import com.openkm.util.WarUtils;
+import com.openkm.util.pendtask.PendingTaskExecutor;
 
 /**
  * Servlet Startup Class
@@ -70,15 +70,15 @@ import com.openkm.util.WarUtils;
 public class RepositoryStartupServlet extends HttpServlet {
 	private static Logger log = LoggerFactory.getLogger(RepositoryStartupServlet.class);
 	private static final long serialVersionUID = 1L;
-	private static Timer uiTimer;  // Update Info (OpenKM Update Information)
-	private static Timer cronTimer;  // CRON Manager
-	private static Timer uinTimer;  // User Interface Notification (Create From Administration)
+	private static Timer uiTimer; // Update Info (OpenKM Update Information)
+	private static Timer cronTimer; // CRON Manager
+	private static Timer uinTimer; // User Interface Notification (Create From Administration)
 	private static Cron cron;
 	private static UINotification uin;
 	private static UpdateInfo ui;
 	private static boolean hasConfiguredDataStore = false;
 	private static boolean running = false;
-	
+
 	@Override
 	public void init() throws ServletException {
 		super.init();
@@ -109,8 +109,8 @@ public class RepositoryStartupServlet extends HttpServlet {
 			log.info("*** Initialize property groups... ***");
 			FormUtils.parsePropertyGroupsForms(Config.PROPERTY_GROUPS_XML);
 		} catch (Exception e) {
-        	log.error(e.getMessage(), e);
-        }
+			log.error(e.getMessage(), e);
+		}
 		
 		// Initialize language detection engine
 		try {
@@ -129,7 +129,7 @@ public class RepositoryStartupServlet extends HttpServlet {
 		// Activity log
 		UserActivity.log(Config.SYSTEM_USER, "MISC_OPENKM_START", null, null, null);
 	}
-
+	
 	@Override
 	public void destroy() {
 		super.destroy();
@@ -139,16 +139,16 @@ public class RepositoryStartupServlet extends HttpServlet {
 		
 		// Invoke stop
 		stop(this);
-        
-        try {
-        	// Database shutdown
-    		log.info("*** Hibernate shutdown ***");
-    		HibernateUtil.closeSessionFactory();	
-        } catch (Exception e) {
-        	log.error(e.getMessage(), e);
-        }
-        
-        try {
+		
+		try {
+			// Database shutdown
+			log.info("*** Hibernate shutdown ***");
+			HibernateUtil.closeSessionFactory();
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+		
+		try {
 			// Call only once during destroy time of your application
 			// @see http://issues.openkm.com/view.php?id=1577
 			SLF4JBridgeHandler.uninstall();
@@ -183,17 +183,6 @@ public class RepositoryStartupServlet extends HttpServlet {
 			throw new ServletException(e.getMessage(), e);
 		}
 		
-		if (Config.USER_ITEM_CACHE) {
-			// Deserialize
-			try {
-				log.info("*** Cache deserialization ***");
-				UserItemsManager.deserialize();
-				UserNodeKeywordsManager.deserialize();
-			} catch (DatabaseException e) {
-				log.warn(e.getMessage(), e);
-			}
-		}
-		
 		log.info("*** User database initialized ***");
 		
 		if (!Config.REPOSITORY_NATIVE) {
@@ -224,11 +213,9 @@ public class RepositoryStartupServlet extends HttpServlet {
 		log.info("*** Initializing MIME types... ***");
 		MimeTypeConfig.loadMimeTypes();
 		
-		if (Config.UPDATE_INFO) {
-			log.info("*** Activating update info ***");
-			ui = new UpdateInfo();
-			uiTimer.schedule(ui, 1000, 24 * 60 * 60 * 1000); // First in 1 seg, next each 24 hours
-		}
+		log.info("*** Activating update info ***");
+		ui = new UpdateInfo();
+		uiTimer.schedule(ui, TimeUnit.MINUTES.toMillis(5), TimeUnit.HOURS.toMillis(24)); // First in 5 min, next each 24 hours
 		
 		log.info("*** Activating cron ***");
 		cron = new Cron();
@@ -248,9 +235,12 @@ public class RepositoryStartupServlet extends HttpServlet {
 		
 		try {
 			// General maintenance works
+			String dapContent = "com.openkm.dao.DashboardActivityDAO.purge();";
+			CronTabUtils.createOrUpdate("Dashboard Activity Purge", "@daily", dapContent);
+
 			String uisContent = "com.openkm.cache.UserItemsManager.serialize();";
 			CronTabUtils.createOrUpdate("User Items Serialize", "@hourly", uisContent);
-			
+
 			String ruiContent = "com.openkm.cache.UserItemsManager.refreshDbUserItems();";
 			CronTabUtils.createOrUpdate("Refresh User Items", "@weekly", ruiContent);
 			
@@ -260,11 +250,11 @@ public class RepositoryStartupServlet extends HttpServlet {
 			String tewContent = "new com.openkm.extractor.TextExtractorWorker().run();";
 			CronTabUtils.createOrUpdate("Text Extractor Worker", "*/5 * * * *", tewContent);
 			
-			String riContent = "new com.openkm.core.RepositoryInfo().run();";
-			CronTabUtils.createOrUpdate("Repository Info", "@daily", riContent);
-			
 			String swdContent = "new com.openkm.core.Watchdog().run();";
 			CronTabUtils.createOrUpdate("Session Watchdog", "*/5 * * * *", swdContent);
+			
+			String pptContent = "new com.openkm.util.pendtask.PendingTaskExecutor().run();";
+			CronTabUtils.createOrUpdate("Process Pending Tasks", "*/5 * * * *", pptContent);
 			
 			// Datastore garbage collection
 			if (!Config.REPOSITORY_NATIVE && hasConfiguredDataStore) {
@@ -283,11 +273,17 @@ public class RepositoryStartupServlet extends HttpServlet {
 		}
 		
 		try {
-			if (!Config.SYSTEM_OPENOFFICE_PATH.equals("")) {
-				log.info("*** Start OpenOffice manager ***");
-				DocConverter.getInstance().start();
+			if (Config.REMOTE_CONVERSION_SERVER.equals("")) {
+				if (!Config.SYSTEM_OPENOFFICE_PATH.equals("")) {
+					log.info("*** Start OpenOffice manager ***");
+					DocConverter.getInstance().start();
+				} else if (!Config.SYSTEM_OPENOFFICE_SERVER.equals("")) {
+					log.info("*** Using OpenOffice conversion server ***");
+				} else {
+					log.warn("*** No OpenOffice manager nor server configured ***");
+				}
 			} else {
-				log.warn("*** No OpenOffice manager configured ***");
+				log.info("*** Remote conversion configured ***");
 			}
 		} catch (Throwable e) {
 			log.warn(e.getMessage(), e);
@@ -297,11 +293,26 @@ public class RepositoryStartupServlet extends HttpServlet {
 		ExtensionManager.getInstance();
 		
 		try {
-			log.info("*** Ejecute start script ***");
+			log.info("*** Execute start script ***");
 			File script = new File(Config.HOME_DIR + File.separatorChar + Config.START_SCRIPT);
 			ExecutionUtils.runScript(script);
 			File jar = new File(Config.HOME_DIR + File.separatorChar + Config.START_JAR);
 			ExecutionUtils.getInstance().runJar(jar);
+		} catch (Throwable e) {
+			log.warn(e.getMessage(), e);
+		}
+		
+		try {
+			log.info("*** Execute start SQL ***");
+			File sql = new File(Config.HOME_DIR + File.separatorChar + Config.START_SQL);
+			
+			if (sql.exists() && sql.canRead()) {
+				FileReader fr = new FileReader(sql);
+				HibernateUtil.executeSentences(fr);
+				IOUtils.closeQuietly(fr);
+			} else {
+				log.warn("Unable to read sql: {}", sql.getPath());
+			}
 		} catch (Throwable e) {
 			log.warn(e.getMessage(), e);
 		}
@@ -322,9 +333,11 @@ public class RepositoryStartupServlet extends HttpServlet {
 		ExtensionManager.getInstance().shutdown();
 		
 		try {
-			if (!Config.SYSTEM_OPENOFFICE_PATH.equals("")) {
-				log.info("*** Shutting down OpenOffice manager ***");
-				DocConverter.getInstance().stop();
+			if (Config.REMOTE_CONVERSION_SERVER.equals("")) {
+				if (!Config.SYSTEM_OPENOFFICE_PATH.equals("")) {
+					log.info("*** Shutting down OpenOffice manager ***");
+					DocConverter.getInstance().stop();
+				}
 			}
 		} catch (Throwable e) {
 			log.warn(e.getMessage(), e);
@@ -346,18 +359,11 @@ public class RepositoryStartupServlet extends HttpServlet {
 		uinTimer.cancel();
 		uiTimer.cancel();
 		
-		log.info("*** Shutting down repository... ***");
+		// Shutdown pending task executor
+		log.info("*** Shutting pending task executor... ***");
+		PendingTaskExecutor.shutdown();
 		
-		if (Config.USER_ITEM_CACHE) {
-			// Serialize
-			try {
-				log.info("*** Cache serialization ***");
-				UserItemsManager.serialize();
-				UserNodeKeywordsManager.serialize();
-			} catch (DatabaseException e) {
-				log.warn(e.getMessage(), e);
-			}
-		}
+		log.info("*** Shutting down repository... ***");
 		
 		try {
 			// Preserve system user config
@@ -371,11 +377,26 @@ public class RepositoryStartupServlet extends HttpServlet {
 		log.info("*** Repository shutted down ***");
 		
 		try {
-			log.info("*** Ejecute stop script ***");
+			log.info("*** Execute stop script ***");
 			File script = new File(Config.HOME_DIR + File.separatorChar + Config.STOP_SCRIPT);
 			ExecutionUtils.runScript(script);
 			File jar = new File(Config.HOME_DIR + File.separatorChar + Config.STOP_JAR);
 			ExecutionUtils.getInstance().runJar(jar);
+		} catch (Throwable e) {
+			log.warn(e.getMessage(), e);
+		}
+		
+		try {
+			log.info("*** Execute stop SQL ***");
+			File sql = new File(Config.HOME_DIR + File.separatorChar + Config.STOP_SQL);
+			
+			if (sql.exists() && sql.canRead()) {
+				FileReader fr = new FileReader(sql);
+				HibernateUtil.executeSentences(fr);
+				IOUtils.closeQuietly(fr);
+			} else {
+				log.warn("Unable to read sql: {}", sql.getPath());
+			}
 		} catch (Throwable e) {
 			log.warn(e.getMessage(), e);
 		}
@@ -413,6 +434,24 @@ public class RepositoryStartupServlet extends HttpServlet {
 		if (!swfCacheFolder.exists()) {
 			log.info("Create missing directory {}", swfCacheFolder.getPath());
 			swfCacheFolder.mkdirs();
+		}
+		
+		// Initialize chroot folder
+		if (Config.SYSTEM_MULTIPLE_INSTANCES) {
+			File chrootFolder = new File(Config.INSTANCE_CHROOT_PATH);
+			if (!chrootFolder.exists()) {
+				log.info("Create missing directory {}", chrootFolder.getPath());
+				chrootFolder.mkdirs();
+			}
+		}
+		
+		// Initialize purgatory home
+		if (Config.REPOSITORY_PURGATORY_HOME != null && !Config.REPOSITORY_PURGATORY_HOME.isEmpty()) {
+			File purgatoryFolder = new File(Config.REPOSITORY_PURGATORY_HOME);
+			if (!purgatoryFolder.exists()) {
+				log.info("Create missing directory {}", purgatoryFolder.getPath());
+				purgatoryFolder.mkdirs();
+			}
 		}
 		
 		if (FsDataStore.DATASTORE_BACKEND_FS.equals(Config.REPOSITORY_DATASTORE_BACKEND)) {

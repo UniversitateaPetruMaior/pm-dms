@@ -1,14 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:jsp="http://java.sun.com/xml/ns/javaee/jsp" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"> 
   <display-name>OpenKM</display-name>
+  
+  <!-- Tomcat resources -->
+  <!-- Already defined in $TOMCAT_HOME/conf/context.xml -->
+  <!--
+  <resource-ref>
+    <description>OKM Datasource</description>
+    <res-ref-name>jdbc/OpenKMDS</res-ref-name>
+    <res-type>javax.sql.DataSource</res-type>
+    <res-auth>Container</res-auth>
+  </resource-ref>
+  <resource-ref>
+    <description>OKM Mail</description>
+    <res-ref-name>mail/OpenKM</res-ref-name>
+    <res-type>javax.mail.Session</res-type>
+    <res-auth>Container</res-auth>
+  </resource-ref>
+  -->
+  
   <jsp-config>
     <taglib>
       <taglib-uri>http://www.openkm.com/tags/utils</taglib-uri>
       <taglib-location>/WEB-INF/tlds/utils.tld</taglib-location>
     </taglib>
   </jsp-config>
+  
+  <!-- Filters -->
   <filter>
-    <filter-name>springSecurityFilterChain</filter-name>
+	<filter-name>springSecurityFilterChain</filter-name>
     <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
   </filter>
   <filter>
@@ -19,6 +41,8 @@
     <filter-name>UploadThrottleFilter</filter-name>
     <filter-class>com.openkm.servlet.frontend.UploadThrottleFilter</filter-class>
   </filter>
+  
+  <!-- Filter Mappings -->
   <filter-mapping>
     <filter-name>springSecurityFilterChain</filter-name>
     <url-pattern>/*</url-pattern>
@@ -31,6 +55,8 @@
     <filter-name>UploadThrottleFilter</filter-name>
     <url-pattern>/frontend/FileUpload</url-pattern>
   </filter-mapping>
+  
+  <!-- Listeners -->
   <listener>
     <listener-class>com.openkm.servlet.SessionListener</listener-class>
   </listener>
@@ -40,6 +66,10 @@
   <listener>
     <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
   </listener>
+  <listener>
+    <listener-class>net.sf.ehcache.constructs.web.ShutdownListener</listener-class>
+  </listener>
+  
   <context-param>
     <param-name>contextConfigLocation</param-name>
     <param-value>
@@ -47,6 +77,8 @@
       file:${catalina.home}/OpenKM.xml
     </param-value>
   </context-param>
+  
+  <!-- Startup Servlets -->
   <servlet>
     <servlet-name>RepositoryStartup</servlet-name>
     <servlet-class>com.openkm.servlet.RepositoryStartupServlet</servlet-class>
@@ -57,6 +89,8 @@
     <servlet-class>org.apache.cxf.transport.servlet.CXFServlet</servlet-class>
     <load-on-startup>2</load-on-startup>
   </servlet>
+  
+  <!-- Frontend Servlets -->
   <servlet>
     <servlet-name>WorkspaceServlet</servlet-name>
     <servlet-class>com.openkm.servlet.frontend.WorkspaceServlet</servlet-class>
@@ -130,15 +164,15 @@
     <servlet-class>com.openkm.servlet.frontend.PropertyServlet</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>ChatServlet</servlet-name>
+  	<servlet-name>ChatServlet</servlet-name>
     <servlet-class>com.openkm.servlet.frontend.ChatServlet</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>FrontendUserConfigServlet</servlet-name>
+  	<servlet-name>FrontendUserConfigServlet</servlet-name>
     <servlet-class>com.openkm.servlet.frontend.UserConfigServlet</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>NoteServlet</servlet-name>
+  	<servlet-name>NoteServlet</servlet-name>
     <servlet-class>com.openkm.servlet.frontend.NoteServlet</servlet-class>
   </servlet>
   <servlet>
@@ -174,6 +208,28 @@
     <servlet-class>com.openkm.servlet.frontend.OmrServlet</servlet-class>
   </servlet>
   <servlet>
+    <servlet-name>PaginationServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.frontend.PaginationServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>CSVExporterServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.frontend.CSVExporterServlet</servlet-class>
+  </servlet>
+  
+  <!-- Extension servlets -->
+  <servlet>
+    <servlet-name>DropboxServlet</servlet-name>
+    <servlet-class>com.openkm.extension.servlet.DropboxServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>ZohoServlet</servlet-name>
+    <servlet-class>com.openkm.extension.servlet.ZohoServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>ZohoFileUploadServlet</servlet-name>
+    <servlet-class>com.openkm.extension.servlet.ZohoFileUploadServlet</servlet-class>
+  </servlet>
+  <servlet>
     <servlet-name>DataBrowserServlet</servlet-name>
     <servlet-class>com.openkm.extension.servlet.DataBrowserServlet</servlet-class>
   </servlet>
@@ -182,9 +238,11 @@
     <servlet-class>com.openkm.extension.servlet.MacrosServlet</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>DropboxServlet</servlet-name>
-    <servlet-class>com.openkm.extension.servlet.DropboxServlet</servlet-class>
+    <servlet-name>OpenMeetingsServlet</servlet-name>
+    <servlet-class>com.openkm.extension.servlet.OpenMeetingsServlet</servlet-class>
   </servlet>
+  
+  <!-- Misc servlets -->
   <servlet>
     <servlet-name>SyndicationServlet</servlet-name>
     <servlet-class>com.openkm.servlet.SyndicationServlet</servlet-class>
@@ -226,8 +284,30 @@
     <servlet-class>com.openkm.servlet.WorkflowRegisterServlet</servlet-class>
   </servlet>
   <servlet>
+    <servlet-name>HtmlPreviewServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.HtmlPreviewServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>SessionKeepAliveServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.SessionKeepAliveServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>MailPreviewServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.MailPreviewServlet</servlet-class>
+  </servlet>
+  
+  <!-- Admin servlets -->
+  <servlet>
     <servlet-name>StatsGraphServlet</servlet-name>
     <servlet-class>com.openkm.servlet.admin.StatsGraphServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>RepositoryBackupServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.RepositoryBackupServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>RepositoryRestoreServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.RepositoryRestoreServlet</servlet-class>
   </servlet>
   <servlet>
     <servlet-name>RepositoryCheckerServlet</servlet-name>
@@ -250,8 +330,24 @@
     <servlet-class>com.openkm.servlet.admin.CronTabServlet</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>RepositoryViewServlet</servlet-name>
-    <servlet-class>com.openkm.servlet.admin.RepositoryViewServlet</servlet-class>
+    <servlet-name>BenchmarkServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.BenchmarkServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>LogCatServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.LogCatServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>TailServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.TailServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>JcrRepositoryViewServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.JcrRepositoryViewServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>DbRepositoryViewServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.DbRepositoryViewServlet</servlet-class>
   </servlet>
   <servlet>
     <servlet-name>DatabaseQueryServlet</servlet-name>
@@ -265,7 +361,7 @@
     <servlet-name>PropertyGroupsServlet</servlet-name>
     <servlet-class>com.openkm.servlet.admin.PropertyGroupsServlet</servlet-class>
   </servlet>
-  <servlet>
+    <servlet>
     <servlet-name>ActivityLogServlet</servlet-name>
     <servlet-class>com.openkm.servlet.admin.ActivityLogServlet</servlet-class>
   </servlet>
@@ -280,10 +376,6 @@
   <servlet>
     <servlet-name>TwitterAccountServlet</servlet-name>
     <servlet-class>com.openkm.servlet.admin.TwitterAccountServlet</servlet-class>
-  </servlet>
-  <servlet>
-  	<servlet-name>UserCertificateServlet</servlet-name>
-    <servlet-class>com.openkm.servlet.admin.UserCertificateServlet</servlet-class>
   </servlet>
   <servlet>
     <servlet-name>WorkflowServlet</servlet-name>
@@ -304,6 +396,10 @@
   <servlet>
     <servlet-name>RepositorySearchServlet</servlet-name>
     <servlet-class>com.openkm.servlet.admin.RepositorySearchServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>InstallationResetServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.InstallationResetServlet</servlet-class>
   </servlet>
   <servlet>
     <servlet-name>RebuildIndexesServlet</servlet-name>
@@ -334,8 +430,12 @@
     <servlet-class>com.openkm.servlet.admin.CheckTextExtractionServlet</servlet-class>
   </servlet>
   <servlet>
-    <servlet-name>LogCatServlet</servlet-name>
-    <servlet-class>com.openkm.servlet.admin.LogCatServlet</servlet-class>
+    <servlet-name>TextExtractionQueueServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.TextExtractionQueueServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>PendingTaskQueueServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.PendingTaskQueueServlet</servlet-class>
   </servlet>
   <servlet>
     <servlet-name>CssServlet</servlet-name>
@@ -346,13 +446,43 @@
     <servlet-class>com.openkm.servlet.admin.OmrServlet</servlet-class>
   </servlet>
   <servlet>
+    <servlet-name>UnitTestingServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.UnitTestingServlet</servlet-class>
+  </servlet>
+  
+  <!-- CMIS Servlets -->
+  <servlet>
+    <servlet-name>cmisAtom</servlet-name>
+    <servlet-class>org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
+    <init-param>
+      <param-name>callContextHandler</param-name>
+      <param-value>org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
+    </init-param>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  <servlet>
+    <servlet-name>cmisBrowser</servlet-name>
+    <servlet-class>org.apache.chemistry.opencmis.server.impl.browser.CmisBrowserBindingServlet</servlet-class>
+    <init-param>
+      <param-name>callContextHandler</param-name>
+      <param-value>org.apache.chemistry.opencmis.server.shared.BasicAuthCallContextHandler</param-value>
+    </init-param>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  
+  <!-- Test Servlets -->
+  <servlet>
     <servlet-name>Test</servlet-name>
     <servlet-class>com.openkm.servlet.TestServlet</servlet-class>
   </servlet>
+  
+  <!-- Startup servlets -->
   <servlet-mapping>
     <servlet-name>CXFServlet</servlet-name>
     <url-pattern>/services/*</url-pattern>
   </servlet-mapping>
+  
+  <!-- Frontend Servlet Mappings -->
   <servlet-mapping>
     <servlet-name>WorkspaceServlet</servlet-name>
     <url-pattern>/frontend/Workspace</url-pattern>
@@ -466,8 +596,32 @@
     <url-pattern>/frontend/Omr</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
+    <servlet-name>PaginationServlet</servlet-name>
+    <url-pattern>/frontend/Pagination</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>CSVExporterServlet</servlet-name>
+    <url-pattern>/frontend/CSVExporter</url-pattern>
+  </servlet-mapping>
+  
+  <!-- Test Servlets -->
+  <servlet-mapping>
     <servlet-name>TestServlet</servlet-name>
     <url-pattern>/frontend/Test</url-pattern>
+  </servlet-mapping>
+  
+  <!-- Extensions Servlet Mappings -->
+  <servlet-mapping>
+    <servlet-name>DropboxServlet</servlet-name>
+    <url-pattern>/extension/Dropbox</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>ZohoServlet</servlet-name>
+    <url-pattern>/extension/Zoho</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>WorkflowGraphServlet</servlet-name>
+    <url-pattern>/extension/WorkflowGraph</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>DataBrowserServlet</servlet-name>
@@ -478,9 +632,15 @@
     <url-pattern>/extension/Macros</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
-    <servlet-name>DropboxServlet</servlet-name>
-    <url-pattern>/extension/Dropbox</url-pattern>
+    <servlet-name>OpenMeetingsServlet</servlet-name>
+    <url-pattern>/extension/OpenMeetings</url-pattern>
   </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>ZohoFileUploadServlet</servlet-name>
+    <url-pattern>/extension/ZohoFileUpload</url-pattern>
+  </servlet-mapping>
+  
+  <!-- Misc servlets mappings -->
   <servlet-mapping>
     <servlet-name>SyndicationServlet</servlet-name>
     <url-pattern>/feed/*</url-pattern>
@@ -522,8 +682,30 @@
     <url-pattern>/workflow-register/*</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
+    <servlet-name>HtmlPreviewServlet</servlet-name>
+    <url-pattern>/HtmlPreview</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>SessionKeepAliveServlet</servlet-name>
+    <url-pattern>/SessionKeepAlive</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>MailPreviewServlet</servlet-name>
+    <url-pattern>/MailPreview</url-pattern>
+  </servlet-mapping>
+  
+  <!-- Admin Servlet Mappings -->
+  <servlet-mapping>
     <servlet-name>StatsGraphServlet</servlet-name>
     <url-pattern>/admin/StatsGraph</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>RepositoryBackupServlet</servlet-name>
+    <url-pattern>/admin/RepositoryBackup</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>RepositoryRestoreServlet</servlet-name>
+    <url-pattern>/admin/RepositoryRestore</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>RepositoryCheckerServlet</servlet-name>
@@ -533,7 +715,7 @@
     <servlet-name>WorkflowGraphServlet</servlet-name>
     <url-pattern>/admin/WorkflowGraph</url-pattern>
   </servlet-mapping>
-  <servlet-mapping>
+   <servlet-mapping>
     <servlet-name>RegisterWorkflowServlet</servlet-name>
     <url-pattern>/admin/RegisterWorkflow</url-pattern>
   </servlet-mapping>
@@ -546,8 +728,24 @@
     <url-pattern>/admin/CronTab</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
-    <servlet-name>RepositoryViewServlet</servlet-name>
-    <url-pattern>/admin/RepositoryView</url-pattern>
+    <servlet-name>BenchmarkServlet</servlet-name>
+    <url-pattern>/admin/Benchmark</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>LogCatServlet</servlet-name>
+    <url-pattern>/admin/LogCat</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>TailServlet</servlet-name>
+    <url-pattern>/admin/Tail</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>JcrRepositoryViewServlet</servlet-name>
+    <url-pattern>/admin/JcrRepositoryView</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>DbRepositoryViewServlet</servlet-name>
+    <url-pattern>/admin/DbRepositoryView</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>DatabaseQueryServlet</servlet-name>
@@ -578,10 +776,6 @@
     <url-pattern>/admin/TwitterAccount</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
-    <servlet-name>UserCertificateServlet</servlet-name>
-    <url-pattern>/admin/UserCertificates</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
     <servlet-name>WorkflowServlet</servlet-name>
     <url-pattern>/admin/Workflow</url-pattern>
   </servlet-mapping>
@@ -600,6 +794,10 @@
   <servlet-mapping>
     <servlet-name>RepositorySearchServlet</servlet-name>
     <url-pattern>/admin/RepositorySearch</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>InstallationResetServlet</servlet-name>
+    <url-pattern>/admin/InstallationReset</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>RebuildIndexesServlet</servlet-name>
@@ -630,8 +828,12 @@
     <url-pattern>/admin/CheckTextExtraction</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
-    <servlet-name>LogCatServlet</servlet-name>
-    <url-pattern>/admin/LogCat</url-pattern>
+    <servlet-name>TextExtractionQueueServlet</servlet-name>
+    <url-pattern>/admin/TextExtractionQueue</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>PendingTaskQueueServlet</servlet-name>
+    <url-pattern>/admin/PendingTaskQueue</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>CssServlet</servlet-name>
@@ -642,16 +844,35 @@
     <url-pattern>/admin/Omr</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
+    <servlet-name>UnitTestingServlet</servlet-name>
+    <url-pattern>/admin/UnitTesting</url-pattern>
+  </servlet-mapping>
+  
+  <!-- CMIS Servlet Mappings -->
+  <servlet-mapping>
+    <servlet-name>cmisAtom</servlet-name>
+    <url-pattern>/cmis/atom/*</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>cmisBrowser</servlet-name>
+    <url-pattern>/cmis/browser/*</url-pattern>
+  </servlet-mapping>
+  
+  <!-- Test Servlet Mapping -->
+  <servlet-mapping>
     <servlet-name>Test</servlet-name>
     <url-pattern>/Test</url-pattern>
   </servlet-mapping>
+
   <welcome-file-list>
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>
+
   <error-page>
     <exception-type>com.openkm.frontend.client.OKMException</exception-type>
     <location>/error.jsp</location>
   </error-page>
+
   <error-page>
     <exception-type>java.lang.Exception</exception-type>
     <location>/error.jsp</location>

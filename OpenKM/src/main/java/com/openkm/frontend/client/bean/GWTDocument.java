@@ -21,12 +21,12 @@
 
 package com.openkm.frontend.client.bean;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import com.openkm.frontend.client.bean.form.GWTFormElement;
 
 /**
  * GWTDocument
@@ -39,7 +39,6 @@ public class GWTDocument implements IsSerializable {
 	private String parentPath;
 	private String name;
 	private String path;
-	private String parent;
 	private String author;
 	private byte[] content;
 	private Date created;
@@ -51,22 +50,36 @@ public class GWTDocument implements IsSerializable {
 	private int permissions;
 	private GWTLockInfo lockInfo;
 	private boolean subscribed;
+	private boolean signed;
 	private boolean convertibleToPdf;
 	private boolean convertibleToSwf;
+	private boolean convertibleToDxf;
 	private String uuid;
 	private boolean isAttachment = false;
 	private boolean hasNotes = false;
+	private String cipherName;
 	private Set<GWTUser> subscriptors;
 	private List<GWTNote> notes;
 	private Set<GWTFolder> categories;
 	private Set<String> keywords;
 	private GWTUser user;
-	private List<GWTSignature> signatures = new ArrayList<GWTSignature>();
+	
+	// Extra columns
+	private GWTFormElement column0;
+	private GWTFormElement column1;
+	private GWTFormElement column2;
+	private GWTFormElement column3;
+	private GWTFormElement column4;
+	private GWTFormElement column5;
+	private GWTFormElement column6;
+	private GWTFormElement column7;
+	private GWTFormElement column8;
+	private GWTFormElement column9;
 	
 	public String getParentPath() {
 		return parentPath;
 	}
-
+	
 	public void setParentPath(String parentPath) {
 		this.parentPath = parentPath;
 	}
@@ -85,14 +98,6 @@ public class GWTDocument implements IsSerializable {
 	
 	public void setPath(String path) {
 		this.path = path;
-	}
-	
-	public String getParent() {
-		return parent;
-	}
-	
-	public void setParent(String parent) {
-		this.parent = parent;
 	}
 	
 	public String getAuthor() {
@@ -183,6 +188,14 @@ public class GWTDocument implements IsSerializable {
 		this.subscribed = subscribed;
 	}
 	
+	public boolean isSigned() {
+		return signed;
+	}
+
+	public void setSigned(boolean signed) {
+		this.signed = signed;
+	}
+
 	public boolean isConvertibleToPdf() {
 		return convertibleToPdf;
 	}
@@ -197,6 +210,14 @@ public class GWTDocument implements IsSerializable {
 	
 	public void setConvertibleToSwf(boolean convertibleToSwf) {
 		this.convertibleToSwf = convertibleToSwf;
+	}
+	
+	public boolean isConvertibleToDxf() {
+		return convertibleToDxf;
+	}
+	
+	public void setConvertibleToDxf(boolean convertibleToDxf) {
+		this.convertibleToDxf = convertibleToDxf;
 	}
 	
 	public String getUuid() {
@@ -221,6 +242,14 @@ public class GWTDocument implements IsSerializable {
 	
 	public void setHasNotes(boolean hasNotes) {
 		this.hasNotes = hasNotes;
+	}
+	
+	public String getCipherName() {
+		return cipherName;
+	}
+	
+	public void setCipherName(String cipherName) {
+		this.cipherName = cipherName;
 	}
 	
 	public Set<GWTUser> getSubscriptors() {
@@ -263,15 +292,85 @@ public class GWTDocument implements IsSerializable {
 		this.user = user;
 	}
 
-	public List<GWTSignature> getSignatures() {
-		return signatures;
+	public GWTFormElement getColumn0() {
+		return column0;
 	}
 
-	public void setSignatures(List<GWTSignature> signatures) {
-		this.signatures = signatures;
+	public void setColumn0(GWTFormElement column0) {
+		this.column0 = column0;
 	}
-	
 
+	public GWTFormElement getColumn1() {
+		return column1;
+	}
+
+	public void setColumn1(GWTFormElement column1) {
+		this.column1 = column1;
+	}
+
+	public GWTFormElement getColumn2() {
+		return column2;
+	}
+
+	public void setColumn2(GWTFormElement column2) {
+		this.column2 = column2;
+	}
+
+	public GWTFormElement getColumn3() {
+		return column3;
+	}
+
+	public void setColumn3(GWTFormElement column3) {
+		this.column3 = column3;
+	}
+
+	public GWTFormElement getColumn4() {
+		return column4;
+	}
+
+	public void setColumn4(GWTFormElement column4) {
+		this.column4 = column4;
+	}
+
+	public GWTFormElement getColumn5() {
+		return column5;
+	}
+
+	public void setColumn5(GWTFormElement column5) {
+		this.column5 = column5;
+	}
+
+	public GWTFormElement getColumn6() {
+		return column6;
+	}
+
+	public void setColumn6(GWTFormElement column6) {
+		this.column6 = column6;
+	}
+
+	public GWTFormElement getColumn7() {
+		return column7;
+	}
+
+	public void setColumn7(GWTFormElement column7) {
+		this.column7 = column7;
+	}
+
+	public GWTFormElement getColumn8() {
+		return column8;
+	}
+
+	public void setColumn8(GWTFormElement column8) {
+		this.column8 = column8;
+	}
+
+	public GWTFormElement getColumn9() {
+		return column9;
+	}
+
+	public void setColumn9(GWTFormElement column9) {
+		this.column9 = column9;
+	}
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -293,6 +392,8 @@ public class GWTDocument implements IsSerializable {
 		sb.append(", uuid="); sb.append(uuid);
 		sb.append(", convertibleToPdf="); sb.append(convertibleToPdf);
 		sb.append(", convertibleToSwf="); sb.append(convertibleToSwf);
+		sb.append(", convertibleToDxf="); sb.append(convertibleToDxf);
+		sb.append(", cipherName="); sb.append(cipherName);
 		sb.append(", notes="); sb.append(notes);
 		sb.append(", user="); sb.append(user.getId());
 		sb.append(", username="); sb.append(user.getUsername());

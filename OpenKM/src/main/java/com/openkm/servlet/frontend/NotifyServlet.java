@@ -39,16 +39,10 @@ import com.openkm.frontend.client.OKMException;
 import com.openkm.frontend.client.constants.service.ErrorCode;
 import com.openkm.frontend.client.service.OKMNotifyService;
 import com.openkm.principal.PrincipalAdapterException;
+import com.openkm.util.MailUtils;
 
 /**
  * Servlet Class
- * 
- * @web.servlet              name="NotifyServlet"
- *                           display-name="Directory tree service"
- *                           description="Directory tree service"
- * @web.servlet-mapping      url-pattern="/NotifyServlet"
- * @web.servlet-init-param   name="A parameter"
- *                           value="A value"
  */
 public class NotifyServlet extends OKMRemoteServiceServlet implements OKMNotifyService {
 	private static final long serialVersionUID = 1L;
@@ -109,9 +103,9 @@ public class NotifyServlet extends OKMRemoteServiceServlet implements OKMNotifyS
 	}
 	
 	@Override
-	public void notify(String docPath, String users, String roles, String message, boolean attachment) throws 
+	public void notify(String docPath, String mails, String users, String roles, String message, boolean attachment) throws 
 			OKMException {
-		log.debug("notify({}, {}, {}, {})", new Object[] { docPath, users, roles, message, attachment });
+		log.debug("notify({}, {}, {}, {}, {})", new Object[] { docPath, mails, users, roles, message, attachment });
 		updateSessionManager();
 		
 		try {
@@ -128,7 +122,8 @@ public class NotifyServlet extends OKMRemoteServiceServlet implements OKMNotifyS
 				}
 			}
 			
-			OKMNotification.getInstance().notify(null, docPath, userNames, message, attachment);
+			List<String> mailList = MailUtils.parseMailList(mails);
+			OKMNotification.getInstance().notify(null, docPath, userNames, mailList, message, attachment);
 		} catch (PathNotFoundException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMNotifyService, ErrorCode.CAUSE_PathNotFound), e.getMessage());

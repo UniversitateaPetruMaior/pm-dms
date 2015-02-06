@@ -33,6 +33,7 @@ public class GWTAvailableOption implements IsSerializable {
 	private boolean createFolderOption = true;
 	private boolean findFolderOption = true;
 	private boolean findDocumentOption = true;
+	private boolean similarDocumentVisible = true;
 	private boolean downloadOption = true;
 	private boolean downloadPdfOption = true;
 	private boolean lockOption = true;
@@ -43,6 +44,7 @@ public class GWTAvailableOption implements IsSerializable {
 	private boolean cancelCheckoutOption = true;
 	private boolean deleteOption = true;
 	private boolean addPropertyGroupOption = true;
+	private boolean updatePropertyGroupOption = true;
 	private boolean removePropertyGroupOption = true;
 	private boolean addSubscriptionOption = true;
 	private boolean removeSubscriptionOption = true;
@@ -66,6 +68,7 @@ public class GWTAvailableOption implements IsSerializable {
 	private boolean purgeTrashOption = true;
 	private boolean sendDocumentLinkOption = true;
 	private boolean sendDocumentAttachmentOption = true;
+	private boolean forwardMailOption = true;
 	private boolean skinOption = true;
 	private boolean debugOption = true;
 	private boolean administrationOption = true;
@@ -80,6 +83,7 @@ public class GWTAvailableOption implements IsSerializable {
 	private boolean aboutOption = true;
 	private boolean languagesOption = true;
 	private boolean preferencesOption = true;
+	private boolean convertOption = true;
 	private boolean addNoteOption = true;
 	private boolean addCategoryOption = true;
 	private boolean addKeywordOption = true;
@@ -185,6 +189,14 @@ public class GWTAvailableOption implements IsSerializable {
 
 	public void setAddPropertyGroupOption(boolean addPropertyGroupOption) {
 		this.addPropertyGroupOption = addPropertyGroupOption;
+	}
+
+	public boolean isUpdatePropertyGroupOption() {
+		return updatePropertyGroupOption;
+	}
+
+	public void setUpdatePropertyGroupOption(boolean updatePropertyGroupOption) {
+		this.updatePropertyGroupOption = updatePropertyGroupOption;
 	}
 
 	public boolean isRemovePropertyGroupOption() {
@@ -371,6 +383,14 @@ public class GWTAvailableOption implements IsSerializable {
 		this.sendDocumentAttachmentOption = sendDocumentAttachmentOption;
 	}
 	
+	public boolean isForwardMailOption() {
+		return forwardMailOption;
+	}
+
+	public void setForwardMailOption(boolean forwardMailOption) {
+		this.forwardMailOption = forwardMailOption;
+	}
+
 	public boolean isSkinOption() {
 		return skinOption;
 	}
@@ -483,12 +503,28 @@ public class GWTAvailableOption implements IsSerializable {
 		this.preferencesOption = preferencesOption;
 	}
 	
+	public boolean isConvertOption() {
+		return convertOption;
+	}
+
+	public void setConvertOption(boolean convertOption) {
+		this.convertOption = convertOption;
+	}
+
 	public boolean isFindDocumentOption() {
 		return findDocumentOption;
 	}
 
 	public void setFindDocumentOption(boolean findDocumentOption) {
 		this.findDocumentOption = findDocumentOption;
+	}
+
+	public boolean isSimilarDocumentVisible() {
+		return similarDocumentVisible;
+	}
+
+	public void setSimilarDocumentVisible(boolean similarDocumentVisible) {
+		this.similarDocumentVisible = similarDocumentVisible;
 	}
 
 	public boolean isAddNoteOption() {

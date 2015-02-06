@@ -32,21 +32,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.openkm.util.*;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.api.OKMDocument;
+import com.openkm.api.OKMMail;
 import com.openkm.api.OKMRepository;
-import com.openkm.api.OKMSignature;
+import com.openkm.api.OKMSearch;
 import com.openkm.bean.Document;
+import com.openkm.bean.Mail;
+import com.openkm.bean.Repository;
 import com.openkm.core.AccessDeniedException;
-import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.MimeTypeConfig;
 import com.openkm.core.NoSuchGroupException;
@@ -55,15 +60,11 @@ import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
 import com.openkm.frontend.client.OKMException;
 import com.openkm.frontend.client.constants.service.ErrorCode;
-import com.openkm.util.ArchiveUtils;
-import com.openkm.util.FileUtils;
-import com.openkm.util.PathUtils;
-import com.openkm.util.WebUtils;
 import com.openkm.util.impexp.RepositoryExporter;
 import com.openkm.util.impexp.TextInfoDecorator;
 
 /**
- * Documento download servlet
+ * Document download servlet
  */
 public class DownloadServlet extends OKMHttpServlet {
 	private static Logger log = LoggerFactory.getLogger(DownloadServlet.class);
@@ -80,31 +81,26 @@ public class DownloadServlet extends OKMHttpServlet {
 		String[] pathList = request.getParameterValues("pathList");
 		String checkout = request.getParameter("checkout");
 		String ver = request.getParameter("ver");
-		String signFileName = request.getParameter("signFileName");
-		String signUuid = request.getParameter("signUuid");
 		boolean export = request.getParameter("export") != null;
 		boolean inline = request.getParameter("inline") != null;
-		boolean signOnly = request.getParameter("signOnly") != null;
-		boolean signTool = request.getParameter("signTool") != null;
 		File tmp = File.createTempFile("okm", ".tmp");
-		Document doc = null;
 		InputStream is = null;
 		updateSessionManager(request);
 		
 		try {
 			// Now an document can be located by UUID
 			if (uuid != null && !uuid.equals("")) {
+				uuid = FormatUtil.sanitizeInput(uuid);
 				path = OKMRepository.getInstance().getNodePath(null, uuid);
 			} else if (path != null) {
+				path = FormatUtil.sanitizeInput(path);
 				path = new String(path.getBytes("ISO-8859-1"), "UTF-8");
 			}
 			
 			if (export) {
 				if (exportZip) {
-					String fileName = "export.zip";
-					
-					// Get document
 					FileOutputStream os = new FileOutputStream(tmp);
+					String fileName = "export.zip";
 					
 					if (path != null) {
 						exportFolderAsZip(path, os);
@@ -147,50 +143,56 @@ public class DownloadServlet extends OKMHttpServlet {
 					// Send document
 					String fileName = PathUtils.getName(path) + ".jar";
 					WebUtils.sendFile(request, response, fileName, "application/x-java-archive", inline, is);
-					
 				}
-			} else if (signOnly) {
-				OKMSignature okmSign = OKMSignature.getInstance();
-				is = okmSign.getContent(null, signUuid);
-				WebUtils.sendFile(request, response, signFileName + ".sig.xml", "application/xml", inline, is);
-				is.close();
-			} else if (signTool) {
-				is = new FileInputStream(Config.SIGN_TOOL_LOCATION);
-				WebUtils.sendFile(request, response, "signtool.exe", "application/exe", inline, is);
 			} else {
-				// Get document
-				doc = OKMDocument.getInstance().getProperties(null, path);
-				
-				if (ver != null && !ver.equals("")) {
-					is = OKMDocument.getInstance().getContentByVersion(null, path, ver);
-				} else {
-					is = OKMDocument.getInstance().getContent(null, path, checkout != null);
+				if (OKMDocument.getInstance().isValid(null, path)) {
+					// Get document
+					Document doc = OKMDocument.getInstance().getProperties(null, path);
+					
+					if (ver != null && !ver.equals("")) {
+						is = OKMDocument.getInstance().getContentByVersion(null, path, ver);
+					} else {
+						is = OKMDocument.getInstance().getContent(null, path, checkout != null);
+					}
+					
+					// Send document
+					String fileName = PathUtils.getName(doc.getPath());
+					WebUtils.sendFile(request, response, fileName, doc.getMimeType(), inline, is);
+				} else if (OKMMail.getInstance().isValid(null, path)) {
+					// Get mail
+					Mail mail = OKMMail.getInstance().getProperties(null, path);
+					
+					// Send mail
+					ServletOutputStream sos = response.getOutputStream();
+					String fileName = PathUtils.getName(mail.getSubject() + ".eml");
+					WebUtils.prepareSendFile(request, response, fileName, MimeTypeConfig.MIME_EML, inline);
+					response.setContentLength((int) mail.getSize());
+					MimeMessage m = MailUtils.create(null, mail);
+					m.writeTo(sos);
+					sos.flush();
+					sos.close();
 				}
-				
-				// Send document
-				String fileName = PathUtils.getName(doc.getPath());
-				WebUtils.sendFile(request, response, fileName, doc.getMimeType(), inline, is);
 			}
 		} catch (PathNotFoundException e) {
 			log.warn(e.getMessage(), e);
-			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService,
-					ErrorCode.CAUSE_PathNotFound), e.getMessage()));
+			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService, ErrorCode.CAUSE_PathNotFound),
+					e.getMessage()));
 		} catch (RepositoryException e) {
 			log.warn(e.getMessage(), e);
-			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService,
-					ErrorCode.CAUSE_Repository), e.getMessage()));
+			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService, ErrorCode.CAUSE_Repository),
+					e.getMessage()));
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService, ErrorCode.CAUSE_IO),
 					e.getMessage()));
 		} catch (DatabaseException e) {
 			log.error(e.getMessage(), e);
-			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService,
-					ErrorCode.CAUSE_Database), e.getMessage()));
+			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService, ErrorCode.CAUSE_Database),
+					e.getMessage()));
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
-			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService,
-					ErrorCode.CAUSE_General), e.getMessage()));
+			throw new ServletException(new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDownloadService, ErrorCode.CAUSE_General),
+					e.getMessage()));
 		} finally {
 			IOUtils.closeQuietly(is);
 			FileUtils.deleteQuietly(tmp);
@@ -203,17 +205,29 @@ public class DownloadServlet extends OKMHttpServlet {
 	 * Generate a zip file from a repository folder path
 	 */
 	private void exportFolderAsZip(String fldPath, OutputStream os) throws PathNotFoundException, AccessDeniedException,
-			RepositoryException, ArchiveException, ParseException, NoSuchGroupException, IOException, DatabaseException,
-			MessagingException {
+			RepositoryException, ArchiveException, ParseException, NoSuchGroupException, IOException, DatabaseException, MessagingException {
 		log.debug("exportFolderAsZip({}, {})", fldPath, os);
 		StringWriter out = new StringWriter();
+		FileOutputStream fos = null;
+		InputStream is = null;
 		File tmp = null;
 		
 		try {
 			tmp = FileUtils.createTempDir();
 			
-			// Export files
-			RepositoryExporter.exportDocuments(null, fldPath, tmp, false, false, out, new TextInfoDecorator(fldPath));
+			if (fldPath.startsWith("/" + Repository.CATEGORIES)) {
+				String categoryId = OKMRepository.getInstance().getNodeUuid(null, fldPath);
+				
+				for (Document doc : OKMSearch.getInstance().getCategorizedDocuments(null, categoryId)) {
+					is = OKMDocument.getInstance().getContent(null, doc.getUuid(), false);
+					fos = new FileOutputStream(new File(tmp, PathUtils.getName(doc.getPath())));
+					IOUtils.copy(is, fos);
+					IOUtils.closeQuietly(is);
+					IOUtils.closeQuietly(fos);
+				}
+			} else {
+				RepositoryExporter.exportDocuments(null, fldPath, tmp, false, false, out, new TextInfoDecorator(fldPath));
+			}
 			
 			// Zip files
 			ArchiveUtils.createZip(tmp, PathUtils.getName(fldPath), os);
@@ -221,16 +235,10 @@ public class DownloadServlet extends OKMHttpServlet {
 			log.error("Error exporting zip", e);
 			throw e;
 		} finally {
+			IOUtils.closeQuietly(is);
+			IOUtils.closeQuietly(fos);
 			IOUtils.closeQuietly(out);
-			
-			if (tmp != null) {
-				try {
-					org.apache.commons.io.FileUtils.deleteDirectory(tmp);
-				} catch (IOException e) {
-					log.error("Error deleting temporal directory", e);
-					throw e;
-				}
-			}
+			FileUtils.deleteQuietly(tmp);
 		}
 		
 		log.debug("exportFolderAsZip: void");
@@ -251,10 +259,9 @@ public class DownloadServlet extends OKMHttpServlet {
 			File fsPath = new File(tmp.getPath());
 			
 			// Export files
-			for (String sourcePath : paths) {
-				String destPath = fsPath.getPath() + File.separator + PathUtils.getName(sourcePath).replace(':', '_');
-				RepositoryExporter.exportDocument(null, destPath, sourcePath, false, false, out, new TextInfoDecorator(
-						sourcePath));
+			for (String docPath : paths) {
+				String destPath = fsPath.getPath() + File.separator + PathUtils.getName(docPath).replace(':', '_');
+				RepositoryExporter.exportDocument(null, docPath, destPath, false, false, out, new TextInfoDecorator(docPath));
 			}
 			
 			// Zip files
@@ -264,15 +271,7 @@ public class DownloadServlet extends OKMHttpServlet {
 			throw e;
 		} finally {
 			IOUtils.closeQuietly(out);
-			
-			if (tmp != null) {
-				try {
-					org.apache.commons.io.FileUtils.deleteDirectory(tmp);
-				} catch (IOException e) {
-					log.error("Error deleting temporal directory", e);
-					throw e;
-				}
-			}
+			FileUtils.deleteQuietly(tmp);
 		}
 		
 		log.debug("exportDocumentsAsZip: void");
@@ -282,8 +281,7 @@ public class DownloadServlet extends OKMHttpServlet {
 	 * Generate a jar file from a repository folder path
 	 */
 	private void exportFolderAsJar(String fldPath, OutputStream os) throws PathNotFoundException, AccessDeniedException,
-			RepositoryException, ArchiveException, ParseException, NoSuchGroupException, IOException, DatabaseException,
-			MessagingException {
+			RepositoryException, ArchiveException, ParseException, NoSuchGroupException, IOException, DatabaseException, MessagingException {
 		log.debug("exportFolderAsJar({}, {})", fldPath, os);
 		StringWriter out = new StringWriter();
 		File tmp = null;
@@ -301,15 +299,7 @@ public class DownloadServlet extends OKMHttpServlet {
 			throw e;
 		} finally {
 			IOUtils.closeQuietly(out);
-			
-			if (tmp != null) {
-				try {
-					org.apache.commons.io.FileUtils.deleteDirectory(tmp);
-				} catch (IOException e) {
-					log.error("Error deleting temporal directory", e);
-					throw e;
-				}
-			}
+			FileUtils.deleteQuietly(tmp);
 		}
 		
 		log.debug("exportFolderAsJar: void");

@@ -42,9 +42,11 @@ public class MessageTag extends TagSupport {
 			Locale locale = pageContext.getRequest().getLocale();
 			String lang = locale.getLanguage() + "-" + locale.getCountry();
 			String msg = LanguageDAO.getTranslation(lang, module, key);
-			if (msg==null || msg.equals("")) {
+			
+			if (msg == null || msg.equals("")) {
 				msg = LanguageDAO.getTranslation(Language.DEFAULT, module, key);
 			}
+			
 			pageContext.getOut().write(msg);
 		} catch (DatabaseException e) {
 			e.printStackTrace();

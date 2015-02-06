@@ -31,17 +31,18 @@ public class UIDesktopConstants {
 	// Navigator stack panel definition
 	public static final int NAVIGATOR_TAXONOMY = 0; // Number indicates ordering
 	public static final int NAVIGATOR_CATEGORIES = 1;
-	public static final int NAVIGATOR_THESAURUS = 2;
-	public static final int NAVIGATOR_TEMPLATES = 3;
-	public static final int NAVIGATOR_PERSONAL = 4;
-	public static final int NAVIGATOR_MAIL = 5;
-	public static final int NAVIGATOR_TRASH = 6;
-	public static final int NAVIGATOR_ALL_CONTEXT = 7; // Used to indicate
+	public static final int NAVIGATOR_METADATA = 2;
+	public static final int NAVIGATOR_THESAURUS = 3;
+	public static final int NAVIGATOR_TEMPLATES = 4;
+	public static final int NAVIGATOR_PERSONAL = 5;
+	public static final int NAVIGATOR_MAIL = 6;
+	public static final int NAVIGATOR_TRASH = 7;
+	public static final int NAVIGATOR_ALL_CONTEXT = 8; // Used to indicate
 														// operation to all
 														// context ( search )
 														// really it's not a
 														// panel
-	public static final int NUMBER_OF_STACKS = 7;
+	public static final int NUMBER_OF_STACKS = 8;
 	public static final int STACK_HEIGHT = 22;
 	
 	// File Browser columns
@@ -53,6 +54,15 @@ public class UIDesktopConstants {
 	public static final int FILEBROWSER_COLUMN_LASTMODIFIED = 5;
 	public static final int FILEBROWSER_COLUMN_AUTHOR = 6;
 	public static final int FILEBROWSER_COLUMN_VERSION = 7;
+	
+	// Search Browser columns
+	public static final int SEARCHBROWSER_COLUMN_RELEVANCE = 0;
+	public static final int SEARCHBROWSER_COLUMN_ICON = 1;
+	public static final int SEARCHBROWSER_COLUMN_NAME = 2;
+	public static final int SEARCHBROWSER_COLUMN_SIZE = 3;
+	public static final int SEARCHBROWSER_COLUMN_LASTMODIFIED = 4;
+	public static final int SEARCHBROWSER_COLUMN_AUTHOR = 5;
+	public static final int SEARCHBROWSER_COLUMN_VERSION = 6;
 	
 	// Document history
 	public static final int DOCUMENT_HISTORY_COLUMN_VERSION = 0;

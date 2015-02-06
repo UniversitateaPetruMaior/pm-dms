@@ -193,7 +193,7 @@ public class FolderSelectTree extends Composite {
 	 */
 	public void getChilds(String path) {	
 		Main.get().mainPanel.desktop.navigator.categoriesTree.categoriesSelectPopup.status.setFlagChilds();
-		folderService.getChilds(path, false, callbackGetChilds);
+		folderService.getChilds(path, false, null, callbackGetChilds);
 	}	
 	
 	/**

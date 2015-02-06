@@ -8,7 +8,7 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PUomOSE.  See the
@@ -37,14 +37,14 @@ import com.openkm.dao.bean.Omr;
 public class OmrDAO {
 	private static Logger log = LoggerFactory.getLogger(OmrDAO.class);
 	private static OmrDAO single = new OmrDAO();
-	
+
 	private OmrDAO() {
 	}
-	
+
 	public static OmrDAO getInstance() {
 		return single;
 	}
-	
+
 	/**
 	 * Create
 	 */
@@ -52,7 +52,7 @@ public class OmrDAO {
 		log.debug("create({})", om);
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
@@ -67,53 +67,53 @@ public class OmrDAO {
 			HibernateUtil.close(session);
 		}
 	}
-	
+
 	/**
 	 * Update template
 	 */
 	public void updateTemplate(Omr om) throws DatabaseException {
 		log.debug("updateTemplate({})", om);
-		String qs = "select om.templateFileContent, om.templateFileName, templateFileMime, " + 
-					"om.ascFileContent, om.ascFileName, ascFileMime, " +
-					"om.configFileContent, om.configFileName, configFileMime, " +
-					"om.fieldsFileContent, om.fieldsFileName, fieldsFileMime " +
-					"from Omr om where om.id=:id";
+		String qs = "select om.templateFileContent, om.templateFileName, templateFileMime, " +
+				"om.ascFileContent, om.ascFileName, ascFileMime, " +
+				"om.configFileContent, om.configFileName, configFileMime, " +
+				"om.fieldsFileContent, om.fieldsFileName, fieldsFileMime " +
+				"from Omr om where om.id=:id";
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
-			
+
 			Query q = session.createQuery(qs);
 			q.setParameter("id", om.getId());
 			Object[] data = (Object[]) q.setMaxResults(1).uniqueResult();
-			
+
 			if (om.getTemplateFileContent() == null || om.getTemplateFileContent().length == 0) {
 				om.setTemplateFilContent((byte[]) data[0]);
 				om.setTemplateFileName((String) data[1]);
 				om.setTemplateFileMime((String) data[2]);
 			}
-			
+
 			if (om.getAscFileContent() == null || om.getAscFileContent().length == 0) {
 				om.setAscFileContent((byte[]) data[3]);
 				om.setAscFileName((String) data[4]);
 				om.setAscFileMime((String) data[5]);
 			}
-			
+
 			if (om.getConfigFileContent() == null || om.getConfigFileContent().length == 0) {
 				om.setConfigFileContent((byte[]) data[6]);
 				om.setConfigFileName((String) data[7]);
 				om.setConfigFileMime((String) data[8]);
 			}
-			
+
 			if (om.getFieldsFileContent() == null || om.getFieldsFileContent().length == 0) {
 				om.setFieldsFileContent((byte[]) data[9]);
 				om.setFieldsFileName((String) data[10]);
 				om.setFieldsFileMime((String) data[11]);
 			}
-			
-			session.update(om);   
+
+			session.update(om);
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);
@@ -121,10 +121,10 @@ public class OmrDAO {
 		} finally {
 			HibernateUtil.close(session);
 		}
-		
+
 		log.debug("updateTemplate: void");
 	}
-	
+
 	/**
 	 * Update 
 	 */
@@ -132,11 +132,11 @@ public class OmrDAO {
 		log.debug("update({})", om);
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
-			session.update(om);   
+			session.update(om);
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);
@@ -144,10 +144,10 @@ public class OmrDAO {
 		} finally {
 			HibernateUtil.close(session);
 		}
-		
+
 		log.debug("update: void");
 	}
-	
+
 	/**
 	 * Delete
 	 */
@@ -155,7 +155,7 @@ public class OmrDAO {
 		log.debug("delete({})", omId);
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
@@ -168,10 +168,10 @@ public class OmrDAO {
 		} finally {
 			HibernateUtil.close(session);
 		}
-		
+
 		log.debug("delete: void");
 	}
-	
+
 	/**
 	 * Find by pk
 	 */
@@ -179,7 +179,7 @@ public class OmrDAO {
 		log.debug("findByPk({})", omId);
 		String qs = "from Omr om where om.id=:id";
 		Session session = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			Query q = session.createQuery(qs);
@@ -194,7 +194,7 @@ public class OmrDAO {
 			HibernateUtil.close(session);
 		}
 	}
-	
+
 	/**
 	 * Find by pk
 	 */
@@ -203,7 +203,7 @@ public class OmrDAO {
 		log.debug("findAll()");
 		String qs = "from Omr om order by om.name";
 		Session session = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			Query q = session.createQuery(qs);
@@ -217,7 +217,7 @@ public class OmrDAO {
 			HibernateUtil.close(session);
 		}
 	}
-	
+
 	/**
 	 * Find all active
 	 */
@@ -227,7 +227,7 @@ public class OmrDAO {
 		String qs = "from Omr om where om.active=:active order by om.name";
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
@@ -244,7 +244,7 @@ public class OmrDAO {
 			HibernateUtil.close(session);
 		}
 	}
-	
+
 	/**
 	 * getProperties
 	 */
@@ -266,7 +266,7 @@ public class OmrDAO {
 			HibernateUtil.close(session);
 		}
 	}
-	
+
 	/**
 	 * Force initialization of a proxy
 	 */
@@ -275,7 +275,7 @@ public class OmrDAO {
 			initializeOMR(oTemplate);
 		}
 	}
-	
+
 	/**
 	 * Force initialization of a proxy
 	 */

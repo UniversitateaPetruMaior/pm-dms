@@ -52,6 +52,7 @@ public class ThesaurusMenu extends MenuBase {
 	private MenuItem category;
 	private MenuItem keyword;
 	private MenuItem propertyGroup;
+	private MenuItem updatePropertyGroup;
 	private MenuItem go;
 	
 	/**
@@ -99,6 +100,9 @@ public class ThesaurusMenu extends MenuBase {
 		propertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/add_property_group.gif", Main.i18n("general.menu.edit.add.property.group")), true, addPropertyGroup);
 		propertyGroup.addStyleName("okm-MenuItem-strike");
 		dirMenu.addItem(propertyGroup);
+		updatePropertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/update_property_group.png", Main.i18n("general.menu.edit.update.property.group")), true, updatePropertyGroupOKM);
+		updatePropertyGroup.addStyleName("okm-MenuItem-strike");
+		dirMenu.addItem(updatePropertyGroup);
 		go = new MenuItem(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")), true, goDirectory);
 		go.addStyleName("okm-MenuItem-strike");
 		dirMenu.addItem(go);
@@ -227,6 +231,16 @@ public class ThesaurusMenu extends MenuBase {
 		}
 	};
 	
+	// Command menu to update property group
+	Command updatePropertyGroupOKM = new Command() {
+		public void execute() {
+			if (toolBarOption.updatePropertyGroupOption) {
+				Main.get().mainPanel.topPanel.toolBar.updatePropertyGroup();
+				hide();
+			}
+		}
+	};
+	
 	// Command menu to go directory file
 	Command goDirectory = new Command() {
 		public void execute() {
@@ -235,12 +249,12 @@ public class ThesaurusMenu extends MenuBase {
 				String path = "";
 				if (Main.get().mainPanel.desktop.browser.fileBrowser.isDocumentSelected()) {
 					docPath = Main.get().mainPanel.desktop.browser.fileBrowser.getDocument().getPath();
-					path = docPath.substring(0,docPath.lastIndexOf("/"));
+					path = Util.getParent(docPath);
 				} else if (Main.get().mainPanel.desktop.browser.fileBrowser.isFolderSelected()) {
 					path = Main.get().mainPanel.desktop.browser.fileBrowser.getFolder().getPath();
 				} else if (Main.get().mainPanel.desktop.browser.fileBrowser.isMailSelected()) {
 					docPath = Main.get().mainPanel.desktop.browser.fileBrowser.getMail().getPath();
-					path = docPath.substring(0,docPath.lastIndexOf("/"));
+					path = Util.getParent(docPath);
 				}
 				CommonUI.openPath(path, docPath);
 				hide();
@@ -262,6 +276,7 @@ public class ThesaurusMenu extends MenuBase {
 		category.setHTML(Util.menuHTML("img/icon/stackpanel/table_key.gif", Main.i18n("category.add")));
 		keyword.setHTML(Util.menuHTML("img/icon/actions/book_add.png", Main.i18n("keyword.add")));
 		propertyGroup.setHTML(Util.menuHTML("img/icon/actions/add_property_group.gif", Main.i18n("general.menu.edit.add.property.group")));
+		updatePropertyGroup.setHTML(Util.menuHTML("img/icon/actions/update_property_group.png", Main.i18n("general.menu.edit.update.property.group")));
 		go.setHTML(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")));
 	}
 	
@@ -293,6 +308,7 @@ public class ThesaurusMenu extends MenuBase {
 		if (toolBarOption.addCategoryOption){enable(category);} else {disable(category);}
 		if (toolBarOption.addKeywordOption){enable(keyword);} else {disable(keyword);}
 		if (toolBarOption.addPropertyGroupOption){enable(propertyGroup);} else {disable(propertyGroup);}
+		if (toolBarOption.updatePropertyGroupOption){enable(updatePropertyGroup);} else {disable(updatePropertyGroup);}
 		if (toolBarOption.goOption){enable(go);} else {disable(go);}
 	}
 	
@@ -334,6 +350,9 @@ public class ThesaurusMenu extends MenuBase {
 		if (!option.isAddPropertyGroupOption()) {
 			dirMenu.removeItem(propertyGroup);
 		}
+		if (!option.isUpdatePropertyGroupOption()) {
+			dirMenu.removeItem(updatePropertyGroup);
+		}
 		if (!option.isGotoFolderOption()) {
 			dirMenu.removeItem(go);
 		}
@@ -354,6 +373,10 @@ public class ThesaurusMenu extends MenuBase {
 		}
 		disable(propertyGroup);
 	}
+	@Override
+	public void disablePdfMerge() {}
+	@Override
+	public void enablePdfMerge() {}
 	
 	/**
 	 * Hide popup menu

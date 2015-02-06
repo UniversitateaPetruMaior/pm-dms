@@ -36,7 +36,6 @@ import com.openkm.frontend.client.widget.foldertree.ExtendedPopupPanel;
  * Status
  * 
  * @author jllort
- *
  */
 public class Status extends ExtendedPopupPanel {
 	
@@ -45,21 +44,21 @@ public class Status extends ExtendedPopupPanel {
 	private HTML space;
 	private Image image;
 	
-	private boolean flag_versionHistory 		= false;
-	private boolean flag_groupProperties 		= false;
-	private boolean flag_UserSecurity 			= false;
-	private boolean flag_RoleSecurity 			= false;
-	private boolean flag_keywords		 		= false;
-	private boolean flag_getVersionHistorySize  = false;
-	private boolean flag_purgeVersionHistory  	= false;
-	private boolean flag_restoreVersion  		= false;
-	private boolean flag_Categories		  		= false;
+	private boolean flag_versionHistory = false;
+	private boolean flag_groupProperties = false;
+	private boolean flag_UserSecurity = false;
+	private boolean flag_RoleSecurity = false;
+	private boolean flag_keywords = false;
+	private boolean flag_getVersionHistorySize = false;
+	private boolean flag_purgeVersionHistory = false;
+	private boolean flag_restoreVersion = false;
+	private boolean flag_Categories = false;
 	
 	/**
 	 * The status
 	 */
 	public Status() {
-		super(false,true);
+		super(false, true);
 		hPanel = new HorizontalPanel();
 		image = new Image(OKMBundleResources.INSTANCE.indicator());
 		msg = new HTML("");
@@ -88,23 +87,23 @@ public class Status extends ExtendedPopupPanel {
 	 * 
 	 * @return
 	 */
-	public boolean isPanelRefreshing () {
-		return (flag_versionHistory || flag_UserSecurity || flag_RoleSecurity || flag_groupProperties 
-				|| flag_getVersionHistorySize || flag_keywords || flag_purgeVersionHistory || flag_restoreVersion 
-				|| flag_Categories );
+	public boolean isPanelRefreshing() {
+		return (flag_versionHistory || flag_UserSecurity || flag_RoleSecurity || flag_groupProperties
+				|| flag_getVersionHistorySize || flag_keywords || flag_purgeVersionHistory || flag_restoreVersion
+				|| flag_Categories);
 	}
 	
 	/**
 	 * Refreshing the panel
 	 */
 	public void refresh() {
-		if (flag_versionHistory || flag_UserSecurity || flag_RoleSecurity || flag_groupProperties 
-			|| flag_getVersionHistorySize || flag_keywords || flag_purgeVersionHistory || flag_restoreVersion 
-			|| flag_Categories) {
-			int left = ((Main.get().mainPanel.desktop.getRight()-220)/2) + Main.get().mainPanel.desktop.getLeft() + 
-					   ExtendedDockPanel.VERTICAL_BORDER_PANEL_WIDTH + Desktop.SPLITTER_WIDTH;
-			int top =  ((Main.get().mainPanel.desktop.browser.bottomHeight-40)/2) + TopPanel.PANEL_HEIGHT + 
-						 Main.get().mainPanel.desktop.browser.topHeight + 10;
+		if (flag_versionHistory || flag_UserSecurity || flag_RoleSecurity || flag_groupProperties
+				|| flag_getVersionHistorySize || flag_keywords || flag_purgeVersionHistory || flag_restoreVersion
+				|| flag_Categories) {
+			int left = ((Main.get().mainPanel.desktop.getRight() - 220) / 2) + Main.get().mainPanel.desktop.getLeft()
+					+ ExtendedDockPanel.VERTICAL_BORDER_PANEL_WIDTH + Desktop.SPLITTER_WIDTH;
+			int top = ((Main.get().mainPanel.desktop.browser.bottomHeight - 40) / 2) + TopPanel.PANEL_HEIGHT
+					+ Main.get().mainPanel.desktop.browser.topHeight + 10;
 			setPopupPosition(left, top);
 			Main.get().mainPanel.desktop.browser.tabMultiple.setStyleName("okm-PanelRefreshing");
 			super.show();
@@ -239,7 +238,8 @@ public class Status extends ExtendedPopupPanel {
 	public void setPurgeVersionHistory() {
 		msg.setHTML(Main.i18n("tab.document.status.purge.version.history"));
 		flag_purgeVersionHistory = true;
-		refresh();	}
+		refresh();
+	}
 	
 	/**
 	 * Unset the purge version history flag

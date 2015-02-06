@@ -21,6 +21,8 @@
 
 package com.openkm.frontend.client.widget.filebrowser;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Controller
@@ -29,40 +31,103 @@ package com.openkm.frontend.client.widget.filebrowser;
  *
  */
 public class Controller {
-	private boolean folder = true;
-	private boolean document = true;
-	private boolean mail = true;
+	private boolean showFolders = true;
+	private boolean showDocuments = true;
+	private boolean showMails = true;
+	private boolean paginated = true;
+	private int selectedRowsLimit = 0;
+	private int total = 0;
+	private int offset = 0;
 	private String selectedRowId;
+	private int selectedOrderBy = 0;
+	private boolean reverse = false;
+	private Map<String, GWTFilter> mapFilter = new LinkedHashMap<String, GWTFilter>();
 
-	public boolean isFolder() {
-		return folder;
+	public boolean isShowFolder() {
+		return showFolders;
 	}
 
-	public void setFolder(boolean folder) {
-		this.folder = folder;
+	public void setShowFolders(boolean showFolders) {
+		this.showFolders = showFolders;
 	}
 
-	public boolean isDocument() {
-		return document;
+	public boolean isShowDocuments() {
+		return showDocuments;
 	}
 
-	public void setDocument(boolean document) {
-		this.document = document;
+	public void setShowDocuments(boolean showDocuments) {
+		this.showDocuments = showDocuments;
 	}
 
-	public boolean isMail() {
-		return mail;
+	public boolean isShowMails() {
+		return showMails;
 	}
 
-	public void setMail(boolean mail) {
-		this.mail = mail;
+	public void setMails(boolean showMails) {
+		this.showMails = showMails;
 	}
-	
+
+	public int getSelectedRowsLimit() {
+		return selectedRowsLimit;
+	}
+
+	public void setSelectedRowsLimit(int selectedRowsLimit) {
+		this.selectedRowsLimit = selectedRowsLimit;
+	}
+
+	public int getTotal() {
+		return total;
+	}
+
+	public void setTotal(int total) {
+		this.total = total;
+	}
+
+	public boolean isPaginated() {
+		return paginated;
+	}
+
+	public void setPaginated(boolean paginated) {
+		this.paginated = paginated;
+	}
+
+	public int getOffset() {
+		return offset;
+	}
+
+	public void setOffset(int offset) {
+		this.offset = offset;
+	}
+
 	public String getSelectedRowId() {
 		return selectedRowId;
 	}
 
 	public void setSelectedRowId(String selectedRowId) {
 		this.selectedRowId = selectedRowId;
+	}
+
+	public int getSelectedOrderBy() {
+		return selectedOrderBy;
+	}
+
+	public void setSelectedOrderBy(int selectedOrderBy) {
+		this.selectedOrderBy = selectedOrderBy;
+	}
+
+	public boolean isReverse() {
+		return reverse;
+	}
+
+	public void setReverse(boolean reverse) {
+		this.reverse = reverse;
+	}
+
+	public Map<String, GWTFilter> getMapFilter() {
+		return mapFilter;
+	}
+
+	public void setMapFilter(Map<String, GWTFilter> mapFilter) {
+		this.mapFilter = mapFilter;
 	}
 }

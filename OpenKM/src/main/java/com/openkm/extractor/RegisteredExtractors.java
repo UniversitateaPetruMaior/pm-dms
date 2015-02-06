@@ -164,6 +164,7 @@ public class RegisteredExtractors {
 	public static String getText(String docPath, String mimeType, String encoding, InputStream isContent) 
 			throws IOException {
 		log.debug("getText({}, {}, {}, {})", new Object[] { docPath, mimeType, encoding, isContent });
+		long begin = System.currentTimeMillis();
 		String failureMessage = "Unknown error";
 		boolean failure = false;
 		String text = null;
@@ -181,6 +182,8 @@ public class RegisteredExtractors {
 			failureMessage = e.getMessage();
 			failure = true;
 		}
+		
+		log.trace("getText.Time: {} ms for {}", System.currentTimeMillis() - begin, docPath);
 		
 		if (failure) {
 			throw new IOException(failureMessage);
@@ -210,12 +213,14 @@ public class RegisteredExtractors {
 				
 				Reader rd = te.extractText(bis, mimeType, encoding);
 				text = IOUtils.toString(rd);
+				IOUtils.closeQuietly(rd);
 			} else {
 				throw new IOException("Full text indexing of '" + mimeType + "' is not supported");
 			}
 		} else {
 			Reader rd = jte.extractText(bis, mimeType, encoding);
 			text = IOUtils.toString(rd);
+			IOUtils.closeQuietly(rd);
 		}
 		
 		IOUtils.closeQuietly(bis);

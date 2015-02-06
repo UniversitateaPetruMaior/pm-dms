@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.jcr;
@@ -45,14 +45,14 @@ import com.openkm.module.jcr.stuff.JcrSessionManager;
 public class JcrStatsModule implements StatsModule {
 	private static Logger log = LoggerFactory.getLogger(JcrStatsModule.class);
 	
-	private static String TAXONOMY_DOCUMENTS = "/jcr:root/"+Repository.ROOT+"//element(*,okm:document)";
-	private static String TAXONOMY_FOLDERS = "/jcr:root/"+Repository.ROOT+"//element(*,okm:folder)";
-	private static String TEMPLATES_DOCUMENTS = "/jcr:root/"+Repository.TEMPLATES+"//element(*,okm:document)";
-	private static String TEMPLATES_FOLDERS = "/jcr:root/"+Repository.TEMPLATES+"//element(*,okm:folder)";
-	private static String PERSONAL_DOCUMENTS = "/jcr:root/"+Repository.PERSONAL+"//element(*,okm:document)";
-	private static String PERSONAL_FOLDERS = "/jcr:root/"+Repository.PERSONAL+"//element(*,okm:folder)";
-	private static String TRASH_DOCUMENTS = "/jcr:root/"+Repository.TRASH+"//element(*,okm:document)";
-	private static String TRASH_FOLDERS = "/jcr:root/"+Repository.TRASH+"//element(*,okm:folder)";
+	private static String TAXONOMY_DOCUMENTS = "/jcr:root/" + Repository.ROOT + "//element(*,okm:document)";
+	private static String TAXONOMY_FOLDERS = "/jcr:root/" + Repository.ROOT + "//element(*,okm:folder)";
+	private static String TEMPLATES_DOCUMENTS = "/jcr:root/" + Repository.TEMPLATES + "//element(*,okm:document)";
+	private static String TEMPLATES_FOLDERS = "/jcr:root/" + Repository.TEMPLATES + "//element(*,okm:folder)";
+	private static String PERSONAL_DOCUMENTS = "/jcr:root/" + Repository.PERSONAL + "//element(*,okm:document)";
+	private static String PERSONAL_FOLDERS = "/jcr:root/" + Repository.PERSONAL + "//element(*,okm:folder)";
+	private static String TRASH_DOCUMENTS = "/jcr:root/" + Repository.TRASH + "//element(*,okm:document)";
+	private static String TRASH_FOLDERS = "/jcr:root/" + Repository.TRASH + "//element(*,okm:folder)";
 	
 	@Override
 	public StatsInfo getDocumentsByContext(String token) throws RepositoryException, DatabaseException {
@@ -95,8 +95,9 @@ public class JcrStatsModule implements StatsModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getDocumentsByContext: {}", si);
@@ -144,8 +145,9 @@ public class JcrStatsModule implements StatsModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getFoldersByContext: {}", si);
@@ -155,8 +157,7 @@ public class JcrStatsModule implements StatsModule {
 	/**
 	 * Get result node count.
 	 */
-	private long getCount(QueryManager queryManager, String statement) throws InvalidQueryException,
-			javax.jcr.RepositoryException {
+	private long getCount(QueryManager queryManager, String statement) throws InvalidQueryException, javax.jcr.RepositoryException {
 		Query query = queryManager.createQuery(statement, Query.XPATH);
 		QueryResult result = query.execute();
 		return result.getRows().getSize();
@@ -203,8 +204,9 @@ public class JcrStatsModule implements StatsModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null)
+			if (token == null) {
 				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getDocumentsSizeByContext: {}", si);
@@ -214,8 +216,7 @@ public class JcrStatsModule implements StatsModule {
 	/**
 	 * Get document node size.
 	 */
-	private long getSubtreeSize(QueryManager queryManager, String statement) throws InvalidQueryException,
-			javax.jcr.RepositoryException {
+	private long getSubtreeSize(QueryManager queryManager, String statement) throws InvalidQueryException, javax.jcr.RepositoryException {
 		Query query = queryManager.createQuery(statement, Query.XPATH);
 		QueryResult result = query.execute();
 		long size = 0;
@@ -227,5 +228,10 @@ public class JcrStatsModule implements StatsModule {
 		}
 		
 		return size;
+	}
+
+	@Override
+	public StatsInfo getMailsByContext(String token) throws RepositoryException, DatabaseException {
+		return new StatsInfo();
 	}
 }

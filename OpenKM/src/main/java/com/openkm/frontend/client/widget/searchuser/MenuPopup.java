@@ -50,4 +50,11 @@ public class MenuPopup extends PopupPanel {
 	public void langRefresh() {
 		menu.langRefresh();
 	}
+	
+	/**
+	 * evaluateMenuOptions
+	 */
+	public void evaluateMenuOptions() {
+		menu.evaluateMenuOptions();
+	}
 }

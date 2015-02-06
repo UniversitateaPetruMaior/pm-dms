@@ -80,19 +80,15 @@ public class FormatUtil {
 	 * Parse human-readable sizes
 	 */
 	public static long parseSize(String text) {
-		double d = Double.parseDouble(text.replaceAll("[GMK]B$", ""));
-		long l = Math.round(d * 1024 * 1024 * 1024L);
-		
-		switch (text.charAt(Math.max(0, text.length() - 2))) {
-			default:
-				l /= 1024;
-			case 'K':
-				l /= 1024;
-			case 'M':
-				l /= 1024;
-			case 'G':
-				return l;
-		}
+	    double d = Double.parseDouble(text.replaceAll("[GMK]B$", ""));
+	    long l = Math.round(d * 1024 * 1024 * 1024L);
+	    
+	    switch (text.charAt(Math.max(0, text.length() - 2))) {
+	        default:  l /= 1024;
+	        case 'K': l /= 1024;
+	        case 'M': l /= 1024;
+	        case 'G': return l;
+	    }
 	}
 	
 	/**
@@ -195,7 +191,8 @@ public class FormatUtil {
 	 * @see http://www.rgagnon.com/javadetails/java-0627.html
 	 */
 	public static String sanitizeInput(String string) {
-		return string.replaceAll("(?i)<script.*?>.*?</script.*?>", "") // case 1 - Open and close
+		return string
+				.replaceAll("(?i)<script.*?>.*?</script.*?>", "") // case 1 - Open and close
 				.replaceAll("(?i)<script.*?/>", "") // case 1 - Open / close
 				.replaceAll("(?i)<script.*?>", "") // case 1 - Open and !close
 				.replaceAll("(?i)<.*?javascript:.*?>.*?</.*?>", "") // case 2 - Open and close

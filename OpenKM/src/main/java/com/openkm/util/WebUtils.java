@@ -38,6 +38,8 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openkm.core.Config;
+
 /**
  * @author jllort
  *
@@ -59,7 +61,7 @@ public class WebUtils {
 		
 		if (value != null) {
 			try {
-				return new String(value.getBytes("ISO-8859-1"), "UTF-8").trim();
+				return new String(value.getBytes(Config.TOMCAT_CONNECTOR_URI_ENCODING), "UTF-8").trim();
 			} catch (UnsupportedEncodingException e) {
 				// Ignore
 			}
@@ -82,7 +84,7 @@ public class WebUtils {
 		
 		if (value != null) {
 			try {
-				return new String(value.getBytes("ISO-8859-1"), "UTF-8");
+				return new String(value.getBytes(Config.TOMCAT_CONNECTOR_URI_ENCODING), "UTF-8").trim();
 			} catch (UnsupportedEncodingException e) {
 				// Ignore
 			}
@@ -105,7 +107,7 @@ public class WebUtils {
 		if (value != null) {
 			try {
 				for (int i=0; i<value.length; i++) {
-					stringValue.add(new String(value[i].getBytes("ISO-8859-1"), "UTF-8"));
+					stringValue.add(new String(value[i].getBytes(Config.TOMCAT_CONNECTOR_URI_ENCODING), "UTF-8"));
 				}
 			} catch (UnsupportedEncodingException e) {
 				// Ignore
@@ -279,6 +281,19 @@ public class WebUtils {
 	}
 	
 	/**
+	 * Get HTTP header.
+	 */
+	private static String getHeader(HttpServletRequest request, String name) {
+		String value = request.getHeader(name);
+		
+		if (value != null) {
+			return value;
+		} else {
+			return EMPTY_STRING;
+		}
+	}
+	
+	/**
 	 * Send file to client browser.
 	 * 
 	 * @throws IOException If there is a communication error.
@@ -323,7 +338,7 @@ public class WebUtils {
 	 */
 	public static void prepareSendFile(HttpServletRequest request, HttpServletResponse response,
 			String fileName, String mimeType, boolean inline) throws UnsupportedEncodingException {
-		String agent = request.getHeader("USER-AGENT");
+		String userAgent = WebUtils.getHeader(request, "user-agent").toLowerCase();
 		
 		// Disable browser cache
 		response.setHeader("Expires", "Sat, 6 May 1971 12:00:00 GMT");
@@ -335,7 +350,7 @@ public class WebUtils {
 		// Set MIME type
 		response.setContentType(mimeType);
 		
-		if (null != agent && -1 != agent.indexOf("MSIE")) {
+		if (userAgent.contains("msie")) {
 			log.debug("Agent: Explorer ({})", request.getServerPort());
 			fileName = URLEncoder.encode(fileName, "UTF-8").replaceAll("\\+", " ");
 			
@@ -344,7 +359,13 @@ public class WebUtils {
 				response.setHeader("Cache-Control", "max-age=1");
 				response.setHeader("Pragma", "public");
 			}
-		} else if (null != agent && -1 != agent.indexOf("Mozilla"))	{
+		} else if (userAgent.contains("iphone") || userAgent.contains("ipad")) {
+			log.debug("Agent: iPhone - iPad");
+			// Do nothing
+		} else if (userAgent.contains("android")) {
+			log.debug("Agent: Android");
+			fileName = URLEncoder.encode(fileName, "UTF-8").replaceAll("\\+", " ");
+		} else if (userAgent.contains("mozilla")) {
 			log.debug("Agent: Mozilla");
 			fileName = MimeUtility.encodeText(fileName, "UTF-8", "B");
 		} else {

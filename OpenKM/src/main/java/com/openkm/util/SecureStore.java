@@ -41,6 +41,7 @@ import javax.crypto.spec.DESKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.RandomStringUtils;
 
 public class SecureStore {
 	/**
@@ -75,6 +76,25 @@ public class SecureStore {
 		byte[] dst = cipher.doFinal(src);
 		
 		return dst;
+	}
+	
+	/**
+	 * DES encoder
+	 */
+	@SuppressWarnings("restriction")
+	public static String desEncode(String key, String src) throws InvalidKeyException, UnsupportedEncodingException,
+			NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException,
+			BadPaddingException {
+		return new sun.misc.BASE64Encoder().encode(desEncode(key, src.getBytes("UTF8")));
+	}
+	
+	/**
+	 * DES decoder
+	 */
+	@SuppressWarnings("restriction")
+	public static String desDecode(String key, String src) throws InvalidKeyException, NoSuchAlgorithmException,
+			InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, IOException {
+		return new String(desDecode(key, new sun.misc.BASE64Decoder().decodeBuffer(src)), "UTF8");
 	}
 	
 	/**
@@ -135,5 +155,12 @@ public class SecureStore {
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * Password generator.
+	 */
+	public static String generatePassword(int lenght) {
+		return RandomStringUtils.randomAlphanumeric(lenght);
 	}
 }

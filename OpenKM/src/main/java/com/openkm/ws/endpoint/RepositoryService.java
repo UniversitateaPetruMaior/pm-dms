@@ -122,6 +122,24 @@ public class RepositoryService {
 	}
 	
 	@WebMethod
+	public String getUpdateMessage(@WebParam(name = "token") String token) throws RepositoryException, DatabaseException {
+		log.debug("getUpdateMessage({})", token);
+		RepositoryModule rm = ModuleManager.getRepositoryModule();
+		String msg = rm.getUpdateMessage(null);
+		log.debug("getUpdateMessage: void");
+		return msg;
+	}
+	
+	@WebMethod
+	public String getRepositoryUuid() throws RepositoryException, DatabaseException {
+		log.debug("getRepositoryUuid({})");
+		RepositoryModule rm = ModuleManager.getRepositoryModule();
+		String uuid = rm.getRepositoryUuid(null);
+		log.debug("getRepositoryUuid: void");
+		return uuid;
+	}
+	
+	@WebMethod
 	public boolean hasNode(@WebParam(name = "token") String token, @WebParam(name = "path") String path)
 			throws RepositoryException, DatabaseException {
 		log.debug("hasNode({}, {})", token, path);

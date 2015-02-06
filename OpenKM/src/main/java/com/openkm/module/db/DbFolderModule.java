@@ -21,11 +21,16 @@
 
 package com.openkm.module.db;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import javax.mail.MessagingException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +40,7 @@ import com.openkm.automation.AutomationException;
 import com.openkm.automation.AutomationManager;
 import com.openkm.automation.AutomationUtils;
 import com.openkm.bean.ContentInfo;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Folder;
 import com.openkm.bean.Repository;
 import com.openkm.core.AccessDeniedException;
@@ -42,34 +48,45 @@ import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.ItemExistsException;
 import com.openkm.core.LockException;
+import com.openkm.core.NoSuchGroupException;
+import com.openkm.core.ParseException;
 import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
 import com.openkm.core.UserQuotaExceededException;
 import com.openkm.core.WorkflowException;
 import com.openkm.dao.NodeBaseDAO;
 import com.openkm.dao.NodeFolderDAO;
+import com.openkm.dao.PendingTaskDAO;
 import com.openkm.dao.bean.AutomationRule;
 import com.openkm.dao.bean.NodeFolder;
+import com.openkm.dao.bean.NodeNote;
+import com.openkm.dao.bean.NodeProperty;
+import com.openkm.dao.bean.PendingTask;
 import com.openkm.extension.core.ExtensionException;
 import com.openkm.module.FolderModule;
 import com.openkm.module.db.base.BaseFolderModule;
-import com.openkm.module.db.base.BaseScriptingModule;
 import com.openkm.spring.PrincipalUtils;
+import com.openkm.util.FileUtils;
 import com.openkm.util.PathUtils;
 import com.openkm.util.UserActivity;
+import com.openkm.util.impexp.RepositoryExporter;
 
 public class DbFolderModule implements FolderModule {
 	private static Logger log = LoggerFactory.getLogger(DbFolderModule.class);
 	
 	@Override
-	public Folder create(String token, Folder fld) throws PathNotFoundException, ItemExistsException,
-			AccessDeniedException, RepositoryException, DatabaseException, ExtensionException, AutomationException {
+	public Folder create(String token, Folder fld) throws PathNotFoundException, ItemExistsException, AccessDeniedException,
+			RepositoryException, DatabaseException, ExtensionException, AutomationException {
 		log.debug("create({}, {})", token, fld);
 		Folder newFolder = null;
 		Authentication auth = null, oldAuth = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
+		}
+		
+		if (!PathUtils.checkPath(fld.getPath())) {
+			throw new RepositoryException("Invalid path: " + fld.getPath());
 		}
 		
 		try {
@@ -100,7 +117,8 @@ public class DbFolderModule implements FolderModule {
 				parentFolder = (NodeFolder) env.get(AutomationUtils.PARENT_NODE);
 				
 				// Create node
-				NodeFolder fldNode = BaseFolderModule.create(auth.getName(), parentFolder, name, fld.getCreated());
+				NodeFolder fldNode = BaseFolderModule.create(auth.getName(), parentFolder, name, fld.getCreated(), new HashSet<String>(),
+						new HashSet<String>(), new HashSet<NodeProperty>(), new ArrayList<NodeNote>());
 				
 				// AUTOMATION - POST
 				env.put(AutomationUtils.FOLDER_NODE, fldNode);
@@ -108,9 +126,6 @@ public class DbFolderModule implements FolderModule {
 				
 				// Set returned folder properties
 				newFolder = BaseFolderModule.getProperties(auth.getName(), fldNode);
-				
-				// Check scripting
-				BaseScriptingModule.checkScripts(auth.getName(), parentFolder.getUuid(), fldNode.getUuid(), "CREATE_FOLDER");
 				
 				// Activity log
 				UserActivity.log(auth.getName(), "CREATE_FOLDER", fldNode.getUuid(), fld.getPath(), null);
@@ -132,11 +147,12 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public Folder getProperties(String token, String fldPath) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
-		log.debug("getProperties({}, {})", token, fldPath);
+	public Folder getProperties(String token, String fldId) throws PathNotFoundException, RepositoryException, DatabaseException {
+		log.debug("getProperties({}, {})", token, fldId);
 		Folder fld = null;
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
 		
 		try {
 			if (token == null) {
@@ -146,7 +162,14 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
+			
 			NodeFolder fldNode = NodeFolderDAO.getInstance().findByPk(fldUuid);
 			fld = BaseFolderModule.getProperties(auth.getName(), fldNode);
 			
@@ -165,10 +188,12 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public void delete(String token, String fldPath) throws LockException, PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("delete({}, {})", token, fldPath);
+	public void delete(String token, String fldId) throws LockException, PathNotFoundException, AccessDeniedException, RepositoryException,
+			DatabaseException {
+		log.debug("delete({}, {})", token, fldId);
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
@@ -182,15 +207,21 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
+			
 			String name = PathUtils.getName(fldPath);
 			
 			if (Repository.ROOT.equals(name) || Repository.CATEGORIES.equals(name) || Repository.THESAURUS.equals(name)
-					|| Repository.TEMPLATES.equals(name) || Repository.PERSONAL.equals(name)
-					|| Repository.MAIL.equals(name) || Repository.TRASH.equals(name)) {
+					|| Repository.TEMPLATES.equals(name) || Repository.PERSONAL.equals(name) || Repository.MAIL.equals(name)
+					|| Repository.TRASH.equals(name)) {
 				throw new AccessDeniedException("Can't delete a required node");
 			}
-			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
 			
 			if (BaseFolderModule.hasLockedNodes(fldUuid)) {
 				throw new LockException("Can't delete a folder with child locked nodes");
@@ -213,9 +244,15 @@ public class DbFolderModule implements FolderModule {
 			
 			NodeFolderDAO.getInstance().delete(name, fldUuid, userTrashUuid);
 			
-			// Check scripting
-			String parentUuid = NodeBaseDAO.getInstance().getParentUuid(fldUuid);
-			BaseScriptingModule.checkScripts(auth.getName(), parentUuid, fldUuid, "DELETE_FOLDER");
+			// Add pending task
+			if (Config.STORE_NODE_PATH) {
+				PendingTask pt = new PendingTask();
+				pt.setNode(fldUuid);
+				pt.setTask(PendingTask.TASK_UPDATE_PATH);
+				pt.setParams("DELETE_FOLDER");
+				pt.setCreated(Calendar.getInstance());
+				PendingTaskDAO.getInstance().create(pt);
+			}
 			
 			// Activity log
 			UserActivity.log(auth.getName(), "DELETE_FOLDER", fldUuid, fldPath, null);
@@ -233,11 +270,13 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public void purge(String token, String fldPath) throws LockException, PathNotFoundException, AccessDeniedException,
-			RepositoryException, DatabaseException {
-		log.debug("purge({}, {})", token, fldPath);
+	public void purge(String token, String fldId) throws LockException, PathNotFoundException, AccessDeniedException, RepositoryException,
+			DatabaseException {
+		log.debug("purge({}, {})", token, fldId);
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
@@ -251,15 +290,21 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
+			
 			String name = PathUtils.getName(fldPath);
 			
 			if (Repository.ROOT.equals(name) || Repository.CATEGORIES.equals(name) || Repository.THESAURUS.equals(name)
-					|| Repository.TEMPLATES.equals(name) || Repository.PERSONAL.equals(name)
-					|| Repository.MAIL.equals(name) || Repository.TRASH.equals(name)) {
+					|| Repository.TEMPLATES.equals(name) || Repository.PERSONAL.equals(name) || Repository.MAIL.equals(name)
+					|| Repository.TRASH.equals(name)) {
 				throw new AccessDeniedException("Can't delete a required node");
 			}
-			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
 			
 			if (BaseFolderModule.hasLockedNodes(fldUuid)) {
 				throw new LockException("Can't purge a folder with child locked nodes");
@@ -273,15 +318,24 @@ public class DbFolderModule implements FolderModule {
 				throw new AccessDeniedException("Can't purge a category in use");
 			}
 			
-			NodeFolderDAO.getInstance().purge(fldUuid, true);
+			if (Config.REPOSITORY_PURGATORY_HOME != null && !Config.REPOSITORY_PURGATORY_HOME.isEmpty()) {
+				File dateDir = FileUtils.createDateDir(Config.REPOSITORY_PURGATORY_HOME);
+				File dstPath = new File(dateDir, PathUtils.getName(fldPath));
+				dstPath.mkdir();
+				RepositoryExporter.exportDocuments(null, fldPath, dstPath, true, false, null, null);
+			}
 			
-			// Check scripting
-			// String parentUuid = NodeBaseDAO.getInstance().getParentUuid(fldUuid);
-			// BaseScriptingModule.checkScripts(user, parentUuid, fldUuid, "PURGE_FOLDER");
+			NodeFolderDAO.getInstance().purge(fldUuid, true);
 			
 			// Activity log - Already inside DAO
 			// UserActivity.log(auth.getName(), "PURGE_FOLDER", fldUuid, fldPath, null);
 		} catch (IOException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (ParseException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (NoSuchGroupException e) {
+			throw new RepositoryException(e.getMessage(), e);
+		} catch (MessagingException e) {
 			throw new RepositoryException(e.getMessage(), e);
 		} catch (DatabaseException e) {
 			throw e;
@@ -295,11 +349,13 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public Folder rename(String token, String fldPath, String newName) throws PathNotFoundException,
-			ItemExistsException, AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("rename({}, {}, {})", new Object[] { token, fldPath, newName });
+	public Folder rename(String token, String fldId, String newName) throws PathNotFoundException, ItemExistsException,
+			AccessDeniedException, RepositoryException, DatabaseException {
+		log.debug("rename({}, {}, {})", new Object[] { token, fldId, newName });
 		Folder renamedFolder = null;
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
@@ -313,8 +369,15 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
+			
 			String name = PathUtils.getName(fldPath);
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
 			
 			// Escape dangerous chars in name
 			newName = PathUtils.escape(newName);
@@ -322,6 +385,16 @@ public class DbFolderModule implements FolderModule {
 			if (newName != null && !newName.isEmpty() && !newName.equals(name)) {
 				NodeFolder folderNode = NodeFolderDAO.getInstance().rename(fldUuid, newName);
 				renamedFolder = BaseFolderModule.getProperties(auth.getName(), folderNode);
+				
+				// Add pending task
+				if (Config.STORE_NODE_PATH) {
+					PendingTask pt = new PendingTask();
+					pt.setNode(fldUuid);
+					pt.setTask(PendingTask.TASK_UPDATE_PATH);
+					pt.setParams("RENAME_FOLDER");
+					pt.setCreated(Calendar.getInstance());
+					PendingTaskDAO.getInstance().create(pt);
+				}
 			} else {
 				// Don't change anything
 				NodeFolder folderNode = NodeFolderDAO.getInstance().findByPk(fldUuid);
@@ -343,10 +416,14 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public void move(String token, String fldPath, String dstPath) throws PathNotFoundException, ItemExistsException,
-			AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("move({}, {}, {})", new Object[] { token, fldPath, dstPath });
+	public void move(String token, String fldId, String dstId) throws PathNotFoundException, ItemExistsException, AccessDeniedException,
+			RepositoryException, DatabaseException {
+		log.debug("move({}, {}, {})", new Object[] { token, fldId, dstId });
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
+		String dstPath = null;
+		String dstUuid = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
@@ -360,12 +437,46 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
-			String dstUuid = NodeBaseDAO.getInstance().getUuidFromPath(dstPath);
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
+			
+			if (PathUtils.isPath(dstId)) {
+				if (!PathUtils.checkPath(dstId)) {
+					throw new RepositoryException("Invalid destination path: " + dstId);
+				}
+				
+				dstPath = dstId;
+				dstUuid = NodeBaseDAO.getInstance().getUuidFromPath(dstId);
+			} else {
+				dstPath = NodeBaseDAO.getInstance().getPathFromUuid(dstId);
+				dstUuid = dstId;
+				
+				if (!PathUtils.checkPath(dstPath)) {
+					throw new RepositoryException("Invalid destination path: " + dstPath);
+				}
+			}
+			
+			// Check for recursive move
+			if (dstPath.startsWith(fldPath)) {
+				throw new RepositoryException("Recursive move detected");
+			}
+			
 			NodeFolderDAO.getInstance().move(fldUuid, dstUuid);
 			
-			// Check scripting
-			BaseScriptingModule.checkScripts(auth.getName(), dstUuid, fldUuid, "MOVE_FOLDER");
+			// Add pending task
+			if (Config.STORE_NODE_PATH) {
+				PendingTask pt = new PendingTask();
+				pt.setNode(fldUuid);
+				pt.setTask(PendingTask.TASK_UPDATE_PATH);
+				pt.setParams("MOVE_FOLDER");
+				pt.setCreated(Calendar.getInstance());
+				PendingTaskDAO.getInstance().create(pt);
+			}
 			
 			// Activity log
 			UserActivity.log(auth.getName(), "MOVE_FOLDER", fldUuid, fldPath, dstPath);
@@ -381,11 +492,22 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public void copy(String token, String fldPath, String dstPath) throws PathNotFoundException, ItemExistsException,
-			AccessDeniedException, RepositoryException, IOException, AutomationException, DatabaseException,
+	public void copy(String token, String fldId, String dstId) throws PathNotFoundException, ItemExistsException, AccessDeniedException,
+			RepositoryException, IOException, AutomationException, DatabaseException, UserQuotaExceededException {
+		log.debug("copy({}, {}, {})", new Object[] { token, fldId, dstId });
+		extendedCopy(token, fldId, dstId, new ExtendedAttributes());
+	}
+	
+	@Override
+	public void extendedCopy(String token, String fldId, String dstId, ExtendedAttributes extAttr) throws PathNotFoundException,
+			ItemExistsException, AccessDeniedException, RepositoryException, IOException, AutomationException, DatabaseException,
 			UserQuotaExceededException {
-		log.debug("copy({}, {}, {})", new Object[] { token, fldPath, dstPath });
+		log.debug("extendedCopy({}, {}, {})", new Object[] { token, fldId, dstId });
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
+		String dstPath = null;
+		String dstUuid = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
@@ -399,11 +521,30 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
-			String dstUuid = NodeBaseDAO.getInstance().getUuidFromPath(dstPath);
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
+			
+			if (PathUtils.isPath(dstId)) {
+				dstPath = dstId;
+				dstUuid = NodeBaseDAO.getInstance().getUuidFromPath(dstId);
+			} else {
+				dstPath = NodeBaseDAO.getInstance().getPathFromUuid(dstId);
+				dstUuid = dstId;
+			}
+			
+			// Check for recursive copy
+			if (dstPath.startsWith(fldPath)) {
+				throw new RepositoryException("Recursive copy detected");
+			}
+			
 			NodeFolder srcFolderNode = NodeFolderDAO.getInstance().findByPk(fldUuid);
 			NodeFolder dstFolderNode = NodeFolderDAO.getInstance().findByPk(dstUuid);
-			NodeFolder newFldNode = BaseFolderModule.copy(auth.getName(), srcFolderNode, dstFolderNode);
+			NodeFolder newFldNode = BaseFolderModule.copy(auth.getName(), srcFolderNode, dstFolderNode, extAttr);
 			
 			// Activity log
 			UserActivity.log(auth.getName(), "COPY_FOLDER", newFldNode.getUuid(), fldPath, dstPath);
@@ -418,17 +559,18 @@ public class DbFolderModule implements FolderModule {
 	
 	@Override
 	@Deprecated
-	public List<Folder> getChilds(String token, String fldPath) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
-		return getChildren(token, fldPath);
+	public List<Folder> getChilds(String token, String fldId) throws PathNotFoundException, RepositoryException, DatabaseException {
+		return getChildren(token, fldId);
 	}
 	
 	@Override
-	public List<Folder> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
-		log.debug("getChildren({}, {})", token, fldPath);
+	public List<Folder> getChildren(String token, String fldId) throws PathNotFoundException, RepositoryException, DatabaseException {
+		log.debug("getChildren({}, {})", token, fldId);
+		long begin = System.currentTimeMillis();
 		List<Folder> children = new ArrayList<Folder>();
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
 		
 		try {
 			if (token == null) {
@@ -438,7 +580,13 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
 			
 			for (NodeFolder nFolder : NodeFolderDAO.getInstance().findByParent(fldUuid)) {
 				children.add(BaseFolderModule.getProperties(auth.getName(), nFolder));
@@ -454,16 +602,19 @@ public class DbFolderModule implements FolderModule {
 			}
 		}
 		
+		log.trace("getChildren.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getChildren: {}", children);
 		return children;
 	}
 	
 	@Override
-	public ContentInfo getContentInfo(String token, String fldPath) throws AccessDeniedException, RepositoryException,
-			PathNotFoundException, DatabaseException {
-		log.debug("getContentInfo({}, {})", token, fldPath);
+	public ContentInfo getContentInfo(String token, String fldId) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			DatabaseException {
+		log.debug("getContentInfo({}, {})", token, fldId);
 		ContentInfo contentInfo = new ContentInfo();
 		Authentication auth = null, oldAuth = null;
+		String fldPath = null;
+		String fldUuid = null;
 		
 		try {
 			if (token == null) {
@@ -473,7 +624,14 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
+			if (PathUtils.isPath(fldId)) {
+				fldPath = fldId;
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldPath = NodeBaseDAO.getInstance().getPathFromUuid(fldId);
+				fldUuid = fldId;
+			}
+			
 			contentInfo = BaseFolderModule.getContentInfo(fldUuid);
 			
 			// Activity log
@@ -491,11 +649,12 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public boolean isValid(String token, String fldPath) throws PathNotFoundException, RepositoryException, DatabaseException {
-		log.debug("isValid({}, {})", token, fldPath);
+	public boolean isValid(String token, String fldId) throws PathNotFoundException, RepositoryException, DatabaseException {
+		log.debug("isValid({}, {})", token, fldId);
 		boolean valid = true;
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
+		String fldUuid = null;
 		
 		try {
 			if (token == null) {
@@ -505,7 +664,11 @@ public class DbFolderModule implements FolderModule {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldPath);
+			if (PathUtils.isPath(fldId)) {
+				fldUuid = NodeBaseDAO.getInstance().getUuidFromPath(fldId);
+			} else {
+				fldUuid = fldId;
+			}
 			
 			try {
 				NodeFolderDAO.getInstance().findByPk(fldUuid);
@@ -525,8 +688,7 @@ public class DbFolderModule implements FolderModule {
 	}
 	
 	@Override
-	public String getPath(String token, String uuid) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public String getPath(String token, String uuid) throws AccessDeniedException, RepositoryException, DatabaseException {
 		try {
 			return NodeBaseDAO.getInstance().getPathFromUuid(uuid);
 		} catch (PathNotFoundException e) {

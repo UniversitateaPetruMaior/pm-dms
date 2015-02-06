@@ -135,7 +135,7 @@ public class ManageBookmarkPopup extends DialogBox {
 				}
 			}
 		);
-		updateButton.setStyleName("okm-YesButton");
+		updateButton.setStyleName("okm-ChangeButton");
 		updateButton.setEnabled(false);
 		
 		table = new FlexTable();

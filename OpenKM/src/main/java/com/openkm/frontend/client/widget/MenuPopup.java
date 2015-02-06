@@ -81,4 +81,18 @@ public class MenuPopup extends PopupPanel {
 	public void disableAddPropertyGroup() {
 		menu.disableAddPropertyGroup();
 	}
+	
+	/**
+	 * enablePdfMerge
+	 */
+	public void enablePdfMerge() {
+		menu.enablePdfMerge();
+	}
+	
+	/**
+	 * disablePdfMerge
+	 */
+	public void disablePdfMerge() {
+		menu.disablePdfMerge();
+	}
 }

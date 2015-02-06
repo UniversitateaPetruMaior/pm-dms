@@ -101,5 +101,4 @@ public interface PropertyModule {
 	public void removeKeyword(String token, String nodePath, String keyword) throws VersionException,
 			LockException, PathNotFoundException, AccessDeniedException, RepositoryException,
 			DatabaseException;
-	
 }

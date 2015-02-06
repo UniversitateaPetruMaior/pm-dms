@@ -206,6 +206,33 @@ public class MimeTypeDAO {
 			HibernateUtil.close(session);
 		}
 	}
+	
+	/**
+	 * Find by search.
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<MimeType> findBySearch() throws DatabaseException {
+		log.debug("findAll()");
+		String qs = "from MimeType mt where mt.search=:search order by mt.description";
+		Session session = null;
+		Transaction tx = null;
+		
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			Query q = session.createQuery(qs);
+			q.setBoolean("search", true);
+			List<MimeType> ret = q.list();
+			HibernateUtil.commit(tx);
+			log.debug("findAll: {}", ret);
+			return ret;
+		} catch (HibernateException e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.close(session);
+		}
+	}
 
 	/**
 	 * Find by name

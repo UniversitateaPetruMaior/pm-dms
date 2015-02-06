@@ -31,8 +31,11 @@ import net.sf.jooreports.templates.DocumentTemplate;
 import net.sf.jooreports.templates.DocumentTemplateException;
 import net.sf.jooreports.templates.DocumentTemplateFactory;
 
+import org.odftoolkit.odfdom.doc.OdfTextDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import de.svenjacobs.loremipsum.LoremIpsum;
 
 /**
  * http://jodreports.sourceforge.net/
@@ -52,5 +55,20 @@ public class OOUtils {
 		DocumentTemplate tpl = dtf.getTemplate(input);
 		tpl.createDocument(model, output);
 		log.info("fillTemplate: void");
+	}
+	
+	/**
+	 * Generate sample odt 
+	 */
+	public static void generateSample(int paragraphs, OutputStream os) throws Exception {
+		LoremIpsum li = new LoremIpsum();
+		OdfTextDocument odt = OdfTextDocument.newTextDocument();
+		
+		for (int i=0; i<paragraphs; i++) {
+			odt.newParagraph(li.getParagraphs());
+			odt.newParagraph();
+		}
+		
+		odt.save(os);
 	}
 }

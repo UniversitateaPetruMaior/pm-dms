@@ -221,7 +221,7 @@ public class FolderSelectTree extends Composite {
 	 * @param path The folder path selected to list items
 	 */
 	public void getChilds(String path) {	
-		folderService.getChilds(path, false, callbackGetChilds);
+		folderService.getChilds(path, false, null, callbackGetChilds);
 	}	
 	
 	/**

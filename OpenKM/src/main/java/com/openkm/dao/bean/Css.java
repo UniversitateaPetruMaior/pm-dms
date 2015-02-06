@@ -32,6 +32,8 @@ import javax.persistence.Lob;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Type;
 
 @Entity
@@ -39,6 +41,7 @@ import org.hibernate.annotations.Type;
 		// ALTER TABLE OKM_CSS ADD CONSTRAINT IDX_CSS_NAME_CTX UNIQUE (CSS_NAME, CSS_CONTEXT)
 		@UniqueConstraint(name = "IDX_CSS_NAME_CTX", columnNames = { "CSS_NAME", "CSS_CONTEXT" })
 	})
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class Css implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public static final String CONTEXT_FRONTEND = "frontend";

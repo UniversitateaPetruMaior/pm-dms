@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.frontend.client.widget.thesaurus;
@@ -33,23 +33,22 @@ import com.openkm.frontend.client.util.OKMBundleResources;
  * Status
  * 
  * @author jllort
- *
+ * 
  */
 public class Status extends PopupPanel {
-	
 	private HorizontalPanel hPanel;
 	private HTML msg;
 	private HTML space;
 	private Image image;
-	private boolean flag_getChilds 			= false;
-	private boolean flag_root				= false;
-	private boolean flag_keywords			= false;
+	private boolean flag_getChilds = false;
+	private boolean flag_root = false;
+	private boolean flag_keywords = false;
 	
 	/**
 	 * Status
 	 */
 	public Status() {
-		super(false,true);
+		super(false, true);
 		hPanel = new HorizontalPanel();
 		image = new Image(OKMBundleResources.INSTANCE.indicator());
 		msg = new HTML("");
@@ -77,19 +76,23 @@ public class Status extends PopupPanel {
 	 * Refreshing satus
 	 */
 	public void refresh() {
-		if (flag_getChilds || flag_root || flag_keywords ) {
-			int left = ((Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getOffsetWidth()-125)/2) +
-						 Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getAbsoluteLeft();
-			int top = ((Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getOffsetHeight()-40)/2) + 
-			            Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getAbsoluteTop();
-			setPopupPosition(left,top);
-			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollDirectoryPanel.addStyleName("okm-PanelRefreshing");
-			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollKeywordPanel.addStyleName("okm-PanelRefreshing");
+		if (flag_getChilds || flag_root || flag_keywords) {
+			int left = ((Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getOffsetWidth() - 125) / 2)
+					+ Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getAbsoluteLeft();
+			int top = ((Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getOffsetHeight() - 40) / 2)
+					+ Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.getAbsoluteTop();
+			setPopupPosition(left, top);
+			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollDirectoryPanel
+					.addStyleName("okm-PanelRefreshing");
+			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollKeywordPanel
+					.addStyleName("okm-PanelRefreshing");
 			super.show();
 		} else {
 			super.hide();
-			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollDirectoryPanel.removeStyleName("okm-PanelRefreshing");
-			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollKeywordPanel.removeStyleName("okm-PanelRefreshing");
+			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollDirectoryPanel
+					.removeStyleName("okm-PanelRefreshing");
+			Main.get().mainPanel.desktop.navigator.thesaurusTree.thesaurusSelectPopup.thesaurusPanel.scrollKeywordPanel
+					.removeStyleName("okm-PanelRefreshing");
 		}
 	}
 	
@@ -115,7 +118,7 @@ public class Status extends PopupPanel {
 	 */
 	public void setFlagRoot() {
 		msg.setHTML(Main.i18n("tree.status.refresh.get.root"));
-		flag_root= true;
+		flag_root = true;
 		refresh();
 	}
 	
@@ -132,7 +135,7 @@ public class Status extends PopupPanel {
 	 */
 	public void setFlagKeywords() {
 		msg.setHTML(Main.i18n("tree.status.refresh.get.keywords"));
-		flag_keywords= true;
+		flag_keywords = true;
 		refresh();
 	}
 	

@@ -21,7 +21,9 @@
 
 package com.openkm.servlet.admin;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -50,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.openkm.bean.ConfigStoredFile;
 import com.openkm.bean.ConfigStoredOption;
 import com.openkm.bean.ConfigStoredSelect;
 import com.openkm.core.DatabaseException;
@@ -58,6 +61,9 @@ import com.openkm.dao.ConfigDAO;
 import com.openkm.dao.HibernateUtil;
 import com.openkm.dao.bean.Config;
 import com.openkm.servlet.admin.DatabaseQueryServlet.WorkerUpdate;
+import com.openkm.util.FileUtils;
+import com.openkm.util.ImageUtils;
+import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
 import com.openkm.util.WarUtils;
 import com.openkm.util.WebUtils;
@@ -79,6 +85,7 @@ public class ConfigServlet extends BaseServlet {
 		types.put(Config.BOOLEAN, "Boolean");
 		types.put(Config.INTEGER, "Integer");
 		types.put(Config.LONG, "Long");
+		types.put(Config.FILE, "File");
 		types.put(Config.SELECT, "Select");
 		types.put(Config.LIST, "List");
 	}
@@ -88,10 +95,12 @@ public class ConfigServlet extends BaseServlet {
 			ServletException {
 		String method = request.getMethod();
 		
-		if (method.equals(METHOD_GET)) {
-			doGet(request, response);
-		} else if (method.equals(METHOD_POST)) {
-			doPost(request, response);
+		if (checkMultipleInstancesAccess(request, response)) {
+			if (method.equals(METHOD_GET)) {
+				doGet(request, response);
+			} else if (method.equals(METHOD_POST)) {
+				doPost(request, response);
+			}
 		}
 	}
 	
@@ -112,6 +121,8 @@ public class ConfigServlet extends BaseServlet {
 				edit(userId, types, request, response);
 			} else if (action.equals("delete")) {
 				delete(userId, types, request, response);
+			} else if (action.equals("view")) {
+				view(userId, request, response);
 			} else if (action.equals("check")) {
 				check(userId, request, response);
 			} else if (action.equals("export")) {
@@ -133,7 +144,7 @@ public class ConfigServlet extends BaseServlet {
 		request.setCharacterEncoding("UTF-8");
 		ServletContext sc = getServletContext();
 		String action = null;
-		String filter = null;
+		String filter = "";
 		String userId = request.getRemoteUser();
 		Session dbSession = null;
 		updateSessionManager(request);
@@ -144,6 +155,7 @@ public class ConfigServlet extends BaseServlet {
 				FileItemFactory factory = new DiskFileItemFactory(); 
 				ServletFileUpload upload = new ServletFileUpload(factory);
 				List<FileItem> items = upload.parseRequest(request);
+				ConfigStoredFile stFile = new ConfigStoredFile();
 				Config cfg = new Config();
 				byte data[] = null;
 				
@@ -164,13 +176,46 @@ public class ConfigServlet extends BaseServlet {
 						}
 					} else {
 						is = item.getInputStream();
-						data = IOUtils.toByteArray(is);
-						is.close();
+						stFile.setName(item.getName());
+						stFile.setMime(MimeTypeConfig.mimeTypes.getContentType(item.getName()));
+						
+						if (cfg.getKey() != null && cfg.getKey().startsWith("logo")) {
+							String size = null;
+							
+							if (cfg.getKey().equals(com.openkm.core.Config.PROPERTY_LOGO_LOGIN)) {
+								size = "316x74>";
+							} else if (cfg.getKey().equals(com.openkm.core.Config.PROPERTY_LOGO_REPORT)) {
+								size = "150x35>";
+							}
+							
+							File tmpIn = FileUtils.createTempFileFromMime(stFile.getMime());
+							File tmpOut = FileUtils.createTempFileFromMime(stFile.getMime());
+							FileOutputStream fos = null;
+							
+							try {
+								fos = new FileOutputStream(tmpIn);
+								IOUtils.copy(is, fos);
+								ImageUtils.resize(tmpIn, size, tmpOut);
+								data = FileUtils.readFileToByteArray(tmpOut);
+							} finally {
+								FileUtils.deleteQuietly(tmpIn);
+								FileUtils.deleteQuietly(tmpOut);
+								IOUtils.closeQuietly(fos);
+								IOUtils.closeQuietly(is);
+							}
+						} else {
+							data = IOUtils.toByteArray(is);
+							IOUtils.closeQuietly(is);
+						}
+						
+						stFile.setContent(SecureStore.b64Encode(data));
 					}
 				}
 			
 				if (action.equals("create")) {
-					if (Config.BOOLEAN.equals(cfg.getType())) {
+					if (Config.FILE.equals(cfg.getType())) {
+						cfg.setValue(new Gson().toJson(stFile));
+					} else if (Config.BOOLEAN.equals(cfg.getType())) {
 						cfg.setValue(Boolean.toString(cfg.getValue() != null && !cfg.getValue().equals("")));
 					} else if (Config.SELECT.equals(cfg.getType())) {
 						ConfigStoredSelect stSelect = ConfigDAO.getSelect(cfg.getKey());
@@ -193,7 +238,9 @@ public class ConfigServlet extends BaseServlet {
 					UserActivity.log(userId, "ADMIN_CONFIG_CREATE", cfg.getKey(), null, cfg.toString());
 					list(userId, filter, request, response);
 				} else if (action.equals("edit")) {
-					if (Config.BOOLEAN.equals(cfg.getType())) {
+					if (Config.FILE.equals(cfg.getType())) {
+						cfg.setValue(new Gson().toJson(stFile));
+					} else if (Config.BOOLEAN.equals(cfg.getType())) {
 						cfg.setValue(Boolean.toString(cfg.getValue() != null && !cfg.getValue().equals("")));
 					} else if (Config.SELECT.equals(cfg.getType())) {
 						ConfigStoredSelect stSelect = ConfigDAO.getSelect(cfg.getKey());
@@ -316,6 +363,8 @@ public class ConfigServlet extends BaseServlet {
 				cfg.setType("Integer");
 			} else if (Config.LONG.equals(cfg.getType())) {
 				cfg.setType("Long");
+			} else if (Config.FILE.equals(cfg.getType())) {
+				cfg.setType("File");
 			} else if (Config.LIST.equals(cfg.getType())) {
 				cfg.setType("List");
 			} else if (Config.SELECT.equals(cfg.getType())) {
@@ -340,6 +389,25 @@ public class ConfigServlet extends BaseServlet {
 		sc.setAttribute("filter", filter);
 		sc.getRequestDispatcher("/admin/config_list.jsp").forward(request, response);
 		log.debug("list: void");
+	}
+	
+	/**
+	 * Download file
+	 */
+	private void view(String userId, HttpServletRequest request, HttpServletResponse response) throws
+			ServletException, IOException, DatabaseException {
+		log.debug("view({}, {}, {})", new Object[] { userId, request, response });
+		String cfgKey = WebUtils.getString(request, "cfg_key");
+		Config cfg = ConfigDAO.findByPk(cfgKey);
+		
+		if (cfg != null) {
+			ConfigStoredFile stFile = new Gson().fromJson(cfg.getValue(), ConfigStoredFile.class);
+			byte[] content = SecureStore.b64Decode(stFile.getContent());
+			ByteArrayInputStream bais = new ByteArrayInputStream(content);
+			WebUtils.sendFile(request, response, stFile.getName(), stFile.getMime(), true, bais);
+		}
+		
+		log.debug("view: void");
 	}
 	
 	/**

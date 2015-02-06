@@ -176,22 +176,32 @@ public class SecurityPanel extends Composite {
 		tabPanel.addStyleName("okm-Border-Bottom");
 		filter.setStyleName("okm-Input");
 		
-		tabPanel.setWidth(String.valueOf(width));
-		
 		initWidget(vPanel);
+	}
+	
+	/**
+	 * initSecurity
+	 * 
+	 */
+	public void initSecurity() {
+		securityUser.initSecurity();
+		securityRole.initSecurity();
+		tabPanel.setWidth(String.valueOf(width));
 	}
 	
 	/**
 	 * reset
 	 * 
-	 * @param path
+	 * @param uuid
 	 */
-	public void reset(String path) {
-		securityUser.setPath(path);
-		securityRole.setPath(path);
+	public void reset(String uuid) {
+		securityUser.setUuid(uuid);
+		securityRole.setUuid(uuid);
 		securityUser.reset();
 		securityRole.reset();
 		filter.setText("");
+		filter.setEnabled(true);
+		checkBoxFilter.setValue(true);
 		usersFilter = "";
 		groupsFilter = "";
 		securityUser.getGrantedUsers();
@@ -258,6 +268,6 @@ public class SecurityPanel extends Composite {
 	 * evaluateChangeButton
 	 */
 	public void evaluateChangeButton() {
-		Main.get().securityPopup.enableChangeButton(securityUser.getNewGrants().size()>0 || securityRole.getNewGrants().size()>0);
+		Main.get().securityPopup.enableChangeButton(securityUser.hasChangedGrants() || securityRole.hasChangedGrants());
 	}
 }

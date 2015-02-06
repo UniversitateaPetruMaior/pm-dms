@@ -27,6 +27,7 @@ import java.util.List;
 
 import com.openkm.automation.AutomationException;
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.LockInfo;
 import com.openkm.bean.Version;
 import com.openkm.core.AccessDeniedException;
@@ -98,13 +99,13 @@ public interface DocumentModule {
 	/**
 	 * Obtain document properties from the repository.
 	 * 
-	 * @param docPath The path that identifies an unique document.
+	 * @param @param docId The path that identifies an unique document or its UUID.
 	 * @return The document properties.
 	 * @throws PathNotFoundException If there is no document in this repository path. you can't modify the document
 	 *         because of lack of permissions.
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
-	public Document getProperties(String token, String docPath) throws PathNotFoundException, RepositoryException,
+	public Document getProperties(String token, String docId) throws PathNotFoundException, RepositoryException,
 			DatabaseException;
 	
 	/**
@@ -124,7 +125,7 @@ public interface DocumentModule {
 	/**
 	 * Obtain document content from the repository.
 	 * 
-	 * @param docPath The path that identifies an unique document.
+	 * @param docId The path that identifies an unique document or its UUID.
 	 * @return The content of the document file.
 	 * @throws PathNotFoundException If there is no document in this repository path.
 	 * @throws AccessDeniedException If there is any security problem: you can't modify this document because of lack of
@@ -132,13 +133,13 @@ public interface DocumentModule {
 	 * @throws RepositoryException If there is any general repository problem.
 	 * @throws IOException An error when retrieving document data from the repository.
 	 */
-	public InputStream getContent(String token, String docPath, boolean checkout) throws PathNotFoundException,
+	public InputStream getContent(String token, String docId, boolean checkout) throws PathNotFoundException,
 			AccessDeniedException, RepositoryException, IOException, DatabaseException;
 	
 	/**
 	 * Obtain document content from the repository.
 	 * 
-	 * @param docPath The path that identifies an unique document.
+	 * @param docId The path that identifies an unique document or its UUID.
 	 * @param versionId The id of the version to get the content from.
 	 * @return The content of the document file.
 	 * @throws AccessDeniedException If there is any security problem: you can't modify this document because of lack of
@@ -147,30 +148,30 @@ public interface DocumentModule {
 	 * @throws PathNotFoundException If there is no folder in the repository with this path.
 	 * @throws IOException An error when retrieving document data from the repository.
 	 */
-	public InputStream getContentByVersion(String token, String docPath, String versionId) throws RepositoryException,
+	public InputStream getContentByVersion(String token, String docId, String versionId) throws RepositoryException,
 			PathNotFoundException, IOException, DatabaseException;
 	
 	/**
 	 * Retrieve a list of child documents from an existing folder.
 	 * 
-	 * @param fldPath The path that identifies an unique folder.
+	 * @param fldId The path that identifies an unique folder or its UUID.
 	 * @return A Collection with the child documents.
 	 * @throws PathNotFoundException If there is no folder in this repository path.
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
 	@Deprecated
-	public List<Document> getChilds(String token, String fldPath) throws PathNotFoundException, RepositoryException,
+	public List<Document> getChilds(String token, String fldId) throws PathNotFoundException, RepositoryException,
 			DatabaseException;
 	
 	/**
 	 * Retrieve a list of children documents from an existing folder.
 	 * 
-	 * @param fldPath The path that identifies an unique folder.
+	 * @param fldId The path that identifies an unique folder or its UUID.
 	 * @return A Collection with the child documents.
 	 * @throws PathNotFoundException If there is no folder in this repository path.
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
-	public List<Document> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException,
+	public List<Document> getChildren(String token, String fldId) throws PathNotFoundException, RepositoryException,
 			DatabaseException;
 	
 	/**
@@ -240,17 +241,36 @@ public interface DocumentModule {
 	public Version checkin(String token, String docPath, InputStream is, String comment)
 			throws FileSizeExceededException, UserQuotaExceededException, VirusDetectedException, LockException,
 			VersionException, PathNotFoundException, AccessDeniedException, RepositoryException, IOException,
-			DatabaseException, ExtensionException;
+			DatabaseException, ExtensionException, AutomationException;
+	
+	/**
+	 * Check in the document to create a new version.
+	 * 
+	 * @param docPath The path that identifies an unique document.
+	 * @param comment A comment for this checkin.
+	 * @param increment Which increment should be increased.
+	 * @return A version object with the properties of the new generated version.
+	 * @throws LockException A locked document can't be modified.
+	 * @throws VersionException If the nodes was not previously checked out.
+	 * @throws PathNotFoundException If there is no document in this repository path.
+	 * @throws AccessDeniedException If there is any security problem: you can't modify the document because of lack of
+	 *         permissions.
+	 * @throws RepositoryException If there is any general repository problem.
+	 */
+	public Version checkin(String token, String docPath, InputStream is, String comment, int increment)
+			throws FileSizeExceededException, UserQuotaExceededException, VirusDetectedException, LockException,
+			VersionException, PathNotFoundException, AccessDeniedException, RepositoryException, IOException,
+			DatabaseException, ExtensionException, AutomationException;
 	
 	/**
 	 * Get the document version history.
 	 * 
-	 * @param docPath The path that identifies an unique document.
+	 * @param docId The path that identifies an unique document or its UUID.
 	 * @return A Collection of Versions with every document version.
 	 * @throws PathNotFoundException If there is no document in this repository path.
 	 * @throws RepositoryException If there is any general repository problem.
 	 */
-	public List<Version> getVersionHistory(String token, String docPath) throws PathNotFoundException,
+	public List<Version> getVersionHistory(String token, String docId) throws PathNotFoundException,
 			RepositoryException, DatabaseException;
 	
 	/**
@@ -362,6 +382,23 @@ public interface DocumentModule {
 			ExtensionException, AutomationException;
 	
 	/**
+	 * Copy a document to another location in the repository.
+	 * 
+	 * @param docPath The path that identifies an unique document.
+	 * @param dstPath The destination folder path.
+	 * @param docName The name of the new document or null if not changed
+	 * @param extAttr Attributes to define what need to be duplicated.
+	 * @throws PathNotFoundException If the dstPath does not exists
+	 * @throws ItemExistsException If there is already a document in the destination folder with the same name.
+	 * @throws AccessDeniedException If there is any security problem: you can't modify the document's parent folder or
+	 *         the destination folder because of lack of permissions.
+	 * @throws RepositoryException If there is any general repository problem.
+	 */
+	public void extendedCopy(String token, String docPath, String dstPath, String docName, ExtendedAttributes extAttr)
+			throws ItemExistsException, PathNotFoundException, AccessDeniedException, RepositoryException, IOException,
+			DatabaseException, UserQuotaExceededException, ExtensionException, AutomationException;
+	
+	/**
 	 * Revert the document to an specific previous version.
 	 * 
 	 * @param docPath The path that identifies an unique document.
@@ -390,13 +427,13 @@ public interface DocumentModule {
 	/**
 	 * Get the version size of a Document.
 	 * 
-	 * @param docPath The path that identifies an unique document.
+	 * @param docId The path that identifies an unique document or its UUID.
 	 * @throws AccessDeniedException If there is any security problem: you can't access this folder because of lack of
 	 *         permissions.
 	 * @throws RepositoryException If there is any general repository problem.
 	 * @throws PathNotFoundException If there is no folder in the repository with this path.
 	 */
-	public long getVersionHistorySize(String token, String docPath) throws RepositoryException, PathNotFoundException,
+	public long getVersionHistorySize(String token, String docId) throws RepositoryException, PathNotFoundException,
 			DatabaseException;
 	
 	/**

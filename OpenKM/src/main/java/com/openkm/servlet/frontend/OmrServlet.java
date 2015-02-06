@@ -52,7 +52,7 @@ import com.openkm.frontend.client.constants.service.ErrorCode;
 import com.openkm.frontend.client.service.OKMOmrService;
 import com.openkm.omr.OMRHelper;
 import com.openkm.util.GWTUtil;
-import com.openkm.util.OMRException;
+import com.openkm.omr.OMRException;
 
 /**
  * OMR service

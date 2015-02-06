@@ -24,6 +24,12 @@ package com.openkm.automation;
 import java.io.File;
 import java.util.HashMap;
 
+import org.apache.derby.impl.io.vfmem.PathUtil;
+
+import com.openkm.api.OKMRepository;
+import com.openkm.core.DatabaseException;
+import com.openkm.core.PathNotFoundException;
+import com.openkm.core.RepositoryException;
 import com.openkm.dao.bean.NodeBase;
 import com.openkm.dao.bean.NodeDocument;
 import com.openkm.dao.bean.NodeFolder;
@@ -52,6 +58,9 @@ public class AutomationUtils {
 	public static final String FOLDER_NAME = "folderName";
 	public static final String MAIL_NODE = "mailNode";
 	public static final String MAIL_UUID = "mailUuid";
+	public static final String MAIL_NAME = "mailName";
+	public static final String MAIL_KEYWORDS = "mailKeywords";
+	public static final String MAIL_MIME_TYPE = "mailMimeType";
 	public static final String NODE_UUID = "nodeUuid";
 	public static final String NODE_PATH = "nodePath";
 	public static final String PROPERTY_GROUP_NAME = "propGroupName";
@@ -65,6 +74,9 @@ public class AutomationUtils {
 		NodeFolder fldNode = (NodeFolder) env.get(FOLDER_NODE);
 		NodeMail mailNode = (NodeMail) env.get(MAIL_NODE);
 		String docUuid = (String) env.get(DOCUMENT_UUID);
+		String folderUuid = (String) env.get(FOLDER_UUID);
+		String mailUuid = (String) env.get(MAIL_UUID);
+		String nodeUuid = (String) env.get(NODE_UUID);
 		String uuid = null;
 		
 		if (docNode != null) {
@@ -75,6 +87,12 @@ public class AutomationUtils {
 			uuid = mailNode.getUuid();
 		} else if (docUuid != null) {
 			uuid = docUuid;
+		} else if (folderUuid != null) {
+			uuid = folderUuid;
+		} else if (mailUuid != null) {
+			uuid = mailUuid;
+		} else if (nodeUuid != null) {
+			uuid = nodeUuid;
 		}
 		
 		return uuid;
@@ -116,8 +134,22 @@ public class AutomationUtils {
 	/**
 	 * getParentPath
 	 */
-	public static String getParentPath(HashMap<String, Object> env) {
-		return (String) env.get(PARENT_PATH);
+	public static String getParentPath(HashMap<String, Object> env) throws PathNotFoundException, RepositoryException, DatabaseException {
+		if (env.containsKey(PARENT_PATH)) {
+			return (String) env.get(PARENT_PATH);
+		} else if (env.containsKey(DOCUMENT_NODE)) {
+			NodeDocument docNode = (NodeDocument) env.get(DOCUMENT_NODE);
+			return OKMRepository.getInstance().getNodePath(null, docNode.getParent());
+		} else if (env.containsKey(FOLDER_NODE)) {
+			NodeFolder fldNode = (NodeFolder) env.get(FOLDER_NODE);
+			return OKMRepository.getInstance().getNodePath(null, fldNode.getParent());
+		} else if (env.containsKey(MAIL_NODE)) {
+			NodeMail mailNode = (NodeMail) env.get(MAIL_NODE);
+			return OKMRepository.getInstance().getNodePath(null, mailNode.getParent());
+		} else if (env.containsKey(NODE_PATH)) {
+			return PathUtil.getParent((String) env.get(NODE_PATH));
+		} 
+		return null;
 	}
 	
 	/**

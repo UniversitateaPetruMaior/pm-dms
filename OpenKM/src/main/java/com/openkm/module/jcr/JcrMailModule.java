@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.jcr;
@@ -29,10 +29,12 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Session;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.jackrabbit.api.XASession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Mail;
 import com.openkm.bean.Repository;
 import com.openkm.core.AccessDeniedException;
@@ -58,9 +60,8 @@ public class JcrMailModule implements MailModule {
 	private static Logger log = LoggerFactory.getLogger(JcrMailModule.class);
 	
 	@Override
-	public Mail create(String token, Mail mail) throws AccessDeniedException, RepositoryException,
-			PathNotFoundException, ItemExistsException, VirusDetectedException, DatabaseException,
-			UserQuotaExceededException {
+	public Mail create(String token, Mail mail) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			ItemExistsException, VirusDetectedException, DatabaseException, UserQuotaExceededException {
 		log.debug("create({}, {})", token, mail);
 		return create(token, mail, null);
 	}
@@ -68,9 +69,8 @@ public class JcrMailModule implements MailModule {
 	/**
 	 * Used when importing mail from scheduler
 	 */
-	public Mail create(String token, Mail mail, String userId) throws AccessDeniedException, RepositoryException,
-			PathNotFoundException, ItemExistsException, VirusDetectedException, DatabaseException,
-			UserQuotaExceededException {
+	public Mail create(String token, Mail mail, String userId) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			ItemExistsException, VirusDetectedException, DatabaseException, UserQuotaExceededException {
 		log.debug("create({}, {}, {})", new Object[] { token, mail, userId });
 		Mail newMail = null;
 		Transaction t = null;
@@ -103,11 +103,10 @@ public class JcrMailModule implements MailModule {
 			t.start();
 			
 			// Create node
-			Node mailNode = BaseMailModule.create(session, parentNode, name, mail.getSize(), 
-					mail.getFrom(), mail.getReply(), mail.getTo(), mail.getCc(), mail.getBcc(),
-					mail.getSentDate(), mail.getReceivedDate(), mail.getSubject(), mail.getContent(),
+			Node mailNode = BaseMailModule.create(session, parentNode, name, mail.getSize(), mail.getFrom(), mail.getReply(), mail.getTo(),
+					mail.getCc(), mail.getBcc(), mail.getSentDate(), mail.getReceivedDate(), mail.getSubject(), mail.getContent(),
 					mail.getMimeType(), userId);
-						
+			
 			// Set returned mail properties
 			newMail = BaseMailModule.getProperties(session, mailNode);
 			
@@ -142,16 +141,17 @@ public class JcrMailModule implements MailModule {
 			t.rollback();
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("create: {}", newMail);
 		return newMail;
 	}
-
+	
 	@Override
-	public Mail getProperties(String token, String mailPath) throws PathNotFoundException, 
-			RepositoryException, DatabaseException {
+	public Mail getProperties(String token, String mailPath) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getProperties({}, {})", token, mailPath);
 		Mail mail = null;
 		Session session = null;
@@ -175,16 +175,18 @@ public class JcrMailModule implements MailModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("get: {}", mail);
 		return mail;
 	}
-
+	
 	@Override
-	public void delete(String token, String mailPath) throws AccessDeniedException, RepositoryException,
-			PathNotFoundException, LockException, DatabaseException {
+	public void delete(String token, String mailPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, DatabaseException {
 		log.debug("delete({}, {})", token, mailPath);
 		Session session = null;
 		
@@ -208,7 +210,7 @@ public class JcrMailModule implements MailModule {
 			String destPath = userTrash.getPath() + "/";
 			String testName = name;
 			
-			for (int i=1; session.itemExists(destPath + testName); i++) {
+			for (int i = 1; session.itemExists(destPath + testName); i++) {
 				testName = name + " (" + i + ")";
 			}
 			
@@ -233,15 +235,17 @@ public class JcrMailModule implements MailModule {
 			JCRUtils.discardsPendingChanges(session);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-				
+		
 		log.debug("delete: void");
-	}	
+	}
 	
 	@Override
-	public void purge(String token, String mailPath) throws AccessDeniedException, RepositoryException,
-			PathNotFoundException, DatabaseException {
+	public void purge(String token, String mailPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			DatabaseException {
 		log.debug("purge({}, {})", token, mailPath);
 		Node parentNode = null;
 		Session session = null;
@@ -262,10 +266,10 @@ public class JcrMailModule implements MailModule {
 			parentNode = mailNode.getParent();
 			mailNode.remove();
 			parentNode.save();
-						
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, parentNode, mailNode, "PURGE_MAIL");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "PURGE_MAIL", mailUuid, mailPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -281,15 +285,17 @@ public class JcrMailModule implements MailModule {
 			JCRUtils.discardsPendingChanges(parentNode);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("purge: void");
 	}
-
+	
 	@Override
-	public Mail rename(String token, String mailPath, String newName) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, ItemExistsException, DatabaseException {
+	public Mail rename(String token, String mailPath, String newName) throws AccessDeniedException, RepositoryException,
+			PathNotFoundException, ItemExistsException, DatabaseException {
 		log.debug("rename({}, {}, {})", new Object[] { token, mailPath, newName });
 		Mail renamedMail = null;
 		Session session = null;
@@ -308,7 +314,7 @@ public class JcrMailModule implements MailModule {
 			
 			String parent = PathUtils.getParent(mailPath);
 			String name = PathUtils.getName(mailPath);
-							
+			
 			// Escape dangerous chars in name
 			newName = PathUtils.escape(newName);
 			
@@ -319,10 +325,10 @@ public class JcrMailModule implements MailModule {
 				// Set new name
 				mailNode = session.getRootNode().getNode(newPath.substring(1));
 				mailNode.setProperty(Mail.SUBJECT, newName);
-			
+				
 				// Publish changes
-				session.save();	
-			
+				session.save();
+				
 				// Set returned document properties
 				renamedMail = BaseMailModule.getProperties(session, mailNode);
 			} else {
@@ -350,7 +356,9 @@ public class JcrMailModule implements MailModule {
 			JCRUtils.discardsPendingChanges(session);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("rename: {}", renamedMail);
@@ -358,15 +366,15 @@ public class JcrMailModule implements MailModule {
 	}
 	
 	@Override
-	public void move(String token, String mailPath, String dstPath) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, ItemExistsException, DatabaseException {
+	public void move(String token, String mailPath, String dstPath) throws AccessDeniedException, RepositoryException,
+			PathNotFoundException, ItemExistsException, DatabaseException {
 		log.debug("move({}, {}, {})", new Object[] { token, mailPath, dstPath });
 		Session session = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -374,7 +382,7 @@ public class JcrMailModule implements MailModule {
 				session = JcrSessionManager.getInstance().get(token);
 			}
 			
-			//Node mailNode = session.getRootNode().getNode(mailPath.substring(1));
+			// Node mailNode = session.getRootNode().getNode(mailPath.substring(1));
 			String name = PathUtils.getName(mailPath);
 			String dstNodePath = dstPath + "/" + name;
 			session.move(mailPath, dstPath + "/" + name);
@@ -403,16 +411,17 @@ public class JcrMailModule implements MailModule {
 			JCRUtils.discardsPendingChanges(session);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("move: void");
 	}
-
+	
 	@Override
-	public void copy(String token, String mailPath, String dstPath) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, ItemExistsException, IOException, DatabaseException,
-			UserQuotaExceededException {
+	public void copy(String token, String mailPath, String dstPath) throws AccessDeniedException, RepositoryException,
+			PathNotFoundException, ItemExistsException, IOException, DatabaseException, UserQuotaExceededException {
 		log.debug("copy({}, {}, {})", new Object[] { token, mailPath, dstPath });
 		Transaction t = null;
 		XASession session = null;
@@ -432,10 +441,10 @@ public class JcrMailModule implements MailModule {
 			t.start();
 			
 			// Make some work
-			Node srcMailNode = session.getRootNode().getNode(mailPath.substring(1)); 
+			Node srcMailNode = session.getRootNode().getNode(mailPath.substring(1));
 			Node dstFolderNode = session.getRootNode().getNode(dstPath.substring(1));
 			BaseMailModule.copy(session, srcMailNode, dstFolderNode);
-
+			
 			t.end();
 			t.commit();
 			
@@ -465,22 +474,28 @@ public class JcrMailModule implements MailModule {
 			t.rollback();
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("copy: void");
 	}
 	
 	@Override
+	public void extendedCopy(String token, String mailPath, String dstPath, ExtendedAttributes extAttr) throws PathNotFoundException,
+			ItemExistsException, AccessDeniedException, RepositoryException, IOException, DatabaseException, UserQuotaExceededException {
+		throw new NotImplementedException("extendedCopy");
+	}
+	
+	@Override
 	@Deprecated
-	public List<Mail> getChilds(String token, String fldPath) throws PathNotFoundException,
-			RepositoryException, DatabaseException {
+	public List<Mail> getChilds(String token, String fldPath) throws PathNotFoundException, RepositoryException, DatabaseException {
 		return getChildren(token, fldPath);
 	}
 	
 	@Override
-	public List<Mail> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public List<Mail> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getChildren({}, {})", token, fldPath);
 		List<Mail> children = new ArrayList<Mail>();
 		Session session = null;
@@ -493,15 +508,15 @@ public class JcrMailModule implements MailModule {
 			}
 			
 			Node folderNode = session.getRootNode().getNode(fldPath.substring(1));
-
-			for (NodeIterator ni = folderNode.getNodes(); ni.hasNext(); ) {
+			
+			for (NodeIterator ni = folderNode.getNodes(); ni.hasNext();) {
 				Node child = ni.nextNode();
 				
 				if (child.isNodeType(Mail.TYPE)) {
 					children.add(BaseMailModule.getProperties(session, child));
 				}
 			}
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "GET_CHILDREN_MAILS", folderNode.getUUID(), fldPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -511,16 +526,18 @@ public class JcrMailModule implements MailModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-				
+		
 		log.debug("getChildren: {}", children);
 		return children;
 	}
-
+	
 	@Override
-	public boolean isValid(String token, String mailPath) throws PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
+	public boolean isValid(String token, String mailPath) throws PathNotFoundException, AccessDeniedException, RepositoryException,
+			DatabaseException {
 		log.debug("isValid({}, {})", token, mailPath);
 		boolean valid = false;
 		Session session = null;
@@ -547,16 +564,17 @@ public class JcrMailModule implements MailModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("isValid: {}", valid);
 		return valid;
 	}
 	
 	@Override
-	public String getPath(String token, String uuid) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public String getPath(String token, String uuid) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("getPath({}, {})", token, uuid);
 		String path = null;
 		Session session = null;
@@ -569,7 +587,7 @@ public class JcrMailModule implements MailModule {
 			}
 			
 			Node node = session.getNodeByUUID(uuid);
-
+			
 			if (node.isNodeType(Mail.TYPE)) {
 				path = node.getPath();
 			}
@@ -580,9 +598,11 @@ public class JcrMailModule implements MailModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getPath: {}", path);
 		return path;
 	}

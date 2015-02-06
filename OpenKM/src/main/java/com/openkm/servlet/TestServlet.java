@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.core.MimeTypeConfig;
+import com.openkm.spring.PrincipalUtils;
 
 /**
  * Only for testing purposes
@@ -49,7 +50,9 @@ public class TestServlet extends HttpServlet {
 		response.setContentType(MimeTypeConfig.MIME_HTML);
 		
 		try {
-			out.println("Hello, World!");
+			out.println("User: " + PrincipalUtils.getUser() + "<br/>");
+			out.println("Roles: " + PrincipalUtils.getRoles() + "<br/>");
+			out.println("Authentication: " + PrincipalUtils.getAuthentication() + "<br/>");
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {

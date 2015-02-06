@@ -24,10 +24,7 @@ package com.openkm.dao;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +34,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import com.openkm.util.FormatUtil;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -165,7 +163,7 @@ public class LegacyDAO {
 			}
 		}	
 	}
-	
+
 	/**
 	 * Execute query
 	 */
@@ -174,7 +172,7 @@ public class LegacyDAO {
 		log.debug("executeValueQuery({})", query);
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
@@ -190,7 +188,7 @@ public class LegacyDAO {
 			HibernateUtil.close(session);
 		}
 	}
-	
+
 	/**
 	 * Execute query
 	 */
@@ -198,7 +196,7 @@ public class LegacyDAO {
 		log.debug("executeQueryUnique({})", query);
 		Session session = null;
 		Transaction tx = null;
-		
+
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			tx = session.beginTransaction();
@@ -214,36 +212,104 @@ public class LegacyDAO {
 			HibernateUtil.close(session);
 		}
 	}
-	
+
 	/**
+	 * Execute HQL query
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<Object> executeHQL(final String query) throws DatabaseException {
+		log.debug("executeHQL({})", query);
+		Session session = null;
+		Transaction tx = null;
+
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			Query q = session.createQuery(query);
+			List<Object> ret = q.list();
+			HibernateUtil.commit(tx);
+			log.debug("executeHQL: {}", ret);
+			return ret;
+		} catch (Exception e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.close(session);
+		}
+	}
+
+	/**
+	 * * Execute SQL query
+	 */
+	public static List<List<String>> executeSQL(final String query) throws DatabaseException {
+		ResultWorker worker = new ResultWorker();
+		Session session = null;
+		Transaction tx = null;
+
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			worker.setSql(query);
+			session.doWork(worker);
+			HibernateUtil.commit(tx);
+		} catch (Exception e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		}
+
+		return worker.getResults();
+	}
+
+	/**
+	 /**
 	 * Utility inner class
 	 */
 	public static class ResultWorker implements Work {
-		private List<String> values = new ArrayList<String>();
+		private List<List<String>> results = new ArrayList<List<String>>();
 		private String sql = null;
-		
+
 		public void setSql(String sql) {
 			this.sql = sql;
 		}
-		
-		public List<String> getValues() {
-			return values;
+
+		public List<List<String>> getResults() {
+			return results;
 		}
-		
+
 		@Override
 		public void execute(Connection con) throws SQLException {
 			Statement st = null;
 			ResultSet rs = null;
-			
+
 			if (sql != null && !sql.isEmpty()) {
 				try {
 					st = con.createStatement();
-					rs = st.executeQuery(sql);
-					
-					while (rs.next()) {
-						values.add(rs.getString(1));
+
+					if (sql.toUpperCase().startsWith("SELECT") || sql.toUpperCase().startsWith("DESCRIBE")) {
+						rs = st.executeQuery(sql);
+						ResultSetMetaData md = rs.getMetaData();
+
+						while (rs.next()) {
+							List<String> row = new ArrayList<String>();
+
+							for (int j = 1; j < md.getColumnCount() + 1; j++) {
+								if (Types.BLOB == md.getColumnType(j)) {
+									row.add("BLOB");
+								} else {
+									if (rs.getString(j) != null) {
+										row.add(FormatUtil.escapeHtml(rs.getString(j)));
+									} else {
+										row.add(rs.getString(j));
+									}
+								}
+							}
+
+							results.add(row);
+						}
+					} else {
+						st.executeUpdate(sql);
 					}
-				} finally {	
+				} finally {
 					close(rs);
 					close(st);
 				}

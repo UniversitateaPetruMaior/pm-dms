@@ -55,11 +55,11 @@ public class Cron extends TimerTask {
 							log.debug("Id: {}, Name: {}, Mime: {}", new Object[] {ct.getId(), ct.getName(),
 									ct.getFileMime()});
 							
-							if (CronTab.BSH.equals(ct.getFileMime())) {
+							if (MimeTypeConfig.MIME_BSH.equals(ct.getFileMime())) {
 								RunnerBsh runner = new RunnerBsh(ct.getId(),ct.getName(), ct.getMail(),  
 										new String(SecureStore.b64Decode(ct.getFileContent())));
 								new Thread(runner).start();
-							} else if (CronTab.JAR.equals(ct.getFileMime())) {
+							} else if (MimeTypeConfig.MIME_JAR.equals(ct.getFileMime())) {
 								RunnerJar runner = new RunnerJar(ct.getId(), ct.getName(), ct.getMail(), 
 										SecureStore.b64Decode(ct.getFileContent()));
 								new Thread(runner).start();

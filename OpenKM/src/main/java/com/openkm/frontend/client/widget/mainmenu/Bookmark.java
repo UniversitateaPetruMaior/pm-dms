@@ -106,8 +106,7 @@ public class Bookmark {
 								if (result.getType().equals(BOOKMARK_DOCUMENT) && validPath != null
 										&& !validPath.equals("")) {
 									// Opens folder passed by parameter
-									String path = validPath.substring(0, validPath.lastIndexOf("/"));
-									CommonUI.openPath(path, validPath);
+									CommonUI.openPath(Util.getParent(validPath), validPath);
 									
 								} else if (bookmark.getType().equals(BOOKMARK_FOLDER) && validPath != null
 										&& !validPath.equals("")) {
@@ -164,8 +163,7 @@ public class Bookmark {
 							if (result.getType().equals(BOOKMARK_DOCUMENT) && validPath != null
 									&& !validPath.equals("")) {
 								// Opens folder passed by parameter
-								String path = validPath.substring(0, validPath.lastIndexOf("/"));
-								CommonUI.openPath(path, validPath);
+								CommonUI.openPath(Util.getParent(validPath), validPath);
 							} else if (bookmark.getType().equals(BOOKMARK_FOLDER) && validPath != null
 									&& !validPath.equals("")) {
 								// Opens document passed by parameter

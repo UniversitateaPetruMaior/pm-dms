@@ -75,12 +75,13 @@ public class NotificationService {
 	
 	@WebMethod
 	public void notify(@WebParam(name = "token") String token, @WebParam(name = "nodePath") String nodePath,
-			@WebParam(name = "users") String[] users, @WebParam(name = "message") String message,
-			@WebParam(name = "attachment") boolean attachment) throws PathNotFoundException, AccessDeniedException,
-			PrincipalAdapterException, RepositoryException, DatabaseException, IOException {
+			@WebParam(name = "users") String[] users, @WebParam(name = "mails") String[] mails,
+			@WebParam(name = "message") String message, @WebParam(name = "attachment") boolean attachment) throws
+			PathNotFoundException, AccessDeniedException, PrincipalAdapterException, RepositoryException,
+			DatabaseException, IOException {
 		log.debug("notify({}, {}, {}, {}, {})", new Object[] { token, nodePath, users, message, attachment });
 		NotificationModule nm = ModuleManager.getNotificationModule();
-		nm.notify(token, nodePath, Arrays.asList(users), message, attachment);
+		nm.notify(token, nodePath, Arrays.asList(users), Arrays.asList(mails), message, attachment);
 		log.debug("notify: void");
 	}
 }

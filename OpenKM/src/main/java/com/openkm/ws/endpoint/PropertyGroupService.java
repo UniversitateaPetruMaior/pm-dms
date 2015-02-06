@@ -120,6 +120,22 @@ public class PropertyGroupService {
 	}
 	
 	@WebMethod
+	public FormElementComplex[] getPropertyGroupForm(@WebParam(name = "token") String token, @WebParam(name = "grpName") String grpName) throws IOException, ParseException, NoSuchGroupException, PathNotFoundException,
+			RepositoryException, DatabaseException {
+		log.debug("getPropertyGroupForm({}, {})", new Object[] { token, grpName });
+		PropertyGroupModule cm = ModuleManager.getPropertyGroupModule();
+		List<FormElement> col = cm.getPropertyGroupForm(token, grpName);
+		FormElementComplex[] result = new FormElementComplex[col.size()];
+		
+		for (int i = 0; i < col.size(); i++) {
+			result[i] = FormElementComplex.toFormElementComplex(col.get(i));
+		}
+		
+		log.debug("getPropertyGroupForm: {}", result);
+		return result;
+	}
+	
+	@WebMethod
 	public void setProperties(@WebParam(name = "token") String token, @WebParam(name = "nodePath") String nodePath,
 			@WebParam(name = "grpName") String grpName, @WebParam(name = "properties") FormElementComplex[] properties)
 			throws IOException, ParseException, NoSuchPropertyException, NoSuchGroupException, LockException,
@@ -169,7 +185,7 @@ public class PropertyGroupService {
 					Select sel = (Select) fe;
 					
 					for (Option opt : sel.getOptions()) {
-						if (opt.equals(value)) {
+						if (opt.getValue().equals(value)) {
 							opt.setSelected(true);
 						} else {
 							opt.setSelected(false);

@@ -39,14 +39,14 @@ public class Permission implements Serializable {
 	public static final String ROLES_DELETE = "okm:authRolesDelete";
 	public static final String ROLES_SECURITY = "okm:authRolesSecurity";
 	
-	public static final int NONE = 0;
-	public static final int READ = 1;
-	public static final int WRITE = 2;
-	public static final int DELETE = 4;
-	public static final int SECURITY = 8;
+	public static final int NONE = 0;     // 0000
+	public static final int READ = 1;     // 0001
+	public static final int WRITE = 2;    // 0010
+	public static final int DELETE = 4;   // 0100
+	public static final int SECURITY = 8; // 1000
 	
 	// All grants
-	public static final int ALL_GRANTS =  READ | WRITE | DELETE | SECURITY;
+	public static final int ALL_GRANTS = READ | WRITE | DELETE | SECURITY;
 	
 	private String item;
 	private int permissions;

@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.servlet.admin;
@@ -59,6 +59,7 @@ import org.hibernate.type.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openkm.bean.DbQueryGlobalResult;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.dao.DatabaseMetadataDAO;
@@ -67,6 +68,7 @@ import com.openkm.dao.LegacyDAO;
 import com.openkm.dao.bean.DatabaseMetadataType;
 import com.openkm.dao.bean.DatabaseMetadataValue;
 import com.openkm.util.DatabaseMetadataUtils;
+import com.openkm.util.FormatUtil;
 import com.openkm.util.UserActivity;
 
 /**
@@ -77,11 +79,10 @@ public class DatabaseQueryServlet extends BaseServlet {
 	private static Logger log = LoggerFactory.getLogger(DatabaseQueryServlet.class);
 	
 	@Override
-	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException,
-			ServletException {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String method = request.getMethod();
 		
-		if (isAdmin(request)) {
+		if (checkMultipleInstancesAccess(request, response)) {
 			if (method.equals(METHOD_GET)) {
 				doGet(request, response);
 			} else if (method.equals(METHOD_POST)) {
@@ -91,8 +92,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 	}
 	
 	@Override
-	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException,
-			ServletException {
+	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		log.debug("doGet({}, {})", request, response);
 		request.setCharacterEncoding("UTF-8");
 		updateSessionManager(request);
@@ -102,15 +102,15 @@ public class DatabaseQueryServlet extends BaseServlet {
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			sc.setAttribute("qs", null);
-			//sc.setAttribute("sql", null);
 			sc.setAttribute("type", null);
+			sc.setAttribute("showSql", null);
 			sc.setAttribute("exception", null);
 			sc.setAttribute("globalResults", null);
 			sc.setAttribute("tables", listTables(session));
 			sc.setAttribute("vtables", listVirtualTables());
 			sc.getRequestDispatcher("/admin/database_query.jsp").forward(request, response);
 		} catch (Exception e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} finally {
 			HibernateUtil.close(session);
 		}
@@ -118,8 +118,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException,
-			ServletException {
+	public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		log.debug("doPost({}, {})", request, response);
 		request.setCharacterEncoding("UTF-8");
 		updateSessionManager(request);
@@ -129,9 +128,11 @@ public class DatabaseQueryServlet extends BaseServlet {
 		
 		try {
 			if (ServletFileUpload.isMultipartContent(request)) {
-				FileItemFactory factory = new DiskFileItemFactory(); 
+				FileItemFactory factory = new DiskFileItemFactory();
 				ServletFileUpload upload = new ServletFileUpload(factory);
 				List<FileItem> items = upload.parseRequest(request);
+				boolean showSql = false;
+				String vtable = "";
 				String type = "";
 				String qs = "";
 				byte[] data = null;
@@ -144,6 +145,10 @@ public class DatabaseQueryServlet extends BaseServlet {
 							qs = item.getString("UTF-8");
 						} else if (item.getFieldName().equals("type")) {
 							type = item.getString("UTF-8");
+						} else if (item.getFieldName().equals("showSql")) {
+							showSql = true;
+						} else if (item.getFieldName().equals("vtables")) {
+							vtable = item.getString("UTF-8");
 						}
 					} else {
 						data = item.get();
@@ -161,12 +166,13 @@ public class DatabaseQueryServlet extends BaseServlet {
 						// Activity log
 						UserActivity.log(user, "ADMIN_DATABASE_QUERY_JDBC", null, null, qs);
 					} else if (type.equals("hibernate")) {
-						executeHibernate(session, qs, sc, request, response);
+						executeHibernate(session, qs, showSql, sc, request, response);
 						
 						// Activity log
 						UserActivity.log(user, "ADMIN_DATABASE_QUERY_HIBERNATE", null, null, qs);
 					} else if (type.equals("metadata")) {
-						executeMetadata(session, qs, sc, request, response);
+						sc.setAttribute("vtable", vtable);
+						executeMetadata(session, qs, false, sc, request, response);
 						
 						// Activity log
 						UserActivity.log(user, "ADMIN_DATABASE_QUERY_METADATA", null, null, qs);
@@ -181,25 +187,48 @@ public class DatabaseQueryServlet extends BaseServlet {
 				} else {
 					sc.setAttribute("qs", qs);
 					sc.setAttribute("type", type);
+					sc.setAttribute("showSql", showSql);
 					sc.setAttribute("exception", null);
-					sc.setAttribute("globalResults", new ArrayList<DatabaseQueryServlet.GlobalResult>());
+					sc.setAttribute("globalResults", new ArrayList<DbQueryGlobalResult>());
 					sc.getRequestDispatcher("/admin/database_query.jsp").forward(request, response);
+				}
+			} else {
+				// Edit table cell value
+				String action = request.getParameter("action");
+				String vtable = request.getParameter("vtable");
+				String column = request.getParameter("column");
+				String value = request.getParameter("value");
+				String id = request.getParameter("id");
+				
+				if (action.equals("edit")) {
+					int idx = column.indexOf('(');
+					
+					if (idx > 0) {
+						column = column.substring(idx + 1, idx + 6);
+					}
+					
+					String hql = "update DatabaseMetadataValue dmv set dmv." + column + "='" + value + "' where dmv.table='" + vtable
+							+ "' and dmv.id=" + id;
+					log.info("HQL: {}", hql);
+					session = HibernateUtil.getSessionFactory().openSession();
+					int rows = session.createQuery(hql).executeUpdate();
+					log.info("Rows affected: {}", rows);
 				}
 			}
 		} catch (FileUploadException e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} catch (SQLException e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} catch (HibernateException e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} catch (DatabaseException e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} catch (IllegalAccessException e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} catch (InvocationTargetException e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} catch (NoSuchMethodException e) {
-			sendError(sc, request,response, e);
+			sendError(sc, request, response, e);
 		} finally {
 			HibernateUtil.close(session);
 		}
@@ -208,11 +237,11 @@ public class DatabaseQueryServlet extends BaseServlet {
 	/**
 	 * Execute metadata query
 	 */
-	private void executeMetadata(Session session, String qs, ServletContext sc, HttpServletRequest request,
-			HttpServletResponse response) throws DatabaseException, ServletException, IOException,
-			HibernateException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	private void executeMetadata(Session session, String qs, boolean showSql, ServletContext sc, HttpServletRequest request,
+			HttpServletResponse response) throws DatabaseException, ServletException, IOException, HibernateException,
+			IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		StringTokenizer st = new StringTokenizer(qs, "\n\r");
-		List<GlobalResult> globalResults = new ArrayList<DatabaseQueryServlet.GlobalResult>();
+		List<DbQueryGlobalResult> globalResults = new ArrayList<DbQueryGlobalResult>();
 		
 		// For each query line
 		while (st.hasMoreTokens()) {
@@ -227,9 +256,9 @@ public class DatabaseQueryServlet extends BaseServlet {
 						List<String> tables = Arrays.asList(parts[1].split(","));
 						hql = DatabaseMetadataUtils.replaceVirtual(tables, parts[2]);
 						log.debug("Metadata SENTENCE: {}", hql);
-						globalResults.add(executeHQL(session, hql, tables));
+						globalResults.add(executeHQL(session, hql, showSql, tables));
 					}
-				} else if (parts[0].toUpperCase().equals("SELECT")) {	
+				} else if (parts[0].toUpperCase().equals("SELECT")) {
 					if (parts.length > 2) {
 						hql = DatabaseMetadataUtils.buildQuery(parts[1], parts[2]);
 					} else {
@@ -238,7 +267,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 					}
 					
 					log.debug("Metadata SELECT: {}", hql);
-					globalResults.add(executeHQL(session, hql, Arrays.asList(parts[1])));
+					globalResults.add(executeHQL(session, hql, showSql, Arrays.asList(parts[1])));
 				} else if (parts[0].toUpperCase().equals("UPDATE")) {
 					if (parts.length > 3) {
 						hql = DatabaseMetadataUtils.buildUpdate(parts[1], parts[2], parts[3]);
@@ -251,7 +280,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 					}
 					
 					log.debug("Metadata UPDATE: {}", hql);
-					globalResults.add(executeHQL(session, hql, Arrays.asList(parts[1])));
+					globalResults.add(executeHQL(session, hql, showSql, Arrays.asList(parts[1])));
 				} else if (parts[0].toUpperCase().equals("DELETE")) {
 					if (parts.length > 2) {
 						hql = DatabaseMetadataUtils.buildDelete(parts[1], parts[2]);
@@ -261,7 +290,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 					}
 					
 					log.debug("Metadata DELETE: {}", hql);
-					globalResults.add(executeHQL(session, hql, Arrays.asList(parts[1])));
+					globalResults.add(executeHQL(session, hql, showSql, Arrays.asList(parts[1])));
 				} else {
 					throw new DatabaseException("Error in metadata action");
 				}
@@ -270,20 +299,20 @@ public class DatabaseQueryServlet extends BaseServlet {
 			}
 		}
 		
-		//sc.setAttribute("sql", HibernateUtil.toSql(qs));
 		sc.setAttribute("exception", null);
+		sc.setAttribute("showSql", showSql);
 		sc.setAttribute("globalResults", globalResults);
 		sc.getRequestDispatcher("/admin/database_query.jsp").forward(request, response);
 	}
-
+	
 	/**
 	 * Execute Hibernate query
 	 */
-	private void executeHibernate(Session session, String qs, ServletContext sc, HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException, HibernateException,
-			DatabaseException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	private void executeHibernate(Session session, String qs, boolean showSql, ServletContext sc, HttpServletRequest request,
+			HttpServletResponse response) throws ServletException, IOException, HibernateException, DatabaseException,
+			IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		StringTokenizer st = new StringTokenizer(qs, "\n\r");
-		List<GlobalResult> globalResults = new ArrayList<DatabaseQueryServlet.GlobalResult>();
+		List<DbQueryGlobalResult> globalResults = new ArrayList<DbQueryGlobalResult>();
 		
 		// For each query line
 		while (st.hasMoreTokens()) {
@@ -296,12 +325,12 @@ public class DatabaseQueryServlet extends BaseServlet {
 					tk = tk.substring(0, tk.length() - 1);
 				}
 				
-				globalResults.add(executeHQL(session, tk, null));
+				globalResults.add(executeHQL(session, tk, showSql, null));
 			}
 		}
 		
-		//sc.setAttribute("sql", HibernateUtil.toSql(qs));
 		sc.setAttribute("exception", null);
+		sc.setAttribute("showSql", showSql);
 		sc.setAttribute("globalResults", globalResults);
 		sc.getRequestDispatcher("/admin/database_query.jsp").forward(request, response);
 	}
@@ -310,7 +339,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 	 * Execute hibernate sentence
 	 */
 	@SuppressWarnings("unchecked")
-	private GlobalResult executeHQL(Session session, String hql, List<String> vtables) throws HibernateException, 
+	private DbQueryGlobalResult executeHQL(Session session, String hql, boolean showSql, List<String> vtables) throws HibernateException,
 			DatabaseException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 		long begin = System.currentTimeMillis();
 		
@@ -324,13 +353,14 @@ public class DatabaseQueryServlet extends BaseServlet {
 			int i = 0;
 			
 			if (vtables == null) {
-				for (i=0; i<rt.length; i++) {
+				for (i = 0; i < rt.length; i++) {
 					columns.add(rt[i].getName());
 				}
 			} else {
 				for (String vtable : vtables) {
-					String query = "select dmt.virtualColumn, dmt.realColumn from DatabaseMetadataType dmt where dmt.table='"+vtable+"'";
-					List<Object> tmp = LegacyDAO.executeQuery(query);
+					String query = "select dmt.virtualColumn, dmt.realColumn from DatabaseMetadataType dmt where dmt.table='" + vtable
+							+ "'";
+					List<Object> tmp = LegacyDAO.executeHQL(query);
 					
 					for (Object obj : tmp) {
 						Object[] dt = (Object[]) obj;
@@ -340,7 +370,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 				}
 			}
 			
-			for (Iterator<Object> it = ret.iterator(); it.hasNext() && i++ < Config.MAX_SEARCH_RESULTS; ) {
+			for (Iterator<Object> it = ret.iterator(); it.hasNext() && i++ < Config.MAX_SEARCH_RESULTS;) {
 				List<String> row = new ArrayList<String>();
 				Object obj = it.next();
 				
@@ -348,7 +378,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 					if (obj instanceof Object[]) {
 						Object[] ao = (Object[]) obj;
 						
-						for (int j=0; j<ao.length; j++) {
+						for (int j = 0; j < ao.length; j++) {
 							row.add(String.valueOf(ao[j]));
 						}
 					} else {
@@ -356,8 +386,11 @@ public class DatabaseQueryServlet extends BaseServlet {
 					}
 				} else {
 					if (obj instanceof DatabaseMetadataValue) {
+						DatabaseMetadataValue dmv = (DatabaseMetadataValue) obj;
+						row.add(String.valueOf(dmv.getId()));
+						
 						for (String column : vcolumns) {
-							row.add(DatabaseMetadataUtils.getString((DatabaseMetadataValue) obj, column));
+							row.add(DatabaseMetadataUtils.getString(dmv, column));
 						}
 					} else if (obj instanceof Object[]) {
 						for (Object objChild : (Object[]) obj) {
@@ -384,15 +417,16 @@ public class DatabaseQueryServlet extends BaseServlet {
 				results.add(row);
 			}
 			
-			GlobalResult gr = new GlobalResult();
+			DbQueryGlobalResult gr = new DbQueryGlobalResult();
 			gr.setColumns(columns);
 			gr.setResults(results);
 			gr.setRows(null);
 			gr.setSql(hql);
+			gr.setExtra(showSql ? HibernateUtil.toSql(hql) : null);
 			gr.setTime(System.currentTimeMillis() - begin);
 			return gr;
 		} else {
-			GlobalResult gr = new GlobalResult();
+			DbQueryGlobalResult gr = new DbQueryGlobalResult();
 			int rows = session.createQuery(hql).executeUpdate();
 			gr.setColumns(null);
 			gr.setResults(null);
@@ -406,13 +440,13 @@ public class DatabaseQueryServlet extends BaseServlet {
 	/**
 	 * Execute JDBC query
 	 */
-	private void executeJdbc(Session session, String qs, ServletContext sc, HttpServletRequest request, 
-			HttpServletResponse response) throws SQLException, ServletException, IOException {
+	private void executeJdbc(Session session, String qs, ServletContext sc, HttpServletRequest request, HttpServletResponse response)
+			throws SQLException, ServletException, IOException {
 		WorkerJdbc worker = new WorkerJdbc();
 		worker.setQueryString(qs);
 		session.doWork(worker);
 		
-		//sc.setAttribute("sql", null);
+		sc.setAttribute("showSql", null);
 		sc.setAttribute("exception", null);
 		sc.setAttribute("globalResults", worker.getGlobalResults());
 		sc.getRequestDispatcher("/admin/database_query.jsp").forward(request, response);
@@ -421,15 +455,15 @@ public class DatabaseQueryServlet extends BaseServlet {
 	/**
 	 * Import into database
 	 */
-	private void executeUpdate(Session session, byte[] data, ServletContext sc, HttpServletRequest request, 
-			HttpServletResponse response) throws SQLException, ServletException, IOException {
+	private void executeUpdate(Session session, byte[] data, ServletContext sc, HttpServletRequest request, HttpServletResponse response)
+			throws SQLException, ServletException, IOException {
 		log.debug("executeUpdate({}, {}, {})", new Object[] { session, request, response });
-		List<GlobalResult> globalResults = new ArrayList<DatabaseQueryServlet.GlobalResult>();
+		List<DbQueryGlobalResult> globalResults = new ArrayList<DbQueryGlobalResult>();
 		WorkerUpdate worker = new WorkerUpdate();
 		worker.setData(data);
 		session.doWork(worker);
 		
-		GlobalResult gr = new GlobalResult();
+		DbQueryGlobalResult gr = new DbQueryGlobalResult();
 		gr.setColumns(null);
 		gr.setResults(null);
 		gr.setSql(null);
@@ -439,6 +473,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 		
 		sc.setAttribute("qs", null);
 		sc.setAttribute("type", null);
+		sc.setAttribute("showSql", null);
 		sc.setAttribute("globalResults", globalResults);
 		sc.getRequestDispatcher("/admin/database_query.jsp").forward(request, response);
 		
@@ -451,28 +486,25 @@ public class DatabaseQueryServlet extends BaseServlet {
 	private List<String> listTables(Session session) {
 		final List<String> tables = new ArrayList<String>();
 		final String[] tableTypes = { "TABLE" };
-		final String[] tablePatterns = new String[] {
-				"JBPM_%", "OKM_%", "DEFAULT_%", "VERSION_%",
-				"jbpm_%", "okm_%", "default_%", "version_%" };
+		final String[] tablePatterns = new String[] { "JBPM_%", "OKM_%", "DEFAULT_%", "VERSION_%", "jbpm_%", "okm_%", "default_%",
+				"version_%" };
 		
-		session.doWork(
-			new Work() {
-				@Override
-				public void execute(Connection con) throws SQLException {
-					DatabaseMetaData md = con.getMetaData();
+		session.doWork(new Work() {
+			@Override
+			public void execute(Connection con) throws SQLException {
+				DatabaseMetaData md = con.getMetaData();
+				
+				for (String table : tablePatterns) {
+					ResultSet rs = md.getTables(null, null, table, tableTypes);
 					
-					for (String table : tablePatterns) {
-						ResultSet rs = md.getTables(null, null, table, tableTypes);
-						
-						while (rs.next()) {
-							tables.add(rs.getString(3));
-						}
-						
-						rs.close();
+					while (rs.next()) {
+						tables.add(rs.getString(3));
 					}
+					
+					rs.close();
 				}
 			}
-		);
+		});
 		
 		return tables;
 	}
@@ -482,7 +514,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 	 */
 	private List<String> listVirtualTables() throws DatabaseException {
 		String query = "select distinct(dmv.table) from DatabaseMetadataType dmv order by dmv.table";
-		List<Object> tmp = LegacyDAO.executeQuery(query);
+		List<Object> tmp = LegacyDAO.executeHQL(query);
 		List<String> tables = new ArrayList<String>();
 		
 		for (Object obj : tmp) {
@@ -495,81 +527,21 @@ public class DatabaseQueryServlet extends BaseServlet {
 	/**
 	 * Send error to be displayed inline
 	 */
-	protected void sendError(ServletContext sc, HttpServletRequest request, HttpServletResponse response, 
-			Exception e) throws ServletException, IOException {
+	protected void sendError(ServletContext sc, HttpServletRequest request, HttpServletResponse response, Exception e)
+			throws ServletException, IOException {
 		sc.setAttribute("exception", e);
 		sc.setAttribute("globalResults", null);
 		sc.getRequestDispatcher("/admin/database_query.jsp").forward(request, response);
 	}
 	
 	/**
-	 * Container helper class
-	 */
-	public class GlobalResult {
-		private List<HashMap<String, String>> errors = new ArrayList<HashMap<String, String>>();
-		private List<List<String>> results = new ArrayList<List<String>>();
-		private List<String> columns = new ArrayList<String>();
-		private Integer rows = new Integer(0);
-		private String sql = new String();
-		private Long time = new Long(0);
-		
-		public List<String> getColumns() {
-			return columns;
-		}
-		
-		public void setColumns(List<String> columns) {
-			this.columns = columns;
-		}
-		
-		public List<List<String>> getResults() {
-			return results;
-		}
-		
-		public void setResults(List<List<String>> results) {
-			this.results = results;
-		}
-		
-		public Integer getRows() {
-			return rows;
-		}
-		
-		public void setRows(Integer rows) {
-			this.rows = rows;
-		}
-
-		public String getSql() {
-			return sql;
-		}
-
-		public void setSql(String sql) {
-			this.sql = sql;
-		}
-		
-		public Long getTime() {
-			return time;
-		}
-
-		public void setTime(Long time) {
-			this.time = time;
-		}
-
-		public List<HashMap<String, String>> getErrors() {
-			return errors;
-		}
-
-		public void setErrors(List<HashMap<String, String>> errors) {
-			this.errors = errors;
-		}
-	}
-	
-	/**
 	 * Hibernate worker helper
 	 */
 	public class WorkerJdbc implements Work {
-		List<GlobalResult> globalResults = new ArrayList<DatabaseQueryServlet.GlobalResult>();
+		List<DbQueryGlobalResult> globalResults = new ArrayList<DbQueryGlobalResult>();
 		String qs = null;
 		
-		List<GlobalResult> getGlobalResults() {
+		List<DbQueryGlobalResult> getGlobalResults() {
 			return this.globalResults;
 		}
 		
@@ -608,43 +580,49 @@ public class DatabaseQueryServlet extends BaseServlet {
 								List<String> columns = new ArrayList<String>();
 								List<List<String>> results = new ArrayList<List<String>>();
 								
-								for (int i=1; i<md.getColumnCount()+1; i++) {
+								for (int i = 1; i < md.getColumnCount() + 1; i++) {
 									columns.add(md.getColumnName(i));
 								}
 								
-								for (int i=0; rs.next() && i++ < Config.MAX_SEARCH_RESULTS; ) {
+								for (int i = 0; rs.next() && i++ < Config.MAX_SEARCH_RESULTS;) {
 									List<String> row = new ArrayList<String>();
 									
-									for (int j=1; j<md.getColumnCount()+1; j++) {
+									for (int j = 1; j < md.getColumnCount() + 1; j++) {
 										if (Types.BLOB == md.getColumnType(j)) {
 											row.add("BLOB");
 										} else {
-											row.add(rs.getString(j));
+											if (rs.getString(j) != null) {
+												row.add(FormatUtil.escapeHtml(rs.getString(j)));
+											} else {
+												row.add(rs.getString(j));
+											}
 										}
 									}
 									
 									results.add(row);
 								}
 								
-								GlobalResult gr = new GlobalResult();
+								DbQueryGlobalResult gr = new DbQueryGlobalResult();
 								gr.setColumns(columns);
 								gr.setResults(results);
+								gr.setExtra(null);
 								gr.setRows(null);
 								gr.setSql(tk);
 								gr.setTime(System.currentTimeMillis() - begin);
 								globalResults.add(gr);
 							} else {
-								GlobalResult gr = new GlobalResult();
+								DbQueryGlobalResult gr = new DbQueryGlobalResult();
 								int rows = stmt.executeUpdate(tk);
 								gr.setColumns(null);
 								gr.setResults(null);
+								gr.setExtra(null);
 								gr.setRows(rows);
 								gr.setSql(tk);
 								gr.setTime(System.currentTimeMillis() - begin);
 								globalResults.add(gr);
 							}
 						} catch (SQLException e) {
-							GlobalResult gr = new GlobalResult();
+							DbQueryGlobalResult gr = new DbQueryGlobalResult();
 							List<HashMap<String, String>> errors = new ArrayList<HashMap<String, String>>();
 							HashMap<String, String> error = new HashMap<String, String>();
 							error.put("ln", Integer.toString(ln));
@@ -654,6 +632,7 @@ public class DatabaseQueryServlet extends BaseServlet {
 							gr.setErrors(errors);
 							gr.setRows(null);
 							gr.setSql(null);
+							gr.setExtra(null);
 							gr.setColumns(null);
 							gr.setResults(null);
 							globalResults.add(gr);

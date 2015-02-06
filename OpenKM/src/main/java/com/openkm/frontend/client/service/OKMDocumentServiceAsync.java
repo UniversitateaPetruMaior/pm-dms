@@ -26,37 +26,63 @@ import java.util.Map;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.openkm.frontend.client.bean.GWTDocument;
+import com.openkm.frontend.client.bean.GWTExtendedAttributes;
 import com.openkm.frontend.client.bean.GWTVersion;
 import com.openkm.frontend.client.bean.form.GWTFormElement;
+import com.openkm.frontend.client.widget.filebrowser.GWTFilter;
 
 /**
  * @author jllort
- *
  */
 public interface OKMDocumentServiceAsync {
-	public void getChilds(String fldPath, AsyncCallback<List<GWTDocument>> callback);
+	public void getChilds(String fldPath, Map<String, GWTFilter> mapFilter, AsyncCallback<List<GWTDocument>> callback);
+	
 	public void getVersionHistory(String docPath, AsyncCallback<List<GWTVersion>> callback);
+	
 	public void delete(String docPath, AsyncCallback<?> callback);
+	
 	public void checkout(String docPath, AsyncCallback<?> callback);
-	public void cancelCheckout (String docPath, AsyncCallback<?> callback);
+	
+	public void cancelCheckout(String docPath, AsyncCallback<?> callback);
+	
 	public void lock(String docPath, AsyncCallback<?> callback);
+	
 	public void unlock(String docPath, AsyncCallback<?> callback);
+	
 	public void rename(String docPath, String newName, AsyncCallback<GWTDocument> callback);
+	
 	public void move(String docPath, String destPath, AsyncCallback<?> callback);
+	
 	public void purge(String docPath, AsyncCallback<?> callback);
+	
 	public void restoreVersion(String docPath, String versionId, AsyncCallback<?> callback);
+	
 	public void get(String docPath, AsyncCallback<GWTDocument> callback);
+	
 	public void copy(String docPath, String fldPath, AsyncCallback<?> callback);
+	
 	public void isValid(String docPath, AsyncCallback<Boolean> callback);
+	
 	public void getVersionHistorySize(String docPath, AsyncCallback<Long> callback);
+	
 	public void purgeVersionHistory(String docPath, AsyncCallback<?> callback);
+	
 	public void forceUnlock(String docPath, AsyncCallback<?> callback);
+	
 	public void forceCancelCheckout(String docPath, AsyncCallback<?> callback);
+	
 	public void createFromTemplate(String docPath, String destinationPath, List<GWTFormElement> formProperties,
-			Map<String, List<Map<String,String>>> tableProperties, AsyncCallback<GWTDocument> callback);
+			Map<String, List<Map<String, String>>> tableProperties, AsyncCallback<GWTDocument> callback);
+	
 	public void updateFromTemplate(String docPath, String destinationPath, List<GWTFormElement> formProperties,
-			Map<String, List<Map<String,String>>> tableProperties, AsyncCallback<String> callback);
+			Map<String, List<Map<String, String>>> tableProperties, AsyncCallback<String> callback);
+	
 	public void convertToPdf(String docPath, AsyncCallback<String> callback);
+	
+	public void mergePdf(String docName, List<String> paths, AsyncCallback<?> callback);
+	
 	public void getAllTemplates(AsyncCallback<List<GWTDocument>> callback);
-	public void createFromTemplate(String tplPath, String fldPath, String newName, AsyncCallback<GWTDocument> callback);
+	
+	public void createFromTemplate(String docPath, String fldPath, String name, GWTExtendedAttributes attributes,
+			AsyncCallback<Object> callback);
 }

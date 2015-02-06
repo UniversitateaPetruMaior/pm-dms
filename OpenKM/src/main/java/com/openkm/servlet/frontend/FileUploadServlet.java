@@ -1,6 +1,5 @@
 package com.openkm.servlet.frontend;
 
-import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,15 +32,12 @@ import org.slf4j.LoggerFactory;
 
 import com.auxilii.msgparser.Message;
 import com.auxilii.msgparser.MsgParser;
-import com.auxilii.msgparser.attachment.Attachment;
-import com.auxilii.msgparser.attachment.FileAttachment;
 import com.google.gson.Gson;
 import com.openkm.api.OKMAuth;
 import com.openkm.api.OKMDocument;
 import com.openkm.api.OKMFolder;
 import com.openkm.api.OKMMail;
 import com.openkm.api.OKMNotification;
-import com.openkm.api.OKMRepository;
 import com.openkm.automation.AutomationException;
 import com.openkm.bean.Document;
 import com.openkm.bean.FileUploadResponse;
@@ -104,6 +100,7 @@ public class FileUploadServlet extends OKMHttpServlet {
 		boolean importZip = false;
 		boolean autoCheckOut = false;
 		String users = null;
+		String mails = null;
 		String roles = null;
 		String message = null;
 		String comment = null;
@@ -111,6 +108,7 @@ public class FileUploadServlet extends OKMHttpServlet {
 		String rename = null;
 		PrintWriter out = null;
 		String uploadedUuid = null;
+		int increaseVersion = 0;
 		java.io.File tmp = null;
 		boolean redirect = false;
 		boolean convertToPdf = false;
@@ -141,62 +139,43 @@ public class FileUploadServlet extends OKMHttpServlet {
 				upload.setProgressListener(listener);
 				List<FileItem> items = upload.parseRequest(request);
 				
-				// Parse the request and get all parameters and the uploaded file
+				// Parse the request and get all parameters and the uploaded
+				// file
 				for (Iterator<FileItem> it = items.iterator(); it.hasNext();) {
 					FileItem item = it.next();
 					
 					if (item.isFormField()) {
 						if (item.getFieldName().equals("path")) {
 							path = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("action")) {
+						} else if (item.getFieldName().equals("action")) {
 							action = Integer.parseInt(item.getString("UTF-8"));
-						}
-						
-						if (item.getFieldName().equals("users")) {
+						} else if (item.getFieldName().equals("users")) {
 							users = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("roles")) {
+						} else if (item.getFieldName().equals("mails")) {
+							mails = item.getString("UTF-8");
+						} else if (item.getFieldName().equals("roles")) {
 							roles = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("notify")) {
+						} else if (item.getFieldName().equals("notify")) {
 							notify = true;
-						}
-						
-						if (item.getFieldName().equals("importZip")) {
+						} else if (item.getFieldName().equals("importZip")) {
 							importZip = true;
-						}
-						
-						if (item.getFieldName().equals("autoCheckOut")) {
+						} else if (item.getFieldName().equals("autoCheckOut")) {
 							autoCheckOut = true;
-						}
-						
-						if (item.getFieldName().equals("message")) {
+						} else if (item.getFieldName().equals("message")) {
 							message = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("comment")) {
+						} else if (item.getFieldName().equals("comment")) {
 							comment = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("folder")) {
+						} else if (item.getFieldName().equals("folder")) {
 							folder = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("rename")) {
+						} else if (item.getFieldName().equals("rename")) {
 							rename = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("redirect")) {
+						} else if (item.getFieldName().equals("redirect")) {
 							redirect = true;
 							redirectURL = item.getString("UTF-8");
-						}
-						
-						if (item.getFieldName().equals("convertToPdf")) {
+						} else if (item.getFieldName().equals("convertToPdf")) {
 							convertToPdf = true;
+						} else if (item.getFieldName().equals("increaseVersion")) {
+							increaseVersion = Integer.parseInt(item.getString("UTF-8"));
 						}
 					} else {
 						fileName = item.getName();
@@ -214,7 +193,8 @@ public class FileUploadServlet extends OKMHttpServlet {
 						// The rename contains filename + extension
 						fileName = rename;
 					} else {
-						// The rename only contains filename, so get extension from uploaded file
+						// The rename only contains filename, so get extension
+						// from uploaded file
 						String ext = FilenameUtils.getExtension(fileName);
 						
 						if (ext.equals("")) {
@@ -253,26 +233,14 @@ public class FileUploadServlet extends OKMHttpServlet {
 							}
 						} else if (FilenameUtils.getExtension(fileName).equalsIgnoreCase("eml")) {
 							log.debug("import EML file '{}' into '{}'", fileName, path);
-							String erroMsg = importEml(path, is);
-							
-							if (erroMsg == null) {
-								sendResponse(out, action, fuResponse.get());
-							} else {
-								log.warn("erroMsg: {}", erroMsg);
-								fuResponse.get().setError(erroMsg);
-								sendResponse(out, action, fuResponse.get());
-							}
+							Mail mail = importEml(path, is);
+							fuResponse.get().setPath(mail.getPath());
+							sendResponse(out, action, fuResponse.get());
 						} else if (FilenameUtils.getExtension(fileName).equalsIgnoreCase("msg")) {
 							log.debug("import MSG file '{}' into '{}'", fileName, path);
-							String erroMsg = importMsg(path, is);
-							
-							if (erroMsg == null) {
-								sendResponse(out, action, fuResponse.get());
-							} else {
-								log.warn("erroMsg: {}", erroMsg);
-								fuResponse.get().setError(erroMsg);
-								sendResponse(out, action, fuResponse.get());
-							}
+							Mail mail = importMsg(path, is);
+							fuResponse.get().setPath(mail.getPath());
+							sendResponse(out, action, fuResponse.get());
 						} else {
 							fileName = FilenameUtils.getName(fileName);
 							log.debug("Upload file '{}' into '{} ({})'", new Object[] { fileName, path, FormatUtil.formatSize(size) });
@@ -323,7 +291,8 @@ public class FileUploadServlet extends OKMHttpServlet {
 								log.debug("Wizard: {}", fuResponse);
 							}
 							
-							// Return the path of the inserted document in response
+							// Return the path of the inserted document in
+							// response
 							sendResponse(out, action, fuResponse.get());
 						}
 					}
@@ -340,7 +309,7 @@ public class FileUploadServlet extends OKMHttpServlet {
 						}
 						
 						if (Config.REPOSITORY_NATIVE) {
-							new DbDocumentModule().checkin(null, path, is, size, comment, null);
+							new DbDocumentModule().checkin(null, path, is, size, comment, null, increaseVersion);
 							fuResponse.get().setPath(path);
 							uploadedUuid = doc.getUuid();
 						} else {
@@ -364,10 +333,12 @@ public class FileUploadServlet extends OKMHttpServlet {
 					sendResponse(out, action, fuResponse.get());
 				}
 				
-				listener.setUploadFinish(true); // Mark uploading operation has finished
+				// Mark uploading operation has finished
+				listener.setUploadFinish(true);
 				
-				// If the document have been added to the repository, perform user notification
-				if ((action == UIFileUploadConstants.ACTION_INSERT || action == UIFileUploadConstants.ACTION_UPDATE) & notify) {
+				// If the document have been added to the repository, perform user notification if has no error
+				if ((action == UIFileUploadConstants.ACTION_INSERT || action == UIFileUploadConstants.ACTION_UPDATE) && notify
+						&& fuResponse.get().getError().equals("")) {
 					List<String> userNames = new ArrayList<String>(Arrays.asList(users.isEmpty() ? new String[0] : users.split(",")));
 					List<String> roleNames = new ArrayList<String>(Arrays.asList(roles.isEmpty() ? new String[0] : roles.split(",")));
 					
@@ -382,7 +353,8 @@ public class FileUploadServlet extends OKMHttpServlet {
 					}
 					
 					String notifyPath = URLDecoder.decode(fuResponse.get().getPath(), "UTF-8");
-					OKMNotification.getInstance().notify(null, notifyPath, userNames, message, false);
+					List<String> mailList = MailUtils.parseMailList(mails);
+					OKMNotification.getInstance().notify(null, notifyPath, userNames, mailList, message, false);
 				}
 				
 				// After uploading redirects to some URL
@@ -394,7 +366,7 @@ public class FileUploadServlet extends OKMHttpServlet {
 					sc.setAttribute("uuid", uploadedUuid);
 					sc.getRequestDispatcher(redirectURL).forward(request, response);
 				}
-			}
+			} 
 		} catch (AccessDeniedException e) {
 			fuResponse.get().setError(ErrorCode.get(ErrorCode.ORIGIN_OKMUploadService, ErrorCode.CAUSE_AccessDenied));
 			sendErrorResponse(out, action, fuResponse.get(), request, response, redirect, redirectURL);
@@ -513,8 +485,8 @@ public class FileUploadServlet extends OKMHttpServlet {
 			
 			// Import files
 			StringWriter out = new StringWriter();
-			ImpExpStats stats = RepositoryImporter.importDocuments(null, tmpOut, path, false, false, false, out,
-					new TextInfoDecorator(tmpOut));
+			ImpExpStats stats = RepositoryImporter.importDocuments(null, tmpOut, path, false, false, false, out, new TextInfoDecorator(
+					tmpOut));
 			
 			if (!stats.isOk()) {
 				errorMsg = out.toString();
@@ -567,8 +539,8 @@ public class FileUploadServlet extends OKMHttpServlet {
 			
 			// Import files
 			StringWriter out = new StringWriter();
-			ImpExpStats stats = RepositoryImporter.importDocuments(null, tmpOut, path, false, false, false, out,
-					new TextInfoDecorator(tmpOut));
+			ImpExpStats stats = RepositoryImporter.importDocuments(null, tmpOut, path, false, false, false, out, new TextInfoDecorator(
+					tmpOut));
 			if (!stats.isOk()) {
 				errorMsg = out.toString();
 			}
@@ -596,15 +568,14 @@ public class FileUploadServlet extends OKMHttpServlet {
 	/**
 	 * Import EML file as MailNode.
 	 */
-	private String importEml(String path, InputStream is) throws MessagingException, PathNotFoundException,
-			ItemExistsException, VirusDetectedException, AccessDeniedException, RepositoryException, DatabaseException,
-			UserQuotaExceededException, UnsupportedMimeTypeException, FileSizeExceededException, ExtensionException,
-			AutomationException, IOException {
+	private Mail importEml(String path, InputStream is) throws MessagingException, PathNotFoundException, ItemExistsException,
+			VirusDetectedException, AccessDeniedException, RepositoryException, DatabaseException, UserQuotaExceededException,
+			UnsupportedMimeTypeException, FileSizeExceededException, ExtensionException, AutomationException, IOException {
 		log.debug("importEml({}, {})", path, is);
 		Properties props = System.getProperties();
-        props.put("mail.host", "smtp.dummydomain.com");
-        props.put("mail.transport.protocol", "smtp");
-		String errorMsg = null;
+		props.put("mail.host", "smtp.dummydomain.com");
+		props.put("mail.transport.protocol", "smtp");
+		Mail newMail = null;
 		
 		try {
 			// Convert file
@@ -612,11 +583,12 @@ public class FileUploadServlet extends OKMHttpServlet {
 			MimeMessage msg = new MimeMessage(mailSession, is);
 			Mail mail = MailUtils.messageToMail(msg);
 			
-			// Create phantom path. In this case we don't have the IMAP message ID, son create a random one.
+			// Create phantom path. In this case we don't have the IMAP message
+			// ID, son create a random one.
 			mail.setPath(path + "/" + UUID.randomUUID().toString() + "-" + PathUtils.escape(mail.getSubject()));
 			
 			// Import files
-			OKMMail.getInstance().create(null, mail);
+			newMail = OKMMail.getInstance().create(null, mail);
 			MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
 		} catch (IOException e) {
 			log.error("Error importing eml", e);
@@ -625,19 +597,18 @@ public class FileUploadServlet extends OKMHttpServlet {
 			IOUtils.closeQuietly(is);
 		}
 		
-		log.debug("importEml: {}", errorMsg);
-		return errorMsg;
+		log.debug("importEml: {}", newMail);
+		return newMail;
 	}
 	
 	/**
 	 * Import MSG file as MailNode.
 	 */
-	private String importMsg(String path, InputStream is) throws MessagingException, PathNotFoundException,
-			ItemExistsException, VirusDetectedException, AccessDeniedException, RepositoryException, DatabaseException,
-			UserQuotaExceededException, UnsupportedMimeTypeException, FileSizeExceededException, ExtensionException,
-			AutomationException, IOException {
+	private Mail importMsg(String path, InputStream is) throws MessagingException, PathNotFoundException, ItemExistsException,
+			VirusDetectedException, AccessDeniedException, RepositoryException, DatabaseException, UserQuotaExceededException,
+			UnsupportedMimeTypeException, FileSizeExceededException, ExtensionException, AutomationException, IOException {
 		log.debug("importMsg({}, {})", path, is);
-		String errorMsg = null;
+		Mail newMail = null;
 		
 		try {
 			// Convert file
@@ -649,38 +620,8 @@ public class FileUploadServlet extends OKMHttpServlet {
 			mail.setPath(path + "/" + UUID.randomUUID().toString() + "-" + PathUtils.escape(mail.getSubject()));
 			
 			// Import files
-			OKMMail.getInstance().create(null, mail);
-			
-			for (Attachment att : msg.getAttachments()) {
-				if (att instanceof FileAttachment) {
-					FileAttachment fileAtt = (FileAttachment) att;
-					log.debug("Importing attachment: {}", fileAtt.getFilename());
-					
-					String fileName = fileAtt.getFilename();
-					String fileExtension = fileAtt.getExtension();
-					String testName = fileName + "." + fileExtension;
-					
-					// Test if already exists a document with the same name in the mail
-					for (int j = 1; OKMRepository.getInstance().hasNode(null, mail.getPath() + "/" + testName); j++) {
-						// log.debug("Trying with: {}", testName);
-						testName = fileName + " (" + j + ")." + fileExtension;
-					}
-					
-					Document attachment = new Document();
-					String mimeType = MimeTypeConfig.mimeTypes.getContentType(testName.toLowerCase());
-					attachment.setMimeType(mimeType);
-					attachment.setPath(mail.getPath() + "/" + testName);
-					ByteArrayInputStream bais = new ByteArrayInputStream(fileAtt.getData());
-					
-					if (Config.REPOSITORY_NATIVE) {
-						new DbDocumentModule().create(null, attachment, bais, fileAtt.getSize(), PrincipalUtils.getUser());
-					} else {
-						new JcrDocumentModule().create(null, attachment, bais, PrincipalUtils.getUser());
-					}
-					
-					IOUtils.closeQuietly(bais);
-				}
-			}
+			newMail = OKMMail.getInstance().create(null, mail);
+            MailUtils.addAttachments(null, mail, msg, PrincipalUtils.getUser());
 		} catch (IOException e) {
 			log.error("Error importing msg", e);
 			throw e;
@@ -688,7 +629,7 @@ public class FileUploadServlet extends OKMHttpServlet {
 			IOUtils.closeQuietly(is);
 		}
 		
-		log.debug("importMsg: {}", errorMsg);
-		return errorMsg;
+		log.debug("importMsg: {}", newMail);
+		return newMail;
 	}
 }

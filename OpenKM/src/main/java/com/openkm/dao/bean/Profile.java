@@ -29,7 +29,7 @@ public class Profile implements Serializable {
 	private String name;
 	private boolean active;
 	private ProfileChat prfChat = new ProfileChat();
-	private ProfileExplorer prfExplorer = new ProfileExplorer();
+	private ProfilePagination prfPagination = new ProfilePagination();
 	private ProfileDashboard prfDashboard = new ProfileDashboard();
 	private ProfileMenu prfMenu = new ProfileMenu();
 	private ProfileMisc prfMisc = new ProfileMisc();
@@ -71,12 +71,12 @@ public class Profile implements Serializable {
 		this.prfChat = prfChat;
 	}
 	
-	public ProfileExplorer getPrfExplorer() {
-		return prfExplorer;
+	public ProfilePagination getPrfPagination() {
+		return prfPagination;
 	}
 
-	public void setPrfExplorer(ProfileExplorer prfExplorer) {
-		this.prfExplorer = prfExplorer;
+	public void setPrfPagination(ProfilePagination prfPagination) {
+		this.prfPagination = prfPagination;
 	}
 
 	public ProfileDashboard getPrfDashboard() {
@@ -150,7 +150,7 @@ public class Profile implements Serializable {
 		sb.append(", name="); sb.append(name);
 		sb.append(", active="); sb.append(active);
 		sb.append(", prfChat="); sb.append(prfChat);
-		sb.append(", prfExplorer="); sb.append(prfExplorer);
+		sb.append(", prfPagination="); sb.append(prfPagination);
 		sb.append(", prfDashboard="); sb.append(prfDashboard);
 		sb.append(", prfMenu="); sb.append(prfMenu);
 		sb.append(", prfMisc="); sb.append(prfMisc);

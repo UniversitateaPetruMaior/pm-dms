@@ -58,10 +58,12 @@ public class CssServlet extends BaseServlet {
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String method = request.getMethod();
 		
-		if (method.equals(METHOD_GET)) {
-			doGet(request, response);
-		} else if (method.equals(METHOD_POST)) {
-			doPost(request, response);
+		if (checkMultipleInstancesAccess(request, response)) {
+			if (method.equals(METHOD_GET)) {
+				doGet(request, response);
+			} else if (method.equals(METHOD_POST)) {
+				doPost(request, response);
+			}
 		}
 	}
 	

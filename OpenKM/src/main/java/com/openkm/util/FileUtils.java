@@ -28,6 +28,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -102,6 +105,34 @@ public class FileUtils {
 	 */
 	public static boolean deleteQuietly(File file) {
 		return org.apache.commons.io.FileUtils.deleteQuietly(file);
+	}
+	
+	/**
+	 * Wrapper for FileUtils.cleanDirectory
+	 * 
+	 * @param file File or directory to be deleted.
+	 */
+	public static void cleanDirectory(File directory) throws IOException {
+		org.apache.commons.io.FileUtils.cleanDirectory(directory);
+	}
+	
+	/**
+	 * Wrapper for FileUtils.listFiles
+	 * 
+	 * @param file File or directory to be listed.
+	 */
+	@SuppressWarnings("unchecked")
+	public static Collection<File> listFiles(File directory, String[] extensions, boolean recursive) {
+		return org.apache.commons.io.FileUtils.listFiles(directory, extensions, recursive);
+	}
+	
+	/**
+	 * Wrapper for FileUtils.readFileToByteArray
+	 * 
+	 * @param file File or directory to be deleted.
+	 */
+	public static byte[] readFileToByteArray(File file) throws IOException {
+		return org.apache.commons.io.FileUtils.readFileToByteArray(file);
 	}
 	
 	/**
@@ -195,5 +226,19 @@ public class FileUtils {
 	 */
 	public static void copy(File input, File output) throws IOException {
 		org.apache.commons.io.FileUtils.copyFile(input, output);
+	}
+	
+	/**
+	 * Create "year / month / day" directory structure. 
+	 */
+	public static File createDateDir(String parent) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy" + File.separator + "MM" + File.separator + "dd");
+		File dateDir = new File(parent, sdf.format(new Date()));
+		
+		if (!dateDir.exists()) {
+			dateDir.mkdirs();
+		}
+		
+		return dateDir;
 	}
 }

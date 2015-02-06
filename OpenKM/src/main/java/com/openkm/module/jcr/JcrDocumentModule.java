@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.jcr;
@@ -39,16 +39,17 @@ import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.api.XASession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.LockInfo;
 import com.openkm.bean.Repository;
 import com.openkm.bean.Version;
-import com.openkm.cache.UserItemsManager;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
@@ -89,9 +90,8 @@ public class JcrDocumentModule implements DocumentModule {
 	private static Logger log = LoggerFactory.getLogger(JcrDocumentModule.class);
 	
 	@Override
-	public Document create(String token, Document doc, InputStream is) throws UnsupportedMimeTypeException, 
-			FileSizeExceededException, UserQuotaExceededException, VirusDetectedException, 
-			ItemExistsException, PathNotFoundException, AccessDeniedException, 
+	public Document create(String token, Document doc, InputStream is) throws UnsupportedMimeTypeException, FileSizeExceededException,
+			UserQuotaExceededException, VirusDetectedException, ItemExistsException, PathNotFoundException, AccessDeniedException,
 			RepositoryException, IOException, DatabaseException, ExtensionException {
 		log.debug("create({}, {}, {})", new Object[] { token, doc, is });
 		return create(token, doc, is, null);
@@ -100,10 +100,9 @@ public class JcrDocumentModule implements DocumentModule {
 	/**
 	 * Used when importing mail with attachments
 	 */
-	public Document create(String token, Document doc, InputStream is, String userId) throws 
-			UnsupportedMimeTypeException, FileSizeExceededException, UserQuotaExceededException,
-			VirusDetectedException, ItemExistsException, PathNotFoundException, AccessDeniedException, 
-			RepositoryException, IOException, DatabaseException, ExtensionException {
+	public Document create(String token, Document doc, InputStream is, String userId) throws UnsupportedMimeTypeException,
+			FileSizeExceededException, UserQuotaExceededException, VirusDetectedException, ItemExistsException, PathNotFoundException,
+			AccessDeniedException, RepositoryException, IOException, DatabaseException, ExtensionException {
 		log.debug("create({}, {}, {}, {})", new Object[] { token, doc, is, userId });
 		Document newDocument = null;
 		Node parentNode = null;
@@ -119,7 +118,7 @@ public class JcrDocumentModule implements DocumentModule {
 		
 		// Add to KEA - must have the same extension
 		int idx = name.lastIndexOf('.');
-		String fileExtension = idx>0 ? name.substring(idx) : ".tmp";
+		String fileExtension = idx > 0 ? name.substring(idx) : ".tmp";
 		File tmp = File.createTempFile("okm", fileExtension);
 		
 		try {
@@ -130,12 +129,11 @@ public class JcrDocumentModule implements DocumentModule {
 			}
 			
 			if (Config.MAX_FILE_SIZE > 0 && size > Config.MAX_FILE_SIZE) {
-				log.error("Uploaded file size: {} ({}), Max file size: {} ({})", new Object[] {
-						FormatUtil.formatSize(size), size, FormatUtil.formatSize(Config.MAX_FILE_SIZE),
-						Config.MAX_FILE_SIZE });
+				log.error("Uploaded file size: {} ({}), Max file size: {} ({})", new Object[] { FormatUtil.formatSize(size), size,
+						FormatUtil.formatSize(Config.MAX_FILE_SIZE), Config.MAX_FILE_SIZE });
 				String usr = userId == null ? session.getUserID() : userId;
-				UserActivity.log(usr, "ERROR_FILE_SIZE_EXCEEDED", null, doc.getPath(), Integer.toString(size));
-				throw new FileSizeExceededException(Integer.toString(size));
+				UserActivity.log(usr, "ERROR_FILE_SIZE_EXCEEDED", null, doc.getPath(), FormatUtil.formatSize(size));
+				throw new FileSizeExceededException(FormatUtil.formatSize(size));
 			}
 			
 			// Escape dangerous chars in name
@@ -154,7 +152,7 @@ public class JcrDocumentModule implements DocumentModule {
 			}
 			
 			// Manage temporary files
-			byte[] buff = new byte[4*1024];
+			byte[] buff = new byte[4 * 1024];
 			FileOutputStream fos = new FileOutputStream(tmp);
 			int read;
 			
@@ -178,8 +176,8 @@ public class JcrDocumentModule implements DocumentModule {
 			}
 			
 			Collection<String> keywords = doc.getKeywords() != null ? doc.getKeywords() : new ArrayList<String>();
-	        
-	        // EP - PRE
+			
+			// EP - PRE
 			Ref<Node> refParentNode = new Ref<Node>(parentNode);
 			Ref<File> refTmp = new Ref<File>(tmp);
 			Ref<Document> refDoc = new Ref<Document>(doc);
@@ -189,8 +187,8 @@ public class JcrDocumentModule implements DocumentModule {
 			mimeType = refDoc.get().getMimeType();
 			keywords = refDoc.get().getKeywords();
 			
-			Node documentNode = BaseDocumentModule.create(session, parentNode, name, doc.getTitle(),
-					mimeType, keywords.toArray(new String[keywords.size()]), is);
+			Node documentNode = BaseDocumentModule.create(session, parentNode, name, doc.getTitle(), mimeType,
+					keywords.toArray(new String[keywords.size()]), is);
 			
 			// EP - POST
 			Ref<Node> refDocumentNode = new Ref<Node>(documentNode);
@@ -253,23 +251,25 @@ public class JcrDocumentModule implements DocumentModule {
 		} finally {
 			IOUtils.closeQuietly(is);
 			org.apache.commons.io.FileUtils.deleteQuietly(tmp);
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("create: {}", newDocument);
 		return newDocument;
 	}
-
+	
 	@Override
-	public void delete(String token, String docPath) throws AccessDeniedException, RepositoryException,
-			PathNotFoundException, LockException, DatabaseException, ExtensionException {
+	public void delete(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, DatabaseException, ExtensionException {
 		log.debug("delete({}, {})", token, docPath);
 		Session session = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -280,35 +280,35 @@ public class JcrDocumentModule implements DocumentModule {
 			String name = PathUtils.getName(docPath);
 			Node documentNode = session.getRootNode().getNode(docPath.substring(1));
 			Node parentNode = documentNode.getParent();
-			Node userTrash = session.getRootNode().getNode(Repository.TRASH+"/"+session.getUserID());
+			Node userTrash = session.getRootNode().getNode(Repository.TRASH + "/" + session.getUserID());
 			
 			// PRE
 			Ref<Node> refDocumentNode = new Ref<Node>(documentNode);
 			DocumentExtensionManager.getInstance().preDelete(session, refDocumentNode);
-
+			
 			if (documentNode.isLocked()) {
 				throw new LockException("Can't delete a locked node");
 			}
-
+			
 			// Test if already exists a document whith the same name in the trash
 			String destPath = userTrash.getPath() + "/";
 			String testName = name;
 			String fileName = FileUtils.getFileName(name);
 			String fileExtension = FileUtils.getFileExtension(name);
-
-			for (int i=1; session.itemExists(destPath + testName); i++) {
+			
+			for (int i = 1; session.itemExists(destPath + testName); i++) {
 				testName = fileName + " (" + i + ")." + fileExtension;
 			}
-
+			
 			session.move(documentNode.getPath(), destPath + testName);
 			session.getRootNode().save();
 			
 			// POST
 			DocumentExtensionManager.getInstance().postDelete(session, docPath);
-
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, parentNode, documentNode, "DELETE_DOCUMENT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "DELETE_DOCUMENT", documentNode.getUUID(), docPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -328,15 +328,16 @@ public class JcrDocumentModule implements DocumentModule {
 			JCRUtils.discardsPendingChanges(session);
 			throw new ExtensionException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("delete: void");
 	}
-
+	
 	@Override
-	public Document getProperties(String token, String docPath) throws RepositoryException, 
-			PathNotFoundException, DatabaseException {
+	public Document getProperties(String token, String docPath) throws RepositoryException, PathNotFoundException, DatabaseException {
 		log.debug("getProperties({}, {})", token, docPath);
 		Document doc = null;
 		Session session = null;
@@ -350,7 +351,7 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			Node documentNode = session.getRootNode().getNode(docPath.substring(1));
 			doc = BaseDocumentModule.getProperties(session, documentNode);
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "GET_DOCUMENT_PROPERTIES", documentNode.getUUID(), docPath, doc.getKeywords().toString());
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -360,16 +361,18 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getProperties: {}", doc);
 		return doc;
 	}
-
+	
 	@Override
-	public InputStream getContent(String token, String docPath, boolean checkout) throws 
-			PathNotFoundException, RepositoryException, IOException, DatabaseException {
+	public InputStream getContent(String token, String docPath, boolean checkout) throws PathNotFoundException, RepositoryException,
+			IOException, DatabaseException {
 		log.debug("getContent({}, {}, {})", new Object[] { token, docPath, checkout });
 		InputStream is = null;
 		Session session = null;
@@ -392,16 +395,18 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getContent: {}", is);
 		return is;
 	}
-
+	
 	@Override
-	public InputStream getContentByVersion(String token, String docPath, String versionId) throws 
-			RepositoryException, PathNotFoundException, IOException, DatabaseException {
+	public InputStream getContentByVersion(String token, String docPath, String versionId) throws RepositoryException,
+			PathNotFoundException, IOException, DatabaseException {
 		log.debug("getContentByVersion({}, {}, {})", new Object[] { token, docPath, versionId });
 		InputStream is;
 		Session session = null;
@@ -419,9 +424,10 @@ public class JcrDocumentModule implements DocumentModule {
 			javax.jcr.version.Version ver = vh.getVersion(versionId);
 			Node frozenNode = ver.getNode(JcrConstants.JCR_FROZENNODE);
 			is = frozenNode.getProperty(JcrConstants.JCR_DATA).getStream();
-
+			
 			// Activity log
-			UserActivity.log(session.getUserID(), "GET_DOCUMENT_CONTENT_BY_VERSION", documentNode.getUUID(), docPath, versionId+", "+is.available());
+			UserActivity.log(session.getUserID(), "GET_DOCUMENT_CONTENT_BY_VERSION", documentNode.getUUID(), docPath,
+					versionId + ", " + is.available());
 		} catch (javax.jcr.PathNotFoundException e) {
 			log.warn(e.getMessage(), e);
 			throw new PathNotFoundException(e.getMessage(), e);
@@ -429,23 +435,23 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getContentByVersion: {}", is);
 		return is;
 	}
 	
 	@Override
 	@Deprecated
-	public List<Document> getChilds(String token, String fldPath) throws PathNotFoundException,
-			RepositoryException, DatabaseException {
+	public List<Document> getChilds(String token, String fldPath) throws PathNotFoundException, RepositoryException, DatabaseException {
 		return getChildren(token, fldPath);
 	}
 	
 	@Override
-	public List<Document> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException,
-			DatabaseException {
+	public List<Document> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("getChildren({}, {})", token, fldPath);
 		List<Document> children = new ArrayList<Document>();
 		Session session = null;
@@ -458,16 +464,16 @@ public class JcrDocumentModule implements DocumentModule {
 			}
 			
 			Node folderNode = session.getRootNode().getNode(fldPath.substring(1));
-
-			for (NodeIterator ni = folderNode.getNodes(); ni.hasNext(); ) {
+			
+			for (NodeIterator ni = folderNode.getNodes(); ni.hasNext();) {
 				Node child = ni.nextNode();
 				log.debug("Child: " + child.getPath() + ", " + child.getPrimaryNodeType().getName());
-
+				
 				if (child.isNodeType(Document.TYPE)) {
 					children.add(BaseDocumentModule.getProperties(session, child));
 				}
 			}
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "GET_CHILDREN_DOCUMENTS", folderNode.getUUID(), fldPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -477,16 +483,18 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getChildren: {}", children);
 		return children;
 	}
-
+	
 	@Override
-	public Document rename(String token, String docPath, String newName) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, ItemExistsException, DatabaseException, ExtensionException {
+	public Document rename(String token, String docPath, String newName) throws AccessDeniedException, RepositoryException,
+			PathNotFoundException, ItemExistsException, DatabaseException, ExtensionException {
 		log.debug("rename:({}, {}, {})", new Object[] { token, docPath, newName });
 		Document renamedDocument = null;
 		Session session = null;
@@ -495,7 +503,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -508,7 +516,7 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			// Escape dangerous chars in name
 			newName = PathUtils.escape(newName);
-
+			
 			if (newName != null && !newName.equals("") && !newName.equals(name)) {
 				String newPath = parent + "/" + newName;
 				
@@ -517,14 +525,14 @@ public class JcrDocumentModule implements DocumentModule {
 				DocumentExtensionManager.getInstance().preRename(session, docPath, newPath, refDocumentNode);
 				
 				session.move(docPath, newPath);
-
+				
 				// Set new name
 				documentNode = session.getRootNode().getNode(newPath.substring(1));
 				documentNode.setProperty(Document.NAME, newName);
-
+				
 				// Publish changes
 				session.save();
-
+				
 				// Set returned document properties
 				renamedDocument = BaseDocumentModule.getProperties(session, documentNode);
 				
@@ -533,7 +541,7 @@ public class JcrDocumentModule implements DocumentModule {
 			} else {
 				// Don't change anything
 				documentNode = session.getRootNode().getNode(docPath.substring(1));
-				renamedDocument = BaseDocumentModule.getProperties(session, documentNode);				
+				renamedDocument = BaseDocumentModule.getProperties(session, documentNode);
 			}
 			
 			// Activity log
@@ -559,16 +567,18 @@ public class JcrDocumentModule implements DocumentModule {
 			JCRUtils.discardsPendingChanges(session);
 			throw new ExtensionException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("rename: {}", renamedDocument);
 		return renamedDocument;
 	}
-
+	
 	@Override
-	public void setProperties(String token, Document doc) throws VersionException, LockException,
-			PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
+	public void setProperties(String token, Document doc) throws VersionException, LockException, PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("setProperties({}, {})", token, doc);
 		Node documentNode = null;
 		Session session = null;
@@ -576,7 +586,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -587,17 +597,17 @@ public class JcrDocumentModule implements DocumentModule {
 			documentNode = session.getRootNode().getNode(doc.getPath().substring(1));
 			
 			// Update document keyword cache
-			//UserKeywordsManager.put(session.getUserID(), documentNode.getUUID(), doc.getKeywords());
+			// UserKeywordsManager.put(session.getUserID(), documentNode.getUUID(), doc.getKeywords());
 			
 			// Update document title
 			// documentNode.setProperty(Document.TITLE, doc.getTitle() == null ? "" : doc.getTitle());
-
+			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(documentNode, session.getUserID(), "SET_DOCUMENT_PROPERTIES", null);
-
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "SET_DOCUMENT_PROPERTIES");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "SET_DOCUMENT_PROPERTIES", documentNode.getUUID(), doc.getPath(), null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -621,22 +631,24 @@ public class JcrDocumentModule implements DocumentModule {
 			JCRUtils.discardsPendingChanges(documentNode);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("setProperties: void");
 	}
-
+	
 	@Override
-	public void checkout(String token, String docPath) throws AccessDeniedException, RepositoryException, 
-			PathNotFoundException, LockException, DatabaseException {
+	public void checkout(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, DatabaseException {
 		checkout(token, docPath, null);
 	}
 	
 	/**
 	 * Used in Zoho extension
 	 */
-	public void checkout(String token, String docPath, String userId) throws AccessDeniedException, RepositoryException, 
+	public void checkout(String token, String docPath, String userId) throws AccessDeniedException, RepositoryException,
 			PathNotFoundException, LockException, DatabaseException {
 		log.debug("checkout({}, {}, {})", new Object[] { token, docPath, userId });
 		Transaction t = null;
@@ -645,7 +657,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = (XASession) JCRUtils.getSession();
@@ -654,22 +666,22 @@ public class JcrDocumentModule implements DocumentModule {
 			}
 			
 			javax.jcr.lock.Lock lck = null;
-
+			
 			t = new Transaction(session);
 			t.start();
-
+			
 			Node documentNode = session.getRootNode().getNode(docPath.substring(1));
 			Node contentNode = documentNode.getNode(Document.CONTENT);
 			lck = documentNode.lock(true, false);
 			JCRUtils.addLockToken(session, documentNode);
 			contentNode.checkout();
-
+			
 			t.end();
 			t.commit();
-
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "CHECKOUT_DOCUMENT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "CHECKOUT_DOCUMENT", documentNode.getUUID(), docPath, lck.getLockToken());
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -693,15 +705,17 @@ public class JcrDocumentModule implements DocumentModule {
 			t.rollback();
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("checkout: void");
 	}
-
+	
 	@Override
-	public void cancelCheckout(String token, String docPath) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, LockException, DatabaseException {
+	public void cancelCheckout(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, DatabaseException {
 		log.debug("cancelCheckout({}, {})", token, docPath);
 		Transaction t = null;
 		XASession session = null;
@@ -709,7 +723,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = (XASession) JCRUtils.getSession();
@@ -729,13 +743,13 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			t.end();
 			t.commit();
-
+			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(documentNode, session.getUserID(), "CANCEL_DOCUMENT_CHECKOUT", null);
-
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "CANCEL_DOCUMENT_CHECKOUT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "CANCEL_DOCUMENT_CHECKOUT", documentNode.getUUID(), docPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -759,16 +773,17 @@ public class JcrDocumentModule implements DocumentModule {
 			t.rollback();
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("cancelCheckout: void");
 	}
 	
 	@Override
-	public void forceCancelCheckout(String token, String docPath) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, LockException, DatabaseException,
-			PrincipalAdapterException {
+	public void forceCancelCheckout(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, DatabaseException, PrincipalAdapterException {
 		log.debug("forceCancelCheckout({}, {})", token, docPath);
 		Transaction t = null;
 		XASession session = null;
@@ -776,7 +791,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = (XASession) JCRUtils.getSession();
@@ -810,13 +825,13 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			t.end();
 			t.commit();
-
+			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(documentNode, session.getUserID(), "FORCE_CANCEL_DOCUMENT_CHECKOUT", null);
-
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "FORCE_CANCEL_DOCUMENT_CHECKOUT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "FORCE_CANCEL_DOCUMENT_CHECKOUT", documentNode.getUUID(), docPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -840,19 +855,20 @@ public class JcrDocumentModule implements DocumentModule {
 			t.rollback();
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("forceCancelCheckout: void");
 	}
-
+	
 	@Override
-	public boolean isCheckedOut(String token, String docPath) throws RepositoryException,
-			PathNotFoundException, DatabaseException {
+	public boolean isCheckedOut(String token, String docPath) throws RepositoryException, PathNotFoundException, DatabaseException {
 		log.debug("isCheckedOut({}, {})", token, docPath);
 		boolean checkedOut = false;
 		Session session = null;
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -870,29 +886,36 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("isCheckedOut: {}", checkedOut);
 		return checkedOut;
 	}
 	
 	@Override
-	public Version checkin(String token, String docPath, InputStream is, String comment) throws
-			FileSizeExceededException, UserQuotaExceededException, VirusDetectedException,
-			AccessDeniedException, RepositoryException, PathNotFoundException, LockException,
-			VersionException, IOException, DatabaseException, ExtensionException {
+	public Version checkin(String token, String docPath, InputStream is, String comment) throws FileSizeExceededException,
+			UserQuotaExceededException, VirusDetectedException, AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, VersionException, IOException, DatabaseException, ExtensionException {
 		return checkin(token, docPath, is, comment, null);
+	}
+	
+	@Override
+	public Version checkin(String token, String docPath, InputStream is, String comment, int increment) throws FileSizeExceededException,
+			UserQuotaExceededException, VirusDetectedException, LockException, VersionException, PathNotFoundException,
+			AccessDeniedException, RepositoryException, IOException, DatabaseException, ExtensionException {
+		throw new NotImplementedException("checkin");
 	}
 	
 	/**
 	 * Used in Zoho extension
 	 */
-	public Version checkin(String token, String docPath, InputStream is, String comment, String userId) throws 
-			FileSizeExceededException, UserQuotaExceededException, VirusDetectedException, AccessDeniedException,
-			RepositoryException, PathNotFoundException, LockException, VersionException, IOException,
-			DatabaseException, ExtensionException {
-		log.debug("checkin({}, {}, {}, {}, {})", new Object[] { token, docPath, is, comment, userId });		
+	public Version checkin(String token, String docPath, InputStream is, String comment, String userId) throws FileSizeExceededException,
+			UserQuotaExceededException, VirusDetectedException, AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, VersionException, IOException, DatabaseException, ExtensionException {
+		log.debug("checkin({}, {}, {}, {}, {})", new Object[] { token, docPath, is, comment, userId });
 		Version version = new Version();
 		Transaction t = null;
 		XASession session = null;
@@ -904,9 +927,9 @@ public class JcrDocumentModule implements DocumentModule {
 		
 		String name = PathUtils.getName(docPath);
 		int idx = name.lastIndexOf('.');
-		String fileExtension = idx>0 ? name.substring(idx) : ".tmp";
+		String fileExtension = idx > 0 ? name.substring(idx) : ".tmp";
 		File tmp = File.createTempFile("okm", fileExtension);
-
+		
 		try {
 			if (token == null) {
 				session = (XASession) JCRUtils.getSession();
@@ -917,17 +940,16 @@ public class JcrDocumentModule implements DocumentModule {
 			if (userId == null) {
 				userId = session.getUserID();
 			}
-						
+			
 			if (Config.MAX_FILE_SIZE > 0 && size > Config.MAX_FILE_SIZE) {
-				log.error("Uploaded file size: {} ({}), Max file size: {} ({})", new Object[] {
-						FormatUtil.formatSize(size), size, FormatUtil.formatSize(Config.MAX_FILE_SIZE),
-						Config.MAX_FILE_SIZE });
-				UserActivity.log(userId, "ERROR_FILE_SIZE_EXCEEDED", null, docPath, Integer.toString(size));
-				throw new FileSizeExceededException(Integer.toString(size));
+				log.error("Uploaded file size: {} ({}), Max file size: {} ({})", new Object[] { FormatUtil.formatSize(size), size,
+						FormatUtil.formatSize(Config.MAX_FILE_SIZE), Config.MAX_FILE_SIZE });
+				UserActivity.log(userId, "ERROR_FILE_SIZE_EXCEEDED", null, docPath, FormatUtil.formatSize(size));
+				throw new FileSizeExceededException(FormatUtil.formatSize(size));
 			}
 			
 			// Manage temporary files
-			byte[] buff = new byte[4*1024];
+			byte[] buff = new byte[4 * 1024];
 			FileOutputStream fos = new FileOutputStream(tmp);
 			int read;
 			
@@ -1003,20 +1025,15 @@ public class JcrDocumentModule implements DocumentModule {
 			t.end();
 			t.commit();
 			
-			// Update user items
-			if (Config.USER_ITEM_CACHE) {
-				UserItemsManager.incSize(session.getUserID(), size);
-			}
-			
 			// Remove pdf & preview from cache
 			CommonGeneralModule.cleanPreviewCache(documentNode.getUUID());
-
+			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(documentNode, userId, "CHECKIN_DOCUMENT", comment);
 			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "CHECKIN_DOCUMENT");
-
+			
 			// Activity log
 			UserActivity.log(userId, "CHECKIN_DOCUMENT", documentNode.getUUID(), docPath, size + ", " + comment);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -1050,16 +1067,18 @@ public class JcrDocumentModule implements DocumentModule {
 		} finally {
 			IOUtils.closeQuietly(is);
 			org.apache.commons.io.FileUtils.deleteQuietly(tmp);
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("checkin: {}", version);
 		return version;
 	}
-
+	
 	@Override
-	public List<Version> getVersionHistory(String token, String docPath) throws PathNotFoundException,
-			RepositoryException, DatabaseException {
+	public List<Version> getVersionHistory(String token, String docPath) throws PathNotFoundException, RepositoryException,
+			DatabaseException {
 		log.debug("getVersionHistory({}, {})", token, docPath);
 		List<Version> history = new ArrayList<Version>();
 		Session session = null;
@@ -1075,11 +1094,11 @@ public class JcrDocumentModule implements DocumentModule {
 			Node contentNode = documentNode.getNode(Document.CONTENT);
 			VersionHistory vh = contentNode.getVersionHistory();
 			String baseVersion = contentNode.getBaseVersion().getName();
-
-			for (VersionIterator vi = vh.getAllVersions(); vi.hasNext(); ) {
+			
+			for (VersionIterator vi = vh.getAllVersions(); vi.hasNext();) {
 				javax.jcr.version.Version ver = vi.nextVersion();
 				String versionName = ver.getName();
-
+				
 				// The rootVersion is not a "real" version node.
 				if (!versionName.equals(JcrConstants.JCR_ROOTVERSION)) {
 					Version version = new Version();
@@ -1089,20 +1108,20 @@ public class JcrDocumentModule implements DocumentModule {
 					version.setComment(frozenNode.getProperty(Document.VERSION_COMMENT).getString());
 					version.setName(ver.getName());
 					version.setCreated(ver.getCreated());
-
+					
 					if (versionName.equals(baseVersion)) {
 						version.setActual(true);
 					} else {
 						version.setActual(false);
 					}
-
+					
 					history.add(version);
 				}
 			}
 			
 			// Reverse history
 			Collections.reverse(history);
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "GET_DOCUMENT_VERSION_HISTORY", documentNode.getUUID(), docPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -1112,16 +1131,18 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getVersionHistory: {}", history);
 		return history;
 	}
-
+	
 	@Override
-	public LockInfo lock(String token, String docPath) throws AccessDeniedException, RepositoryException, 
-			PathNotFoundException, LockException, DatabaseException {
+	public LockInfo lock(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, DatabaseException {
 		log.debug("lock({})", docPath);
 		Session session = null;
 		LockInfo lock = new LockInfo();
@@ -1129,7 +1150,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -1146,10 +1167,10 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(documentNode, session.getUserID(), "LOCK_DOCUMENT", null);
-
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "LOCK_DOCUMENT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "LOCK_DOCUMENT", documentNode.getUUID(), docPath, lck.getLockToken());
 		} catch (javax.jcr.lock.LockException e) {
@@ -1168,23 +1189,25 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("lock: {}", lock);
 		return lock;
 	}
-
+	
 	@Override
-	public void unlock(String token, String docPath) throws AccessDeniedException, RepositoryException, 
-			PathNotFoundException, LockException, DatabaseException {
+	public void unlock(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			LockException, DatabaseException {
 		log.debug("unlock({}, {})", token, docPath);
 		Session session = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -1196,13 +1219,13 @@ public class JcrDocumentModule implements DocumentModule {
 			Node documentNode = session.getRootNode().getNode(docPath.substring(1));
 			documentNode.unlock();
 			JCRUtils.removeLockToken(session, documentNode);
-
+			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(documentNode, session.getUserID(), "UNLOCK_DOCUMENT", null);
 			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "UNLOCK_DOCUMENT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "UNLOCK_DOCUMENT", documentNode.getUUID(), docPath, null);
 		} catch (javax.jcr.lock.LockException e) {
@@ -1221,22 +1244,24 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("unlock: void");
 	}
 	
 	@Override
-	public void forceUnlock(String token, String docPath) throws LockException, PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException, PrincipalAdapterException {
+	public void forceUnlock(String token, String docPath) throws LockException, PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException, PrincipalAdapterException {
 		log.debug("forceUnlock({}, {})", token, docPath);
 		Session session = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -1266,13 +1291,13 @@ public class JcrDocumentModule implements DocumentModule {
 				documentNode.unlock();
 				LockTokenDAO.delete(lock.getLockOwner(), lt);
 			}
-
+			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(documentNode, session.getUserID(), "FORCE_UNLOCK", null);
 			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, documentNode, documentNode, "FORCE_UNLOCK_DOCUMENT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "FORCE_UNLOCK_DOCUMENT", documentNode.getUUID(), docPath, null);
 		} catch (javax.jcr.lock.LockException e) {
@@ -1291,15 +1316,16 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("forceUnlock: void");
 	}
-
+	
 	@Override
-	public boolean isLocked(String token, String docPath) throws RepositoryException, PathNotFoundException, 
-			DatabaseException {
+	public boolean isLocked(String token, String docPath) throws RepositoryException, PathNotFoundException, DatabaseException {
 		log.debug("isLocked({}, {})", token, docPath);
 		boolean locked;
 		Session session = null;
@@ -1320,16 +1346,18 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("isLocked: {}", locked);
 		return locked;
 	}
-
+	
 	@Override
-	public LockInfo getLockInfo(String token, String docPath) throws RepositoryException, PathNotFoundException,
-			LockException, DatabaseException {
+	public LockInfo getLockInfo(String token, String docPath) throws RepositoryException, PathNotFoundException, LockException,
+			DatabaseException {
 		log.debug("getLockInfo({}, {})", token, docPath);
 		LockInfo lock = new LockInfo();
 		Session session = null;
@@ -1352,16 +1380,18 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("getLock: {}", lock);
 		return lock;
 	}
-
+	
 	@Override
-	public void purge(String token, String docPath) throws AccessDeniedException, RepositoryException, 
-			PathNotFoundException, DatabaseException, ExtensionException {
+	public void purge(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			DatabaseException, ExtensionException {
 		log.debug("purge({}, {})", token, docPath);
 		Node parentNode = null;
 		Session session = null;
@@ -1369,7 +1399,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -1391,7 +1421,7 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			// POST
 			DocumentExtensionManager.getInstance().postPurge(session, docPath);
-
+			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, parentNode, documentNode, "PURGE_DOCUMENT");
 			
@@ -1414,16 +1444,17 @@ public class JcrDocumentModule implements DocumentModule {
 			JCRUtils.discardsPendingChanges(parentNode);
 			throw new ExtensionException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("purge: void");
 	}
-
+	
 	@Override
-	public void move(String token, String docPath, String dstPath) throws PathNotFoundException,
-			ItemExistsException, AccessDeniedException, RepositoryException, DatabaseException,
-			ExtensionException {
+	public void move(String token, String docPath, String dstPath) throws PathNotFoundException, ItemExistsException,
+			AccessDeniedException, RepositoryException, DatabaseException, ExtensionException {
 		log.debug("move({}, {}, {})", new Object[] { token, docPath, dstPath });
 		Session session = null;
 		
@@ -1464,7 +1495,7 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			// Check scripting
 			BaseScriptingModule.checkScripts(session, dstDocNode.getParent(), dstDocNode, "MOVE_DOCUMENT");
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "MOVE_DOCUMENT", dstDocNode.getUUID(), docPath, dstPath);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -1484,24 +1515,25 @@ public class JcrDocumentModule implements DocumentModule {
 			JCRUtils.discardsPendingChanges(session);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("move: void");
 	}
-
+	
 	@Override
-	public void copy(String token, String docPath, String dstPath) throws ItemExistsException,
-			PathNotFoundException, AccessDeniedException, RepositoryException, IOException, DatabaseException, 
-			UserQuotaExceededException, ExtensionException {
-		log.debug("copy({}, {}, {})", new Object[]  { token, docPath, dstPath });
+	public void copy(String token, String docPath, String dstPath) throws ItemExistsException, PathNotFoundException,
+			AccessDeniedException, RepositoryException, IOException, DatabaseException, UserQuotaExceededException, ExtensionException {
+		log.debug("copy({}, {}, {})", new Object[] { token, docPath, dstPath });
 		Node dstFolderNode = null;
 		Session session = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -1526,7 +1558,7 @@ public class JcrDocumentModule implements DocumentModule {
 			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(dstFolderNode, session.getUserID(), "COPY_DOCUMENT", null);
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "COPY_DOCUMENT", newDocument.getUUID(), docPath, dstPath);
 		} catch (javax.jcr.ItemExistsException e) {
@@ -1554,15 +1586,24 @@ public class JcrDocumentModule implements DocumentModule {
 			JCRUtils.discardsPendingChanges(dstFolderNode);
 			throw e;
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("copy: void");
 	}
-
+	
 	@Override
-	public void restoreVersion(String token, String docPath, String versionId) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, DatabaseException, ExtensionException {
+	public void extendedCopy(String token, String docPath, String dstPath, String docName, ExtendedAttributes extAttr)
+			throws ItemExistsException, PathNotFoundException, AccessDeniedException, RepositoryException, IOException, DatabaseException,
+			UserQuotaExceededException, ExtensionException {
+		throw new NotImplementedException("extendedCopy");
+	}
+	
+	@Override
+	public void restoreVersion(String token, String docPath, String versionId) throws AccessDeniedException, RepositoryException,
+			PathNotFoundException, DatabaseException, ExtensionException {
 		log.debug("restoreVersion({}, {}, {})", new Object[] { token, docPath, versionId });
 		Node contentNode = null;
 		Session session = null;
@@ -1570,7 +1611,7 @@ public class JcrDocumentModule implements DocumentModule {
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -1583,7 +1624,7 @@ public class JcrDocumentModule implements DocumentModule {
 			// PRE
 			Ref<Node> refDocumentNode = new Ref<Node>(documentNode);
 			DocumentExtensionManager.getInstance().preRestoreVersion(session, refDocumentNode);
-
+			
 			synchronized (documentNode) {
 				contentNode = documentNode.getNode(Document.CONTENT);
 				contentNode.restore(versionId, true);
@@ -1615,22 +1656,24 @@ public class JcrDocumentModule implements DocumentModule {
 			JCRUtils.discardsPendingChanges(contentNode);
 			throw new ExtensionException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("restoreVersion: void");
 	}
-
+	
 	@Override
-	public void purgeVersionHistory(String token, String docPath) throws AccessDeniedException,
-			RepositoryException, PathNotFoundException, DatabaseException {
+	public void purgeVersionHistory(String token, String docPath) throws AccessDeniedException, RepositoryException, PathNotFoundException,
+			DatabaseException {
 		log.debug("purgeVersionHistory({}, {})", token, docPath);
 		Session session = null;
 		
 		if (Config.SYSTEM_READONLY) {
 			throw new AccessDeniedException("System is in read-only mode");
 		}
-
+		
 		try {
 			if (token == null) {
 				session = JCRUtils.getSession();
@@ -1644,18 +1687,18 @@ public class JcrDocumentModule implements DocumentModule {
 				Node contentNode = documentNode.getNode(Document.CONTENT);
 				VersionHistory vh = contentNode.getVersionHistory();
 				String baseVersion = contentNode.getBaseVersion().getName();
-
-				for (VersionIterator vi = vh.getAllVersions(); vi.hasNext(); ) {
+				
+				for (VersionIterator vi = vh.getAllVersions(); vi.hasNext();) {
 					javax.jcr.version.Version ver = vi.nextVersion();
 					String versionName = ver.getName();
-
+					
 					// The rootVersion is not a "real" version node.
 					if (!versionName.equals(JcrConstants.JCR_ROOTVERSION) && !versionName.equals(baseVersion)) {
 						vh.removeVersion(versionName);
 					}
-				}				
+				}
 			}
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "PURGE_DOCUMENT_VERSION_HISTORY", documentNode.getUUID(), docPath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -1665,15 +1708,16 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("purgeVersionHistory: void");
 	}
-
+	
 	@Override
-	public long getVersionHistorySize(String token, String docPath) throws RepositoryException,
-			PathNotFoundException, DatabaseException {
+	public long getVersionHistorySize(String token, String docPath) throws RepositoryException, PathNotFoundException, DatabaseException {
 		log.debug("getVersionHistorySize({}, {})", token, docPath);
 		long ret = 0;
 		Session session = null;
@@ -1688,11 +1732,11 @@ public class JcrDocumentModule implements DocumentModule {
 			Node documentNode = session.getRootNode().getNode(docPath.substring(1));
 			Node contentNode = documentNode.getNode(Document.CONTENT);
 			VersionHistory vh = contentNode.getVersionHistory();
-
-			for (VersionIterator vi = vh.getAllVersions(); vi.hasNext(); ) {
+			
+			for (VersionIterator vi = vh.getAllVersions(); vi.hasNext();) {
 				javax.jcr.version.Version ver = vi.nextVersion();
 				String versionName = ver.getName();
-
+				
 				// The rootVersion is not a "real" version node.
 				if (!versionName.equals(JcrConstants.JCR_ROOTVERSION)) {
 					Node frozenNode = ver.getNode(JcrConstants.JCR_FROZENNODE);
@@ -1706,13 +1750,15 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getVersionHistorySize: {}", ret);
 		return ret;
 	}
-
+	
 	@Override
 	public boolean isValid(String token, String docPath) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("isValid({}, {})", token, docPath);
@@ -1727,7 +1773,7 @@ public class JcrDocumentModule implements DocumentModule {
 			}
 			
 			Node node = session.getRootNode().getNode(docPath.substring(1));
-
+			
 			if (node.isNodeType(Document.TYPE)) {
 				valid = true;
 			}
@@ -1738,16 +1784,17 @@ public class JcrDocumentModule implements DocumentModule {
 		} catch (javax.jcr.RepositoryException e) {
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("isValid: {}", valid);
 		return valid;
 	}
-
+	
 	@Override
-	public String getPath(String token, String uuid) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public String getPath(String token, String uuid) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("getPath({}, {})", token, uuid);
 		String path = null;
 		Session session = null;
@@ -1760,7 +1807,7 @@ public class JcrDocumentModule implements DocumentModule {
 			}
 			
 			Node node = session.getNodeByUUID(uuid);
-
+			
 			if (node.isNodeType(Document.TYPE)) {
 				path = node.getPath();
 			}
@@ -1771,9 +1818,11 @@ public class JcrDocumentModule implements DocumentModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getPath: {}", path);
 		return path;
 	}

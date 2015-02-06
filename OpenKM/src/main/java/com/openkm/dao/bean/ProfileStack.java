@@ -31,6 +31,7 @@ public class ProfileStack implements Serializable {
 	private boolean templatesVisible;
 	private boolean personalVisible;
 	private boolean mailVisible;
+	private boolean metadataVisible;
 	private boolean trashVisible;
 
 	public boolean isTaxonomyVisible() {
@@ -80,6 +81,14 @@ public class ProfileStack implements Serializable {
 	public void setMailVisible(boolean mailVisible) {
 		this.mailVisible = mailVisible;
 	}
+	
+	public boolean isMetadataVisible() {
+		return metadataVisible;
+	}
+
+	public void setMetadataVisible(boolean metadataVisible) {
+		this.metadataVisible = metadataVisible;
+	}
 
 	public boolean isTrashVisible() {
 		return trashVisible;
@@ -98,6 +107,7 @@ public class ProfileStack implements Serializable {
 		sb.append(", templatesVisible="); sb.append(templatesVisible);
 		sb.append(", personalVisible="); sb.append(personalVisible);
 		sb.append(", mailVisible="); sb.append(mailVisible);
+		sb.append(", metadataVisible="); sb.append(metadataVisible);
 		sb.append(", trashVisible="); sb.append(trashVisible);
 		sb.append("}");
 		return sb.toString();

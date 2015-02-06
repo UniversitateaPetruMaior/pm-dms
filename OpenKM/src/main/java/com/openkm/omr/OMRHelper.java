@@ -64,7 +64,6 @@ import com.openkm.dao.OmrDAO;
 import com.openkm.dao.bean.Omr;
 import com.openkm.extension.core.ExtensionException;
 import com.openkm.util.FileUtils;
-import com.openkm.util.OMRException;
 
 /**
  * OMRHelper

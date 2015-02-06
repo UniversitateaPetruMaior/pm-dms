@@ -30,6 +30,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTDocument;
+import com.openkm.frontend.client.bean.GWTFolder;
 import com.openkm.frontend.client.bean.GWTWorkspace;
 import com.openkm.frontend.client.bean.ToolBarOption;
 import com.openkm.frontend.client.service.OKMRepositoryService;
@@ -253,5 +254,21 @@ public class GeneralComunicator {
 	 */
 	public static void openPathByUuid(String uuid) {
 		CommonUI.openPathByUuid(uuid);
+	}
+	
+	/**
+	 * getFolderIcon
+	 */
+	public static String getFolderIcon(GWTFolder fld) {
+		return CommonUI.getFolderIcon(fld);
+	}
+	
+	/**
+	 * get
+	 * 
+	 * @return
+	 */
+	public static Main get() {
+		return Main.get();
 	}
 }

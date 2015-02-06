@@ -26,8 +26,6 @@ import java.util.Calendar;
 
 public class CronTab implements Serializable {
 	private static final long serialVersionUID = 1L;
-	public static final String BSH = "application/x-bsh";
-	public static final String JAR = "application/x-java-archive";
 	private long id;
 	private String name;
 	private String expression;

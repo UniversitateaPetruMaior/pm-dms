@@ -50,6 +50,7 @@ import com.openkm.frontend.client.bean.GWTUser;
 import com.openkm.frontend.client.service.OKMAuthService;
 import com.openkm.frontend.client.service.OKMAuthServiceAsync;
 import com.openkm.frontend.client.util.RoleComparator;
+import com.openkm.frontend.client.util.ScrollTableHelper;
 import com.openkm.frontend.client.util.Util;
 
 /**
@@ -62,7 +63,7 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 	private final OKMAuthServiceAsync authService = (OKMAuthServiceAsync) GWT.create(OKMAuthService.class);
 	
 	// Number of columns
-	private String path;	
+	private String uuid;	
 	private ScrollTable table;
 	private FixedWidthFlexTable headerTable;
 	private FixedWidthGrid dataTable;
@@ -132,32 +133,33 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 		button = new Button(Main.i18n("button.update"), this);
 		button.setStyleName("okm-ChangeButton");
 		
-		initSecurity();
-		
 		initWidget(table);
 	}
 	
 	/**
 	 * initSecurity
+	 * 
+	 * @param extendedSecurity
 	 */
-	public void initSecurity() {
+	public void initSecurity() {		
 		int col = 0;
-		table.setColumnWidth(col,110);
-		table.setPreferredColumnWidth(col++, 110);
-	    table.setColumnWidth(col,90);
-	    table.setPreferredColumnWidth(col++, 90);
-	    table.setColumnWidth(col++,90);
-	    table.setColumnWidth(col++,90);
-	    table.setColumnWidth(col++,90);    
-	    
-	    table.setColumnWidth(col,80);
+		ScrollTableHelper.setColumnWidth(table, col, 110, ScrollTableHelper.GREAT, true, false);
+		col++;
+		// Four security properties
+		for (int i=0; i<4; i++) {
+			ScrollTableHelper.setColumnWidth(table, col, 90, ScrollTableHelper.MEDIUM, false, true);
+			col++;
+		}    
+	    // Button
+	    ScrollTableHelper.setColumnWidth(table, col, 100, ScrollTableHelper.FIXED);
 	    table.setColumnSortable(col++, false);
-	    table.setColumnWidth(col,110);
-	    table.setPreferredColumnWidth(col++, 110);
-	    table.setColumnWidth(col++,90);
-	    table.setColumnWidth(col++,90);
-	    table.setColumnWidth(col++,90);
-	    table.setColumnWidth(col++,90);
+	    ScrollTableHelper.setColumnWidth(table, col, 110, ScrollTableHelper.GREAT, true, false);
+		col++;
+		// Four security properties
+		for (int i=0; i<4; i++) {
+			ScrollTableHelper.setColumnWidth(table, col, 90, ScrollTableHelper.MEDIUM, false, true);
+			col++;
+		}
 		
 		// Level 1 headers		
 		col = 0;
@@ -180,7 +182,7 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 
 	    // Table data
 	    dataTable.setSelectionPolicy(SelectionGrid.SelectionPolicy.ONE_ROW);
-	    table.setResizePolicy(ResizePolicy.UNCONSTRAINED);
+	    table.setResizePolicy(ResizePolicy.FILL_WIDTH);
 	    table.setScrollPolicy(ScrollPolicy.BOTH);
 	    
 	    headerTable.addStyleName("okm-DisableSelect");
@@ -188,12 +190,12 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 	}
 	
 	/**
-	 * Sets the document or folder ID
+	 * Sets the uuid
 	 * 
-	 * @param path The document or folder ID
+	 * @param uuid The uuid
 	 */
-	public void setPath(String path) {
-		this.path = path;
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 	
 	/**
@@ -206,7 +208,6 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 		headerTable.setHTML(0, col++, Main.i18n("security.role.permission.write"));
 		headerTable.setHTML(0, col++, Main.i18n("security.role.permission.delete"));
 		headerTable.setHTML(0, col++, Main.i18n("security.role.permission.security"));
-
 		button.setText(Main.i18n("button.update"));
 		col++; // Button column
 		headerTable.setHTML(0, col++, Main.i18n("security.user.name"));
@@ -242,8 +243,7 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 			dataTable.insertRow(rows);
 		}
 		
-		int col = 6;
-		
+		int col = 6;		
 		dataTable.setHTML(rows, col++, user.getUsername());
 		
 		if ((permission & GWTPermission.READ) == GWTPermission.READ) {
@@ -353,9 +353,9 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 	 * Gets the granted users
 	 */
 	private void getGrantedUsers() {
-		if (path != null) {
+		if (uuid != null) {
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.setUserSecurity();
-			authService.getGrantedUsers(path, new AsyncCallback<List<GWTGrantedUser>>() {
+			authService.getGrantedUsers(uuid, new AsyncCallback<List<GWTGrantedUser>>() {
 				@Override
 				public void onSuccess(List<GWTGrantedUser> result) {				
 					for (GWTGrantedUser gu : result ) {
@@ -379,9 +379,9 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 	private void getGrantedRoles() {
 		removeAllRows();
 		
-		if (path != null) {
+		if (uuid != null) {
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.setRoleSecurity();	
-			authService.getGrantedRoles(path, callbackGetGrantedRoles);
+			authService.getGrantedRoles(uuid, callbackGetGrantedRoles);
 		}
 	}
 	
@@ -394,11 +394,9 @@ public class SecurityScrollTable extends Composite implements ClickHandler  {
 		button.setVisible(visible);
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.google.gwt.event.dom.client.ClickHandler#onClick(com.google.gwt.event.dom.client.ClickEvent)
-	 */
+	@Override
 	public void onClick(ClickEvent event) {
-		Main.get().securityPopup.show(path);
+		Main.get().securityPopup.show(uuid);
 	}
 	
 	/**

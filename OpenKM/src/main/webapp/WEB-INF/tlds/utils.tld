@@ -29,6 +29,21 @@
     </attribute>
   </tag>
   <tag>
+    <name>formatDate</name>
+    <tag-class>com.openkm.util.tags.FormatDateTag</tag-class>
+    <body-content>empty</body-content>
+    <attribute>
+      <name>date</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <name>calendar</name>
+      <required>false</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+  </tag>
+  <tag>
     <name>getName</name>
     <tag-class>com.openkm.util.tags.GetNameTag</tag-class>
     <body-content>empty</body-content>

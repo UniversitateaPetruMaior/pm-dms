@@ -28,8 +28,10 @@ public class ProfileToolbar implements Serializable {
 	private boolean createFolderVisible;
 	private boolean findFolderVisible;
 	private boolean findDocumentVisible;
+	private boolean similarDocumentVisible;
 	private boolean downloadVisible;
 	private boolean downloadPdfVisible;
+	private boolean printVisible;
 	private boolean lockVisible;
 	private boolean unlockVisible;
 	private boolean addDocumentVisible;
@@ -46,6 +48,7 @@ public class ProfileToolbar implements Serializable {
 	private boolean homeVisible;
 	private boolean scannerVisible;
 	private boolean uploaderVisible;
+	private boolean splitterResizeVisible;
 	private boolean omrVisible;
 
 	public boolean isCreateFolderVisible() {
@@ -71,6 +74,14 @@ public class ProfileToolbar implements Serializable {
 	public void setFindDocumentVisible(boolean findDocumentVisible) {
 		this.findDocumentVisible = findDocumentVisible;
 	}
+	
+	public boolean isSimilarDocumentVisible() {
+		return similarDocumentVisible;
+	}
+
+	public void setSimilarDocumentVisible(boolean similarDocumentVisible) {
+		this.similarDocumentVisible = similarDocumentVisible;
+	}
 
 	public boolean isDownloadVisible() {
 		return downloadVisible;
@@ -86,6 +97,14 @@ public class ProfileToolbar implements Serializable {
 
 	public void setDownloadPdfVisible(boolean downloadPdfVisible) {
 		this.downloadPdfVisible = downloadPdfVisible;
+	}
+
+	public boolean isPrintVisible() {
+		return printVisible;
+	}
+
+	public void setPrintVisible(boolean printVisible) {
+		this.printVisible = printVisible;
 	}
 
 	public boolean isLockVisible() {
@@ -216,6 +235,14 @@ public class ProfileToolbar implements Serializable {
 		this.uploaderVisible = uploaderVisible;
 	}
 	
+	public boolean isSplitterResizeVisible() {
+		return splitterResizeVisible;
+	}
+
+	public void setSplitterResizeVisible(boolean splitterResizeVisible) {
+		this.splitterResizeVisible = splitterResizeVisible;
+	}
+
 	public boolean isOmrVisible() {
 		return omrVisible;
 	}
@@ -223,15 +250,17 @@ public class ProfileToolbar implements Serializable {
 	public void setOmrVisible(boolean omrVisible) {
 		this.omrVisible = omrVisible;
 	}
-
+	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		sb.append("createFolderVisible="); sb.append(createFolderVisible);
 		sb.append(", findFolderVisible="); sb.append(findFolderVisible);
 		sb.append(", findDocumentVisible="); sb.append(findDocumentVisible);
+		sb.append(", similarDocumentVisible="); sb.append(similarDocumentVisible);
 		sb.append(", downloadVisible="); sb.append(downloadVisible);
 		sb.append(", downloadPdfVisible="); sb.append(downloadPdfVisible);
+		sb.append(", printVisible="); sb.append(printVisible);
 		sb.append(", addDocumentVisible="); sb.append(addDocumentVisible);
 		sb.append(", lockVisible="); sb.append(lockVisible);
 		sb.append(", unlockVisible="); sb.append(unlockVisible);
@@ -248,6 +277,7 @@ public class ProfileToolbar implements Serializable {
 		sb.append(", refreshVisible="); sb.append(refreshVisible);
 		sb.append(", scannerVisible="); sb.append(scannerVisible);
 		sb.append(", uploaderVisible="); sb.append(uploaderVisible);
+		sb.append(", splitterResizeVisible="); sb.append(splitterResizeVisible);
 		sb.append(", omrVisible="); sb.append(omrVisible);
 		sb.append("}");
 		return sb.toString();

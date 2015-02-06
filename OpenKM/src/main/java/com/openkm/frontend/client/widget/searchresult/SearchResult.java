@@ -44,10 +44,11 @@ public class SearchResult extends Composite {
 	
 	SimplePanel sp;
 	public SearchCompactResult searchCompactResult;
-	private SearchFullResult searchFullResult;
+	public SearchFullResult searchFullResult;
 	public Status status;
 	private GWTResultSet resultSet = new GWTResultSet();
 	private int resultsViewMode = SearchControl.RESULTS_VIEW_NORMAL;
+	
 	
 	public SearchResult() {
 		sp = new SimplePanel();

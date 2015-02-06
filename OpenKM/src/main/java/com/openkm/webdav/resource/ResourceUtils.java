@@ -53,6 +53,7 @@ public class ResourceUtils {
 	public static Resource getNode(Path srcPath, String path) throws PathNotFoundException, AccessDeniedException,
 			RepositoryException, DatabaseException {
 		log.debug("getNode({}, {})", srcPath, path);
+		long begin = System.currentTimeMillis();
 		String fixedPath = ResourceUtils.fixRepositoryPath(path);
 		Resource res = null;
 		
@@ -74,6 +75,7 @@ public class ResourceUtils {
 			log.warn("PathNotFoundException: {}", e.getMessage());
 		}
 		
+		log.trace("getNode.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getNode: {}", res);
 		return res;
 	}
@@ -83,6 +85,7 @@ public class ResourceUtils {
 	 */
 	private static Resource getFolder(Path path, String fldPath) throws PathNotFoundException, RepositoryException,
 			DatabaseException {
+		long begin = System.currentTimeMillis();
 		String fixedFldPath = fixRepositoryPath(fldPath);
 		Folder fld = OKMFolder.getInstance().getProperties(null, fixedFldPath);
 		List<Folder> fldChilds = OKMFolder.getInstance().getChildren(null, fixedFldPath);
@@ -90,6 +93,7 @@ public class ResourceUtils {
 		List<Mail> mailChilds = OKMMail.getInstance().getChildren(null, fixedFldPath);
 		Resource fldResource = new FolderResource(path, fld, fldChilds, docChilds, mailChilds);
 		
+		log.trace("getFolder.Time: {}", System.currentTimeMillis() - begin);
 		return fldResource;
 	}
 	
@@ -98,10 +102,12 @@ public class ResourceUtils {
 	 */
 	private static Resource getDocument(String docPath) throws PathNotFoundException, RepositoryException,
 			DatabaseException {
+		long begin = System.currentTimeMillis();
 		String fixedDocPath = fixRepositoryPath(docPath);
 		Document doc = OKMDocument.getInstance().getProperties(null, fixedDocPath);
 		Resource docResource = new DocumentResource(doc);
 		
+		log.trace("getDocument.Time: {}", System.currentTimeMillis() - begin);
 		return docResource;
 	}
 	
@@ -110,10 +116,12 @@ public class ResourceUtils {
 	 */
 	private static Resource getMail(String mailPath) throws PathNotFoundException, RepositoryException,
 			DatabaseException {
+		long begin = System.currentTimeMillis();
 		String fixedMailPath = fixRepositoryPath(mailPath);
 		Mail mail = OKMMail.getInstance().getProperties(null, fixedMailPath);
 		Resource docResource = new MailResource(mail);
 		
+		log.trace("getMail.Time: {}", System.currentTimeMillis() - begin);
 		return docResource;
 	}
 	
@@ -122,6 +130,7 @@ public class ResourceUtils {
 	 */
 	private static Resource getCategory(Path path, String catPath) throws PathNotFoundException, RepositoryException,
 			DatabaseException {
+		long begin = System.currentTimeMillis();
 		String fixedFldPath = fixRepositoryPath(catPath);
 		Folder cat = OKMFolder.getInstance().getProperties(null, fixedFldPath);
 		List<Folder> catChilds = OKMFolder.getInstance().getChildren(null, fixedFldPath);
@@ -140,6 +149,7 @@ public class ResourceUtils {
 		List<Mail> mailChilds = new ArrayList<Mail>();
 		Resource catResource = new CategoryResource(path, cat, catChilds, docChilds, mailChilds);
 		
+		log.trace("getCategory.Time: {}", System.currentTimeMillis() - begin);
 		return catResource;
 	}
 	
@@ -149,6 +159,7 @@ public class ResourceUtils {
 	public static void createContent(OutputStream out, Path path, List<Folder> fldChilds, List<Document> docChilds,
 			List<Mail> mailChilds) {
 		log.debug("createContent({}, {}, {}, {}, {})", new Object[] { out, path, fldChilds, docChilds, mailChilds });
+		long begin = System.currentTimeMillis();
 		PrintWriter pw = new PrintWriter(out);
 		pw.println("<html>");
 		pw.println("<header>");
@@ -213,6 +224,8 @@ public class ResourceUtils {
 		pw.println("</html>");
 		pw.flush();
 		pw.close();
+		
+		log.trace("createContent.Time: {}", System.currentTimeMillis() - begin);
 	}
 	
 	/**

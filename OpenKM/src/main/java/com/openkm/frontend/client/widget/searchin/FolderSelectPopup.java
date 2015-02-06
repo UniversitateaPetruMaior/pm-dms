@@ -60,14 +60,14 @@ public class FolderSelectPopup extends DialogBox  {
 		super(false,true);
 		
 		vPanel = new VerticalPanel();		
-		vPanel.setWidth("300");
-		vPanel.setHeight("200");
+		vPanel.setWidth("450");
+		vPanel.setHeight("300");
 		hPanel = new HorizontalPanel();
 		hListPanel  = new HorizontalPanel();
-		hListPanel.setWidth("290");
+		hListPanel.setWidth("440");
 		
 		scrollDirectoryPanel = new ScrollPanel();
-		scrollDirectoryPanel.setSize("290", "150");
+		scrollDirectoryPanel.setSize("440", "250");
 		scrollDirectoryPanel.setStyleName("okm-Popup-text");
 		verticalDirectoryPanel = new VerticalPanel();
 		verticalDirectoryPanel.setSize("100%", "100%");
@@ -111,7 +111,7 @@ public class FolderSelectPopup extends DialogBox  {
 		vPanel.setCellHorizontalAlignment(hListPanel, HasAlignment.ALIGN_CENTER);
 		vPanel.setCellHorizontalAlignment(scrollDirectoryPanel, HasAlignment.ALIGN_CENTER);
 		vPanel.setCellHorizontalAlignment(hPanel, HasAlignment.ALIGN_CENTER);
-		vPanel.setCellHeight(scrollDirectoryPanel, "150");
+		vPanel.setCellHeight(scrollDirectoryPanel, "250");
 
 		cancelButton.setStyleName("okm-Input");
 		actionButton.setStyleName("okm-Input");
@@ -146,6 +146,7 @@ public class FolderSelectPopup extends DialogBox  {
 		} else {
 			setText(Main.i18n("search.folder.filter"));
 		}
+		
 		cancelButton.setText(Main.i18n("button.cancel"));
 		actionButton.setText(Main.i18n("button.select"));
 	}
@@ -155,8 +156,8 @@ public class FolderSelectPopup extends DialogBox  {
 	 */
 	public void show(boolean categories) {
 		this.categories = categories;
-		int left = (Window.getClientWidth()-300) / 2;
-		int top = (Window.getClientHeight()-200) / 2;
+		int left = (Window.getClientWidth()-450) / 2;
+		int top = (Window.getClientHeight()-300) / 2;
 		setPopupPosition(left, top);
 		
 		if (categories) {

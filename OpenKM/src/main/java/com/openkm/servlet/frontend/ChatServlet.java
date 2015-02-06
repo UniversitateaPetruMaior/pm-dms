@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.api.OKMAuth;
 import com.openkm.core.ChatManager;
+import com.openkm.core.Config;
 import com.openkm.frontend.client.OKMException;
 import com.openkm.frontend.client.bean.GWTUser;
 import com.openkm.frontend.client.constants.service.ErrorCode;
@@ -79,11 +80,13 @@ public class ChatServlet extends OKMRemoteServiceServlet implements OKMChatServi
 		updateSessionManager();
 		
 		try {
-			for (String userId : manager.getLoggedUsers()) {
-				GWTUser user = new GWTUser();
-				user.setId(userId);
-				user.setUsername(OKMAuth.getInstance().getName(null, userId));
-				users.add(user);
+			if (!Config.SYSTEM_MAINTENANCE) {
+				for (String userId : manager.getLoggedUsers()) {
+					GWTUser user = new GWTUser();
+					user.setId(userId);
+					user.setUsername(OKMAuth.getInstance().getName(null, userId));
+					users.add(user);
+				}
 			}
 		} catch (PrincipalAdapterException e) {
 			log.error(e.getMessage(), e);
@@ -194,6 +197,7 @@ public class ChatServlet extends OKMRemoteServiceServlet implements OKMChatServi
 	@Override
 	public void addUserToChatRoom(String room, String user) throws OKMException {
 		updateSessionManager();
+		
 		try {
 			manager.addUserToChatRoom(user, room);
 		} catch (PrincipalAdapterException e) {

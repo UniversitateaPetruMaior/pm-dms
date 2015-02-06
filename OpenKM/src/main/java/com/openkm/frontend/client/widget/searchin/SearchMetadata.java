@@ -35,6 +35,7 @@ import com.google.gwt.user.client.ui.ScrollPanel;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTPropertyParams;
 import com.openkm.frontend.client.bean.form.GWTFormElement;
+import com.openkm.frontend.client.constants.ui.UIDockPanelConstants;
 import com.openkm.frontend.client.widget.form.FormManager;
 
 /**
@@ -54,8 +55,8 @@ public class SearchMetadata extends Composite {
 	/**
 	 * SearchMetadata
 	 */
-	public SearchMetadata(HasSearch search) {
-		formManager = new FormManager(search);
+	public SearchMetadata(HasPropertyHandler propertyHandler) {
+		formManager = new FormManager(propertyHandler);
 		table = new FlexTable();
 		scrollPanel = new ScrollPanel(table);
 		
@@ -72,7 +73,7 @@ public class SearchMetadata extends Composite {
 		addGroup = new Button(Main.i18n("search.add.property.group"), new ClickHandler() { 
 			@Override
 			public void onClick(ClickEvent event) {
-				groupPopup.show();
+				groupPopup.show(UIDockPanelConstants.SEARCH);
 			}
 		});
 		

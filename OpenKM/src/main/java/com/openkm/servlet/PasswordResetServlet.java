@@ -34,6 +34,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.dao.AuthDAO;
 import com.openkm.dao.bean.User;
@@ -56,32 +57,36 @@ public class PasswordResetServlet extends HttpServlet {
 		ServletContext sc = getServletContext();
 		User usr = null;
 		
-		try {
-			usr = AuthDAO.findUserByPk(username);
-		} catch (DatabaseException e) {
-			log.error(getServletName() + " User '" + username + "' not found");
-		}
-		
-		if (usr != null) {
+		if (Config.USER_PASSWORD_RESET) {
 			try {
-				String password = RandomStringUtils.randomAlphanumeric(8);
-				AuthDAO.updateUserPassword(username, password);
-				MailUtils.sendMessage(usr.getEmail(), usr.getEmail(), "Password reset", "Your new password is: " + password
-						+ "<br/>" + "To change it log in and then go to 'Tools' > 'Preferences' > 'User Configuration'.");
-				sc.setAttribute("resetOk", usr.getEmail());
-				response.sendRedirect("password_reset.jsp");
-			} catch (MessagingException e) {
-				log.error(e.getMessage(), e);
-				sc.setAttribute("resetFailed", "Failed to send the new password by email");
-				response.sendRedirect("password_reset.jsp");
+				usr = AuthDAO.findUserByPk(username);
 			} catch (DatabaseException e) {
-				log.error(e.getMessage(), e);
-				sc.setAttribute("resetFailed", "Failed reset the user password");
-				response.sendRedirect("password_reset.jsp");
+				log.error(getServletName() + " User '" + username + "' not found");
+			}
+			
+			if (usr != null) {
+				try {
+					String password = RandomStringUtils.randomAlphanumeric(8);
+					AuthDAO.updateUserPassword(username, password);
+					MailUtils.sendMessage(usr.getEmail(), usr.getEmail(), "Password reset", "Your new password is: " + password
+						+ "<br/>" + "To change it log in and then go to 'Tools' > 'Preferences' > 'User Configuration'.");
+					sc.setAttribute("resetOk", usr.getEmail());
+					response.sendRedirect("password_reset.jsp");
+				} catch (MessagingException e) {
+					log.error(e.getMessage(), e);
+					sc.setAttribute("resetFailed", "Failed to send the new password by email");
+					response.sendRedirect("password_reset.jsp");
+				} catch (DatabaseException e) {
+					log.error(e.getMessage(), e);
+					sc.setAttribute("resetFailed", "Failed reset the user password");
+					response.sendRedirect("password_reset.jsp");
+				}
+			} else {
+				sc.setAttribute("resetFailed", "Invalid user name provided");
+				sc.getRequestDispatcher("/password_reset.jsp").forward(request, response);
 			}
 		} else {
-			sc.setAttribute("resetFailed", "Invalid user name provided");
-			sc.getRequestDispatcher("/password_reset.jsp").forward(request, response);
+			sc.getRequestDispatcher("/login.jsp").forward(request, response);
 		}
 	}
 }

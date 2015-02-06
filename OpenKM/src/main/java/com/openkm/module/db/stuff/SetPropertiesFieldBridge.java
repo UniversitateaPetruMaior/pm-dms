@@ -66,17 +66,17 @@ public class SetPropertiesFieldBridge implements FieldBridge {
 						
 						if (fe instanceof Input && ((Input) fe).getType().equals(Input.TYPE_DATE)) {
 							propValue = propValue.substring(0, 8);
-							log.info("Added date field '{}' with value '{}'", nodProp.getName(), propValue);
+							log.debug("Added date field '{}' with value '{}'", nodProp.getName(), propValue);
 							luceneOptions.addFieldToDocument(nodProp.getName(), propValue, document);
 						} else if (fe instanceof Select) {
 							String[] propValues = gson.fromJson(propValue, String[].class);
 							
 							for (String optValue : propValues) {
-								log.info("Added list field '{}' with value '{}'", nodProp.getName(), optValue);
+								log.debug("Added list field '{}' with value '{}'", nodProp.getName(), optValue);
 								luceneOptions.addFieldToDocument(nodProp.getName(), optValue, document);
 							}
 						} else {
-							log.info("Added field '{}' with value '{}'", nodProp.getName(), propValue);
+							log.debug("Added field '{}' with value '{}'", nodProp.getName(), propValue);
 							luceneOptions.addFieldToDocument(nodProp.getName(), propValue, document);
 						}
 					}

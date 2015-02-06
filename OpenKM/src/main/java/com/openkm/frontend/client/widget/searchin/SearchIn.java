@@ -49,7 +49,7 @@ import com.openkm.frontend.client.widget.searchsaved.Status;
  * 
  * @author jllort
  */
-public class SearchIn extends Composite implements HasSearch {
+public class SearchIn extends Composite implements HasPropertyHandler {
 	private static final int TAB_HEIGHT = 20;
 	private static final int CONTROLER_WIDTH = 380;
 	private static final int MINIMUM_TAB_WIDTH = 400;
@@ -443,7 +443,6 @@ public class SearchIn extends Composite implements HasSearch {
 			searchNormal.setPixelSize(tabWidth-20, height-42); // Substract tab height
 			searchAdvanced.setPixelSize(tabWidth-20, height-42); // Substract tab height
 			searchMetadata.setPixelSize(tabWidth-20, height-42); // Substract tab height
-			Main.get().mainPanel.search.searchBrowser.refreshSpliterAfterAdded();
 			Timer timer =new Timer() {
 				@Override
 				public void run() {

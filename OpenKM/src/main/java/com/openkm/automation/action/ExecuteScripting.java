@@ -32,6 +32,8 @@ import bsh.Interpreter;
 import com.openkm.automation.Action;
 import com.openkm.automation.AutomationUtils;
 import com.openkm.dao.bean.NodeBase;
+import com.openkm.module.db.stuff.DbSessionManager;
+import com.openkm.spring.PrincipalUtils;
 
 /**
  * ExecuteScripting
@@ -63,12 +65,16 @@ public class ExecuteScripting implements Action  {
 		NodeBase node = AutomationUtils.getNode(env);
 		String uuid = AutomationUtils.getUuid(env);
 		File file = AutomationUtils.getFile(env);
+		String systemToken = DbSessionManager.getInstance().getSystemToken();
+		String userId = PrincipalUtils.getUser();
 		
 		try {
 			Interpreter i = new Interpreter();
+			i.set("systemToken", systemToken);
 			i.set("node", node);
 			i.set("uuid", uuid);
 			i.set("file", file);
+			i.set("userId", userId);
 			
 			if (env.get(AutomationUtils.NODE_UUID) != null) {
 				i.set(AutomationUtils.NODE_UUID, env.get(AutomationUtils.NODE_UUID));

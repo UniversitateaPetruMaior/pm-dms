@@ -21,14 +21,19 @@
 
 package com.openkm.frontend.client.util;
 
+import java.util.Date;
+
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.openkm.frontend.client.Main;
+import com.openkm.frontend.client.bean.GWTFolder;
+import com.openkm.frontend.client.bean.GWTPermission;
 import com.openkm.frontend.client.bean.GWTTaskInstance;
+import com.openkm.frontend.client.bean.GWTUINotification;
 import com.openkm.frontend.client.constants.GWTRepository;
+import com.openkm.frontend.client.constants.service.ErrorCode;
 import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
 import com.openkm.frontend.client.constants.ui.UIDockPanelConstants;
-import com.openkm.frontend.client.constants.service.ErrorCode;
 import com.openkm.frontend.client.service.OKMDocumentService;
 import com.openkm.frontend.client.service.OKMDocumentServiceAsync;
 import com.openkm.frontend.client.service.OKMFolderService;
@@ -39,6 +44,7 @@ import com.openkm.frontend.client.service.OKMRepositoryService;
 import com.openkm.frontend.client.service.OKMRepositoryServiceAsync;
 import com.openkm.frontend.client.service.OKMWorkflowService;
 import com.openkm.frontend.client.service.OKMWorkflowServiceAsync;
+import com.openkm.frontend.client.widget.startup.StartUp;
 
 /**
  * @author jllort
@@ -50,6 +56,12 @@ public class CommonUI {
 	private static final OKMDocumentServiceAsync documentService = (OKMDocumentServiceAsync) GWT.create(OKMDocumentService.class);
 	private static final OKMMailServiceAsync mailService = (OKMMailServiceAsync) GWT.create(OKMMailService.class);
 	private static final OKMWorkflowServiceAsync workflowService = (OKMWorkflowServiceAsync) GWT.create(OKMWorkflowService.class);
+	
+	public static final String FOLDER_IMAGE_WITH_CHILDREN = "menuitem_childs";
+	public static final String FOLDER_IMAGE_EMPTY = "menuitem_empty";
+	public static final String FOLDER_IMAGE_READONLY_WITH_CHILDREN = "menuitem_childs_ro";
+	public static final String FOLDER_IMAGE_READONLY_EMPTY = "menuitem_empty_ro";
+	public static final String FOLDER_IMAGE_WITH_SUBSCRIPTION = "_subscribed";
 	
 	/**
 	 * Opens path
@@ -81,6 +93,11 @@ public class CommonUI {
 				if (path.startsWith(Main.get().categoriesRootFolder.getPath())) {
 					found = true;
 					stack = UIDesktopConstants.NAVIGATOR_CATEGORIES;
+				}
+			}
+			if (Main.get().workspaceUserProperties.getWorkspace().isStackMetadataVisible()) {
+				if (path.startsWith(Main.get().metadataRootFolder.getPath())) {
+					stack = UIDesktopConstants.NAVIGATOR_METADATA;
 				}
 			}
 			if (Main.get().workspaceUserProperties.getWorkspace().isStackThesaurusVisible()) {
@@ -115,7 +132,12 @@ public class CommonUI {
 			}
 			
 			if (found) {
-				Main.get().mainPanel.topPanel.tabWorkspace.changeSelectedTab(UIDockPanelConstants.DESKTOP);
+				// At loading time in profiles can defined other tab than desktop. 
+				// If actual loading status is STARTUP_LOADING_TAXONOMY_EVAL_PARAMS should not change tab
+				// This indicates we're on startup loading
+				if (Main.get().startUp.getStatus()!=StartUp.STARTUP_LOADING_TAXONOMY_EVAL_PARAMS) {
+					Main.get().mainPanel.topPanel.tabWorkspace.changeSelectedTab(UIDockPanelConstants.DESKTOP);
+				}
 				Main.get().mainPanel.desktop.navigator.stackPanel.showStack(stack,false);				
 				Main.get().activeFolderTree.openAllPathFolder(path, docPath);
 			}
@@ -199,6 +221,8 @@ public class CommonUI {
 				return Main.get().taxonomyRootFolder.getPath();
 			} else if (Main.get().workspaceUserProperties.getWorkspace().isStackCategoriesVisible()) {
 				return Main.get().categoriesRootFolder.getPath();
+			} else if (Main.get().workspaceUserProperties.getWorkspace().isStackMetadataVisible()) {
+				return Main.get().metadataRootFolder.getPath();
 			} else if (Main.get().workspaceUserProperties.getWorkspace().isStackThesaurusVisible()) {
 				return Main.get().thesaurusRootFolder.getPath();
 			} else if (Main.get().workspaceUserProperties.getWorkspace().isStackTemplatesVisible()) {
@@ -215,6 +239,29 @@ public class CommonUI {
 	}
 	
 	/**
+	 * getDefaultRootLoadingPath
+	 */
+	public static String getDefaultRootPathByProfile() {
+		if (Main.get().workspaceUserProperties.getWorkspace().isStackTaxonomy()) {
+			return  Main.get().taxonomyRootFolder.getPath();
+		} else if (Main.get().workspaceUserProperties.getWorkspace().isStackCategoriesVisible()) {
+			return Main.get().categoriesRootFolder.getPath();
+		} else if (Main.get().workspaceUserProperties.getWorkspace().isStackThesaurusVisible()) {
+			return Main.get().thesaurusRootFolder.getPath();
+		} else if (Main.get().workspaceUserProperties.getWorkspace().isStackTemplatesVisible()) {
+			return Main.get().templatesRootFolder.getPath();
+		} else if (Main.get().workspaceUserProperties.getWorkspace().isStackPersonalVisible()) {
+			return Main.get().personalRootFolder.getPath();
+		} else if (Main.get().workspaceUserProperties.getWorkspace().isStackMailVisible()) {
+			return Main.get().mailRootFolder.getPath();
+		} else if (Main.get().workspaceUserProperties.getWorkspace().isStackTrashVisible()) {
+			return Main.get().trashRootFolder.getPath();
+		} else {
+			return  Main.get().taxonomyRootFolder.getPath();
+		}
+	}
+	
+	/**
 	 * isVisiblePathByProfile
 	 * 
 	 * Evaluates if path is visible to user profiles
@@ -228,6 +275,9 @@ public class CommonUI {
 			return false;
 		} else if (!Main.get().workspaceUserProperties.getWorkspace().isStackCategoriesVisible()
 				&& path.startsWith("/"+GWTRepository.CATEGORIES)) {
+			return false;
+		} else if (!Main.get().workspaceUserProperties.getWorkspace().isStackMetadataVisible()
+				&& path.startsWith("/"+GWTRepository.METADATA)) {
 			return false;
 		} else if (!Main.get().workspaceUserProperties.getWorkspace().isStackThesaurusVisible()
 				&& path.startsWith("/"+GWTRepository.THESAURUS)) {
@@ -279,20 +329,61 @@ public class CommonUI {
 	}
 	
 	/**
+	 * disableExtension
+	 */
+	public static void disableExtension(String name) {
+		GWTUINotification uin = new GWTUINotification();
+		uin.setAction(GWTUINotification.ACTION_NONE);
+		uin.setType(GWTUINotification.TYPE_TEMPORAL);
+		uin.setDate(new Date());
+		uin.setShow(true);
+		uin.setMessage("["+name+"] "+Main.i18n("browser.java.support.not.found.extension.disabled"));
+		Main.get().mainPanel.bottomPanel.userInfo.addUINotification(uin);
+	}
+	
+	/**
+	 * getFolderIcon
+	 */
+	public static String getFolderIcon(GWTFolder fld) {
+		// url is ./ because this method call is always done from /frontend/
+		String url = "img/";
+		if ((fld.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE) {
+			if (fld.isHasChildren()) {
+				url += FOLDER_IMAGE_WITH_CHILDREN;
+			} else {
+				url += FOLDER_IMAGE_EMPTY;
+			}
+		} else {
+			if (fld.isHasChildren()) {
+				url += FOLDER_IMAGE_READONLY_WITH_CHILDREN;
+			} else {
+				url += FOLDER_IMAGE_READONLY_EMPTY;
+			}
+		}
+		if (fld.isSubscribed()) {
+			url += FOLDER_IMAGE_WITH_SUBSCRIPTION; // image subscription at ends
+		}
+		url += ".gif";
+		return url;
+	}
+	
+	/**
 	 * initJavaScriptApi
 	 * 
 	 * @param toolBar
 	 */
 	public native void initJavaScriptApi(CommonUI commonUI) /*-{
 		$wnd.openPathByUuid = function(uuid) { 
-			return @com.openkm.frontend.client.util.CommonUI::openPathByUuid(Ljava/lang/String;)(uuid);
+			@com.openkm.frontend.client.util.CommonUI::openPathByUuid(Ljava/lang/String;)(uuid);
+			return true;
 		}
 		$wnd.openPath = function(folderPath, docPath) {
 			@com.openkm.frontend.client.util.CommonUI::openPath(Ljava/lang/String;Ljava/lang/String;)(folderPath, docPath);
 			return true;
 		};
 		$wnd.jsOpenPathByUuid = function(uuid) { 
-			return @com.openkm.frontend.client.util.CommonUI::openPathByUuid(Ljava/lang/String;)(uuid);
+			@com.openkm.frontend.client.util.CommonUI::openPathByUuid(Ljava/lang/String;)(uuid);
+			return true;
 		}
 		$wnd.jsOpenPath = function(folderPath, docPath) {
 			@com.openkm.frontend.client.util.CommonUI::openPath(Ljava/lang/String;Ljava/lang/String;)(folderPath, docPath);

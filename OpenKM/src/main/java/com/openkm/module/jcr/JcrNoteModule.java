@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.jcr;
@@ -64,8 +64,8 @@ public class JcrNoteModule implements NoteModule {
 	}
 	
 	@Override
-	public Note add(String token, String nodePath, String text) throws LockException, 
-			PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
+	public Note add(String token, String nodePath, String text) throws LockException, PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
 		log.debug("add({}, {}, {})", new Object[] { token, nodePath, text });
 		Note newNote = null;
 		Session session = null;
@@ -84,10 +84,10 @@ public class JcrNoteModule implements NoteModule {
 			
 			node = session.getRootNode().getNode(nodePath.substring(1));
 			newNote = BaseNoteModule.add(session, node, text);
-						
+			
 			// Check subscriptions
 			BaseNotificationModule.checkSubscriptions(node, session.getUserID(), "ADD_NOTE", text);
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "ADD_NOTE", node.getUUID(), nodePath, text);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -107,16 +107,18 @@ public class JcrNoteModule implements NoteModule {
 			JCRUtils.discardsPendingChanges(node);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("add: {}", newNote);
 		return newNote;
 	}
-
+	
 	@Override
-	public void delete(String token, String notePath) throws LockException, PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
+	public void delete(String token, String notePath) throws LockException, PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
 		log.debug("delete({}, {})", token, notePath);
 		Session session = null;
 		Node parentNode = null;
@@ -150,7 +152,7 @@ public class JcrNoteModule implements NoteModule {
 			} else {
 				throw new AccessDeniedException("Note can only be delete by its creator");
 			}
-						
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "DELETE_NOTE", nid, notePath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -170,15 +172,17 @@ public class JcrNoteModule implements NoteModule {
 			JCRUtils.discardsPendingChanges(parentNode);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("delete: void");
 	}
 	
 	@Override
-	public Note get(String token, String notePath) throws LockException, PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
+	public Note get(String token, String notePath) throws LockException, PathNotFoundException, AccessDeniedException, RepositoryException,
+			DatabaseException {
 		log.debug("get({}, {})", token, notePath);
 		Session session = null;
 		Note note = null;
@@ -196,7 +200,7 @@ public class JcrNoteModule implements NoteModule {
 			
 			Node noteNode = session.getRootNode().getNode(notePath.substring(1));
 			note = get(noteNode);
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "GET_NOTE", ((NodeImpl) noteNode).getIdentifier(), notePath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -212,16 +216,18 @@ public class JcrNoteModule implements NoteModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("get: {}", note);
 		return note;
 	}
-
+	
 	@Override
-	public String set(String token, String notePath, String text) throws LockException, 
-			PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
+	public String set(String token, String notePath, String text) throws LockException, PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
 		log.debug("set({}, {}, {})", new Object[] { token, notePath, text });
 		Session session = null;
 		Node noteNode = null;
@@ -268,16 +274,17 @@ public class JcrNoteModule implements NoteModule {
 			JCRUtils.discardsPendingChanges(noteNode);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
 		
 		log.debug("set: {}", text);
 		return text;
 	}
-
+	
 	@Override
-	public List<Note> list(String token, String nodePath) throws PathNotFoundException,
-			RepositoryException, DatabaseException {
+	public List<Note> list(String token, String nodePath) throws PathNotFoundException, RepositoryException, DatabaseException {
 		log.debug("list({}, {})", token, nodePath);
 		List<Note> notes = new ArrayList<Note>();
 		Session session = null;
@@ -292,7 +299,7 @@ public class JcrNoteModule implements NoteModule {
 			Node nodeNode = session.getRootNode().getNode(nodePath.substring(1));
 			Node notesNode = nodeNode.getNode(Note.LIST);
 			
-			for (NodeIterator nit = notesNode.getNodes(); nit.hasNext(); ) {
+			for (NodeIterator nit = notesNode.getNodes(); nit.hasNext();) {
 				Node noteNode = nit.nextNode();
 				Note note = new Note();
 				note.setDate(noteNode.getProperty(Note.DATE).getDate());
@@ -301,7 +308,7 @@ public class JcrNoteModule implements NoteModule {
 				note.setPath(noteNode.getPath());
 				notes.add(note);
 			}
-
+			
 			// Activity log
 			UserActivity.log(session.getUserID(), "LIST_NOTES", nodeNode.getUUID(), nodePath, null);
 		} catch (javax.jcr.PathNotFoundException e) {
@@ -311,9 +318,11 @@ public class JcrNoteModule implements NoteModule {
 			log.error(e.getMessage(), e);
 			throw new RepositoryException(e.getMessage(), e);
 		} finally {
-			if (token == null) JCRUtils.logout(session);
+			if (token == null) {
+				JCRUtils.logout(session);
+			}
 		}
-
+		
 		log.debug("getChilds: {}", notes);
 		return notes;
 	}

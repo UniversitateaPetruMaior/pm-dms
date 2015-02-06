@@ -45,6 +45,7 @@ import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTPropertyGroup;
 import com.openkm.frontend.client.bean.GWTPropertyParams;
 import com.openkm.frontend.client.bean.form.GWTFormElement;
+import com.openkm.frontend.client.constants.ui.UIDockPanelConstants;
 import com.openkm.frontend.client.service.OKMPropertyGroupService;
 import com.openkm.frontend.client.service.OKMPropertyGroupServiceAsync;
 
@@ -55,7 +56,6 @@ import com.openkm.frontend.client.service.OKMPropertyGroupServiceAsync;
  *
  */
 public class GroupPopup extends DialogBox {
-	
 	private final OKMPropertyGroupServiceAsync propertyGroupService = (OKMPropertyGroupServiceAsync) GWT.create(OKMPropertyGroupService.class);
 	
 	private VerticalPanel vPanel;
@@ -69,6 +69,7 @@ public class GroupPopup extends DialogBox {
 	private Label groupLabel;
 	private Label propertyLabel;
 	private int validate = -1;
+	private int origin = UIDockPanelConstants.SEARCH;
 	
 	/**
 	 * About popup
@@ -104,7 +105,14 @@ public class GroupPopup extends DialogBox {
 							param.setGrpName(grpName);
 							param.setGrpLabel(grpLabel);
 							param.setFormElement(formElement);
-							Main.get().mainPanel.search.searchBrowser.searchIn.searchMetadata.addProperty(param);
+							switch (origin) {
+								case UIDockPanelConstants.SEARCH:
+									Main.get().mainPanel.search.searchBrowser.searchIn.searchMetadata.addProperty(param);
+									break;
+								case UIDockPanelConstants.DESKTOP:
+									Main.get().updatePropertyGroupPopup.addProperty(param);
+									break;
+							}
 						}
 					}
 				}
@@ -176,6 +184,11 @@ public class GroupPopup extends DialogBox {
 		setWidget(vPanel);
 	}
 	
+	public void show(int origin) {
+		this.origin = origin;
+		show();
+	}
+	
 	/**
 	 * Gets asynchronous to get all groups
 	 */
@@ -209,7 +222,16 @@ public class GroupPopup extends DialogBox {
 			propertyLabel.setVisible(true);
 			propertyListBox.addItem("",""); // First item is always blank
 			
-			Collection<String> actualProperties = Main.get().mainPanel.search.searchBrowser.searchIn.getFormElementsKeys();
+			Collection<String> actualProperties = new ArrayList<String>();
+			switch (origin) {
+				case UIDockPanelConstants.SEARCH:
+					actualProperties = Main.get().mainPanel.search.searchBrowser.searchIn.getFormElementsKeys();
+					break;
+				case UIDockPanelConstants.DESKTOP:
+					actualProperties = Main.get().updatePropertyGroupPopup.getFormElementsKeys();
+					break;
+			}
+			
 
 			for (Iterator<GWTFormElement> it = result.iterator(); it.hasNext();) {
 				GWTFormElement formElement = it.next();
@@ -231,7 +253,15 @@ public class GroupPopup extends DialogBox {
 		public void onSuccess(List<GWTFormElement> result){
 			formElementList = result;
 			
-			Collection<String> actualProperties = Main.get().mainPanel.search.searchBrowser.searchIn.getFormElementsKeys();
+			Collection<String> actualProperties = new ArrayList<String>();
+			switch (origin) {
+				case UIDockPanelConstants.SEARCH:
+					actualProperties = Main.get().mainPanel.search.searchBrowser.searchIn.getFormElementsKeys();
+					break;
+				case UIDockPanelConstants.DESKTOP:
+					actualProperties = Main.get().updatePropertyGroupPopup.getFormElementsKeys();
+					break;
+			}
 			boolean found = false;
 			
 			for (Iterator<GWTFormElement> it = result.iterator(); it.hasNext();) {
@@ -326,13 +356,27 @@ public class GroupPopup extends DialogBox {
 			String value = groupListBox.getValue(validate);	
 			propertyGroupService.getPropertyGroupForm(value, callbackGetPropertyGroupFormDataToValidate);
 		} else {
-			// Validate button 
-			if (groupListBox.getItemCount()>1) {
-				Main.get().mainPanel.search.searchBrowser.searchIn.searchMetadata.addGroup.setEnabled(true);
-			} else {
-				Main.get().mainPanel.search.searchBrowser.searchIn.searchMetadata.addGroup.setEnabled(false);
+			switch (origin) {
+				case UIDockPanelConstants.SEARCH:
+					// Validate button 
+					if (groupListBox.getItemCount()>1) {
+						Main.get().mainPanel.search.searchBrowser.searchIn.searchMetadata.addGroup.setEnabled(true);
+					} else {
+						Main.get().mainPanel.search.searchBrowser.searchIn.searchMetadata.addGroup.setEnabled(false);
+					}
+					validate = -1; // Resets values
+					break;
+				case UIDockPanelConstants.DESKTOP:
+					// Validate button 
+					if (groupListBox.getItemCount()>1) {
+						Main.get().updatePropertyGroupPopup.addGroup.setEnabled(true);
+					} else {
+						Main.get().updatePropertyGroupPopup.addGroup.setEnabled(false);
+					}
+					validate = -1; // Resets values
+					break;
 			}
-			validate = -1; // Resets values
+
 		}
 	}
 }

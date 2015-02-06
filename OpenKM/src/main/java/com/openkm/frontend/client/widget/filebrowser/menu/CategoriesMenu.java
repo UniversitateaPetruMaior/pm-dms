@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.frontend.client.widget.filebrowser.menu;
@@ -35,7 +35,7 @@ import com.openkm.frontend.client.widget.MenuBase;
  * CategoryMenu menu
  * 
  * @author jllort
- *
+ * 
  */
 public class CategoriesMenu extends MenuBase {
 	private ToolBarOption toolBarOption;
@@ -52,7 +52,9 @@ public class CategoriesMenu extends MenuBase {
 	private MenuItem category;
 	private MenuItem keyword;
 	private MenuItem propertyGroup;
+	private MenuItem updatePropertyGroup;
 	private MenuItem go;
+	private MenuItem export;
 	
 	/**
 	 * Category menu
@@ -72,7 +74,8 @@ public class CategoriesMenu extends MenuBase {
 		checkin = new MenuItem(Util.menuHTML("img/icon/actions/checkin.gif", Main.i18n("filebrowser.menu.checkin")), true, checkinFile);
 		checkin.addStyleName("okm-MenuItem-strike");
 		dirMenu.addItem(checkin);
-		cancelCheckout = new MenuItem(Util.menuHTML("img/icon/actions/cancel_checkout.gif", Main.i18n("filebrowser.menu.checkout.cancel")), true, cancelCheckinFile);
+		cancelCheckout = new MenuItem(Util.menuHTML("img/icon/actions/cancel_checkout.gif", Main.i18n("filebrowser.menu.checkout.cancel")),
+				true, cancelCheckinFile);
 		cancelCheckout.addStyleName("okm-MenuItem-strike");
 		dirMenu.addItem(cancelCheckout);
 		lock = new MenuItem(Util.menuHTML("img/icon/actions/lock.gif", Main.i18n("filebrowser.menu.lock")), true, lockFile);
@@ -96,12 +99,20 @@ public class CategoriesMenu extends MenuBase {
 		keyword = new MenuItem(Util.menuHTML("img/icon/actions/book_add.png", Main.i18n("keyword.add")), true, addKeyword);
 		keyword.addStyleName("okm-MenuItem-strike");
 		dirMenu.addItem(keyword);
-		propertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/add_property_group.gif", Main.i18n("general.menu.edit.add.property.group")), true, addPropertyGroup);
+		propertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/add_property_group.gif",
+				Main.i18n("general.menu.edit.add.property.group")), true, addPropertyGroup);
 		propertyGroup.addStyleName("okm-MenuItem-strike");
 		dirMenu.addItem(propertyGroup);
+		updatePropertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/update_property_group.png",
+				Main.i18n("general.menu.edit.update.property.group")), true, updatePropertyGroupOKM);
+		updatePropertyGroup.addStyleName("okm-MenuItem-strike");
+		dirMenu.addItem(updatePropertyGroup);
 		go = new MenuItem(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")), true, goDirectory);
 		go.addStyleName("okm-MenuItem-strike");
 		dirMenu.addItem(go);
+		export = new MenuItem(Util.menuHTML("img/icon/actions/export.gif", Main.i18n("general.menu.file.export")), true, exportToFile);
+		export.addStyleName("okm-MenuItem-strike");
+		dirMenu.addItem(export);
 		
 		dirMenu.setStyleName("okm-MenuBar");
 		initWidget(dirMenu);
@@ -109,7 +120,7 @@ public class CategoriesMenu extends MenuBase {
 	
 	// Command menu to download file
 	Command downloadFile = new Command() {
-		public void execute() {		
+		public void execute() {
 			if (toolBarOption.downloadOption) {
 				Main.get().mainPanel.topPanel.toolBar.executeDownload();
 				hide();
@@ -227,6 +238,16 @@ public class CategoriesMenu extends MenuBase {
 		}
 	};
 	
+	// Command menu to update property group
+	Command updatePropertyGroupOKM = new Command() {
+		public void execute() {
+			if (toolBarOption.updatePropertyGroupOption) {
+				Main.get().mainPanel.topPanel.toolBar.updatePropertyGroup();
+				hide();
+			}
+		}
+	};
+	
 	// Command menu to go directory file
 	Command goDirectory = new Command() {
 		public void execute() {
@@ -235,14 +256,24 @@ public class CategoriesMenu extends MenuBase {
 				String path = "";
 				if (Main.get().mainPanel.desktop.browser.fileBrowser.isDocumentSelected()) {
 					docPath = Main.get().mainPanel.desktop.browser.fileBrowser.getDocument().getPath();
-					path = docPath.substring(0,docPath.lastIndexOf("/"));
+					path = Util.getParent(docPath);
 				} else if (Main.get().mainPanel.desktop.browser.fileBrowser.isFolderSelected()) {
 					path = Main.get().mainPanel.desktop.browser.fileBrowser.getFolder().getPath();
 				} else if (Main.get().mainPanel.desktop.browser.fileBrowser.isMailSelected()) {
 					docPath = Main.get().mainPanel.desktop.browser.fileBrowser.getMail().getPath();
-					path = docPath.substring(0,docPath.lastIndexOf("/"));
+					path = Util.getParent(docPath);
 				}
 				CommonUI.openPath(path, docPath);
+				hide();
+			}
+		}
+	};
+	
+	// Command menu to set default home
+	Command exportToFile = new Command() {
+		public void execute() {
+			if (toolBarOption.exportOption) {
+				Main.get().mainPanel.desktop.browser.fileBrowser.exportFolderToFile();
 				hide();
 			}
 		}
@@ -262,7 +293,10 @@ public class CategoriesMenu extends MenuBase {
 		category.setHTML(Util.menuHTML("img/icon/stackpanel/table_key.gif", Main.i18n("category.add")));
 		keyword.setHTML(Util.menuHTML("img/icon/actions/book_add.png", Main.i18n("keyword.add")));
 		propertyGroup.setHTML(Util.menuHTML("img/icon/actions/add_property_group.gif", Main.i18n("general.menu.edit.add.property.group")));
+		updatePropertyGroup.setHTML(Util.menuHTML("img/icon/actions/update_property_group.png",
+				Main.i18n("general.menu.edit.update.property.group")));
 		go.setHTML(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")));
+		export.setHTML(Util.menuHTML("img/icon/actions/export.gif", Main.i18n("general.menu.file.export")));
 	}
 	
 	@Override
@@ -293,7 +327,9 @@ public class CategoriesMenu extends MenuBase {
 		if (toolBarOption.addCategoryOption){enable(category);} else {disable(category);}
 		if (toolBarOption.addKeywordOption){enable(keyword);} else {disable(keyword);}
 		if (toolBarOption.addPropertyGroupOption){enable(propertyGroup);} else {disable(propertyGroup);}
+		if (toolBarOption.updatePropertyGroupOption){enable(updatePropertyGroup);} else {disable(updatePropertyGroup);}
 		if (toolBarOption.goOption){enable(go);} else {disable(go);}
+		if (toolBarOption.exportOption){enable(export);} else {disable(export);}
 	}
 	
 	@Override
@@ -334,14 +370,20 @@ public class CategoriesMenu extends MenuBase {
 		if (!option.isAddPropertyGroupOption()) {
 			dirMenu.removeItem(propertyGroup);
 		}
+		if (!option.isUpdatePropertyGroupOption()) {
+			dirMenu.removeItem(updatePropertyGroup);
+		}
 		if (!option.isGotoFolderOption()) {
 			dirMenu.removeItem(go);
+		}
+		if (!option.isExportOption()) {
+			dirMenu.removeItem(export);
 		}
 	}
 	
 	@Override
 	public void enableAddPropertyGroup() {
-		if (dirMenu!=null) { // Condition caused by loading case
+		if (dirMenu != null) { // Condition caused by loading case
 			toolBarOption.addPropertyGroupOption = true;
 		}
 		enable(propertyGroup);
@@ -349,10 +391,18 @@ public class CategoriesMenu extends MenuBase {
 	
 	@Override
 	public void disableAddPropertyGroup() {
-		if (dirMenu!=null) { // Condition caused by loading case
+		if (dirMenu != null) { // Condition caused by loading case
 			toolBarOption.addPropertyGroupOption = false;
 		}
 		disable(propertyGroup);
+	}
+	
+	@Override
+	public void disablePdfMerge() {
+	}
+	
+	@Override
+	public void enablePdfMerge() {
 	}
 	
 	/**

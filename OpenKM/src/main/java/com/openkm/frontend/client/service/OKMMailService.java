@@ -22,11 +22,14 @@
 package com.openkm.frontend.client.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+
 import com.openkm.frontend.client.OKMException;
 import com.openkm.frontend.client.bean.GWTMail;
+import com.openkm.frontend.client.widget.filebrowser.GWTFilter;
 
 /**
  * @author jllort
@@ -34,7 +37,7 @@ import com.openkm.frontend.client.bean.GWTMail;
  */
 @RemoteServiceRelativePath("Mail")
 public interface OKMMailService extends RemoteService {
-	public List<GWTMail> getChilds(String fldId) throws OKMException;
+	public List<GWTMail> getChilds(String fldId, Map<String, GWTFilter> mapFilter) throws OKMException;
 	public void delete(String mailPath) throws OKMException;
 	public void move(String docPath, String destPath) throws OKMException;
 	public void purge(String mailPath) throws OKMException;
@@ -42,4 +45,5 @@ public interface OKMMailService extends RemoteService {
 	public GWTMail getProperties(String mailPath) throws OKMException;
 	public GWTMail rename(String mailId, String newName) throws OKMException;
 	public Boolean isValid(String mailPath) throws OKMException;
+	public void forwardMail(String mailPath, String mails, String users, String roles, String message) throws OKMException;
 }

@@ -82,7 +82,7 @@ public class PersonalMenu extends MenuBase {
 	Command addFolder = new Command() {
 		public void execute() {
 			if (toolBarOption.createFolderOption) {
-				Main.get().activeFolderTree.addTmpFolderCreate();
+				Main.get().mainPanel.topPanel.toolBar.executeFolderDirectory();
 				Main.get().activeFolderTree.hideMenuPopup();
 			}
 		}
@@ -197,4 +197,8 @@ public class PersonalMenu extends MenuBase {
 	public void enableAddPropertyGroup() {}
 	@Override
 	public void disableAddPropertyGroup() {}
+	@Override
+	public void disablePdfMerge() {}
+	@Override
+	public void enablePdfMerge() {}
 }

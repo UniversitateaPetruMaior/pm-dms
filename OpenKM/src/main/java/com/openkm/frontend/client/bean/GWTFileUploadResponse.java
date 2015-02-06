@@ -34,8 +34,12 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 /**
  * GWTFileUploadResponse
  * 
- * @author jllort
+ * Note: Keep on sync with com.openkm.applet.FileUploadResponse at:
  * 
+ *   - Uploader Applet
+ *   - Scanner Applet
+ *   - Crypto Applet
+ *   - Editor Applet 
  */
 public class GWTFileUploadResponse implements IsSerializable {
 	private boolean hasAutomation = false;
@@ -44,6 +48,7 @@ public class GWTFileUploadResponse implements IsSerializable {
 	private List<String> workflowList = new ArrayList<String>();
 	private boolean showWizardCategories = false;
 	private boolean showWizardKeywords = false;
+	private boolean showWizardOCRDataCapture = false;
 	private boolean digitalSignature = false;
 	private String error = "";
 	
@@ -125,6 +130,14 @@ public class GWTFileUploadResponse implements IsSerializable {
 		this.showWizardKeywords = showWizardKeywords;
 	}
 	
+	public boolean isShowWizardOCRDataCapture() {
+		return showWizardOCRDataCapture;
+	}
+
+	public void setShowWizardOCRDataCapture(boolean showWizardOCRDataCapture) {
+		this.showWizardOCRDataCapture = showWizardOCRDataCapture;
+	}
+	
 	public boolean isHasAutomation() {
 		return hasAutomation;
 	}
@@ -155,6 +168,7 @@ public class GWTFileUploadResponse implements IsSerializable {
 		sb.append("path=").append(path);
 		sb.append(", showWizardCategories=").append(showWizardCategories);
 		sb.append(", showWizardKeywords=").append(showWizardKeywords);
+		sb.append(", showWizardOCRDataCapture=").append(showWizardOCRDataCapture);
 		sb.append(", groupsList=").append(groupsList);
 		sb.append(", workflowList=").append(workflowList);
 		sb.append(", hasAutomation=").append(hasAutomation);

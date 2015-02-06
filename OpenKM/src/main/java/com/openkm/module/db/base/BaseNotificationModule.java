@@ -78,7 +78,7 @@ public class BaseNotificationModule {
 			
 			if (!mails.isEmpty()) {
 				String path = NodeBaseDAO.getInstance().getPathFromUuid(node.getUuid());
-				CommonNotificationModule.sendMailSubscription(user, path, eventType, comment, mails);
+				CommonNotificationModule.sendMailSubscription(user, node.getUuid(), path, eventType, comment, mails);
 			}
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);

@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.dao;
@@ -39,6 +39,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import com.openkm.dao.bean.*;
+import com.openkm.dao.bean.cache.UserItems;
 import org.apache.commons.io.IOUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -56,33 +58,8 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
-import com.openkm.dao.bean.Activity;
-import com.openkm.dao.bean.AutomationAction;
-import com.openkm.dao.bean.AutomationMetadata;
-import com.openkm.dao.bean.AutomationRule;
-import com.openkm.dao.bean.AutomationValidation;
-import com.openkm.dao.bean.Bookmark;
-import com.openkm.dao.bean.Css;
-import com.openkm.dao.bean.DatabaseMetadataSequence;
-import com.openkm.dao.bean.DatabaseMetadataType;
-import com.openkm.dao.bean.DatabaseMetadataValue;
-import com.openkm.dao.bean.Language;
-import com.openkm.dao.bean.MimeType;
-import com.openkm.dao.bean.NodeBase;
-import com.openkm.dao.bean.NodeDocument;
-import com.openkm.dao.bean.NodeDocumentVersion;
-import com.openkm.dao.bean.NodeFolder;
-import com.openkm.dao.bean.NodeLock;
-import com.openkm.dao.bean.NodeMail;
-import com.openkm.dao.bean.NodeNote;
-import com.openkm.dao.bean.NodeSignature;
-import com.openkm.dao.bean.NodeProperty;
-import com.openkm.dao.bean.RegisteredPropertyGroup;
-import com.openkm.dao.bean.Omr;
-import com.openkm.dao.bean.Translation;
-import com.openkm.dao.bean.cache.UserItems;
-import com.openkm.dao.bean.cache.UserNodeKeywords;
 import com.openkm.dao.bean.extension.DropboxToken;
+import com.openkm.extension.dao.bean.ZohoToken;
 import com.openkm.util.ConfigUtils;
 import com.openkm.util.DatabaseDialectAdapter;
 import com.openkm.util.EnvironmentDetector;
@@ -94,9 +71,7 @@ import com.openkm.util.FileUtils;
  * 
  * @author pavila
  */
-//@SuppressWarnings(HibernateUtil.UNUSED)
 public class HibernateUtil {
-	static final String UNUSED = "unused";
 	private static Logger log = LoggerFactory.getLogger(HibernateUtil.class);
 	private static SessionFactory sessionFactory;
 	public static String HBM2DDL_CREATE = "create";
@@ -106,7 +81,8 @@ public class HibernateUtil {
 	/**
 	 * Disable constructor to guaranty a single instance
 	 */
-	private HibernateUtil() {}
+	private HibernateUtil() {
+	}
 	
 	/**
 	 * Get instance
@@ -128,15 +104,16 @@ public class HibernateUtil {
 		cfg.addAnnotatedClass(DatabaseMetadataType.class);
 		cfg.addAnnotatedClass(DatabaseMetadataValue.class);
 		cfg.addAnnotatedClass(DatabaseMetadataSequence.class);
+		cfg.addAnnotatedClass(ZohoToken.class);
 		cfg.addAnnotatedClass(com.openkm.dao.bean.Config.class);
+		cfg.addAnnotatedClass(DashboardActivity.class);
 		cfg.addAnnotatedClass(Css.class);
-		
-		// Extensions
+		cfg.addAnnotatedClass(PendingTask.class);
+		cfg.addAnnotatedClass(Omr.class);
 		cfg.addAnnotatedClass(DropboxToken.class);
-		
+
 		// Cache
 		cfg.addAnnotatedClass(UserItems.class);
-		cfg.addAnnotatedClass(UserNodeKeywords.class);
 		
 		// Automation
 		cfg.addAnnotatedClass(AutomationRule.class);
@@ -151,11 +128,9 @@ public class HibernateUtil {
 		cfg.addAnnotatedClass(NodeFolder.class);
 		cfg.addAnnotatedClass(NodeMail.class);
 		cfg.addAnnotatedClass(NodeNote.class);
-		cfg.addAnnotatedClass(NodeSignature.class);
 		cfg.addAnnotatedClass(NodeLock.class);
 		cfg.addAnnotatedClass(NodeProperty.class);
 		cfg.addAnnotatedClass(RegisteredPropertyGroup.class);
-		cfg.addAnnotatedClass(Omr.class);
 		
 		return cfg;
 	}
@@ -176,6 +151,7 @@ public class HibernateUtil {
 				cfg.setProperty("hibernate.search.analyzer", Config.HIBERNATE_SEARCH_ANALYZER);
 				cfg.setProperty("hibernate.search.default.directory_provider", "org.hibernate.search.store.FSDirectoryProvider");
 				cfg.setProperty("hibernate.search.default.indexBase", Config.HIBERNATE_SEARCH_INDEX_HOME);
+				cfg.setProperty("hibernate.search.default.exclusive_index_use", Config.HIBERNATE_SEARCH_INDEX_EXCLUSIVE);
 				cfg.setProperty("hibernate.search.default.optimizer.operation_limit.max", "500");
 				cfg.setProperty("hibernate.search.default.optimizer.transaction_limit.max", "75");
 				cfg.setProperty("hibernate.worker.execution", "async");
@@ -189,13 +165,13 @@ public class HibernateUtil {
 				log.info("Hibernate 'hibernate.hbm2ddl.auto' = {}", cfg.getProperty("hibernate.hbm2ddl.auto"));
 				log.info("Hibernate 'hibernate.show_sql' = {}", cfg.getProperty("hibernate.show_sql"));
 				log.info("Hibernate 'hibernate.generate_statistics' = {}", cfg.getProperty("hibernate.generate_statistics"));
-				log.info("Hibernate 'hibernate.search.default.directory_provider' = {}", cfg.getProperty("hibernate.search.default.directory_provider"));
+				log.info("Hibernate 'hibernate.search.default.directory_provider' = {}",
+						cfg.getProperty("hibernate.search.default.directory_provider"));
 				log.info("Hibernate 'hibernate.search.default.indexBase' = {}", cfg.getProperty("hibernate.search.default.indexBase"));
-				
 				
 				if (HBM2DDL_CREATE.equals(hbm2ddl)) {
 					// In case of database schema creation, also clean filesystem data.
-					// This means, conversion cache, file datastore and Lucene indexes. 
+					// This means, conversion cache, file datastore and Lucene indexes.
 					log.info("Cleaning filesystem data from: {}", Config.REPOSITORY_HOME);
 					FileUtils.deleteQuietly(new File(Config.REPOSITORY_HOME));
 				}
@@ -207,7 +183,7 @@ public class HibernateUtil {
 					log.info("Executing specific import for: {}", Config.HIBERNATE_DIALECT);
 					InputStream is = ConfigUtils.getResourceAsStream("default.sql");
 					String adapted = DatabaseDialectAdapter.dialectAdapter(is, Config.HIBERNATE_DIALECT);
-					executeImport(new StringReader(adapted));
+					executeSentences(new StringReader(adapted));
 					IOUtils.closeQuietly(is);
 				}
 				
@@ -226,14 +202,14 @@ public class HibernateUtil {
 						
 						InputStream isLang = ConfigUtils.getResourceAsStream("i18n/" + res);
 						log.info("Importing translation: {}", res);
-						executeImport(new InputStreamReader(isLang));
+						executeSentences(new InputStreamReader(isLang));
 						IOUtils.closeQuietly(isLang);
 						
 						// Apply previous translation changes
 						if (HBM2DDL_UPDATE.equals(hbm2ddl)) {
 							if (oldTrans != null) {
 								log.info("Restoring translations for: {}", langId);
-								executeImport(new StringReader(oldTrans));
+								executeSentences(new StringReader(oldTrans));
 							}
 						}
 					}
@@ -243,8 +219,8 @@ public class HibernateUtil {
 						log.info("Executing Hibernate create autofix");
 						hibernateCreateAutofix(Config.HOME_DIR + "/" + Config.OPENKM_CONFIG);
 					} else {
-						log.info("Hibernate create autofix not executed because of {}={}", 
-								Config.PROPERTY_HIBERNATE_CREATE_AUTOFIX, Config.HIBERNATE_CREATE_AUTOFIX);
+						log.info("Hibernate create autofix not executed because of {}={}", Config.PROPERTY_HIBERNATE_CREATE_AUTOFIX,
+								Config.HIBERNATE_CREATE_AUTOFIX);
 					}
 				}
 			} catch (HibernateException e) {
@@ -288,7 +264,7 @@ public class HibernateUtil {
 			return null;
 		}
 	}
-
+	
 	/**
 	 * Get instance
 	 */
@@ -336,7 +312,7 @@ public class HibernateUtil {
 			tx.rollback();
 		}
 	}
-
+	
 	/**
 	 * Convert from Blob to byte array
 	 */
@@ -349,11 +325,11 @@ public class HibernateUtil {
 			InputStream is = fromImageBlob.getBinaryStream();
 			
 			try {
-				while((dataSize = is.read(buf)) != -1) {
+				while ((dataSize = is.read(buf)) != -1) {
 					baos.write(buf, 0, dataSize);
 				}
 			} finally {
-				if(is != null) {
+				if (is != null) {
 					is.close();
 				}
 			}
@@ -374,7 +350,7 @@ public class HibernateUtil {
 			final SessionFactoryImplementor sfi = (SessionFactoryImplementor) sessionFactory;
 			final QueryTranslator translator = qtf.createQueryTranslator(hql, hql, Collections.EMPTY_MAP, sfi);
 			translator.compile(Collections.EMPTY_MAP, false);
-			return translator.getSQLString(); 
+			return translator.getSQLString();
 		}
 		
 		return null;
@@ -383,7 +359,7 @@ public class HibernateUtil {
 	/**
 	 * Load specific database import
 	 */
-	private static void executeImport(final Reader rd) {
+	public static void executeSentences(final Reader rd) {
 		Session session = null;
 		Transaction tx = null;
 		
@@ -391,23 +367,21 @@ public class HibernateUtil {
 			session = sessionFactory.openSession();
 			tx = session.beginTransaction();
 			
-			session.doWork(
-				new Work() {
-					@Override
-					public void execute(Connection con) throws SQLException {
-						try {
-							for (HashMap<String, String> error: LegacyDAO.executeScript(con, rd)) {
-								log.error("Error during import script execution at line {}: {} [ {} ]",
-										new Object[] { error.get("ln"), error.get("msg"), error.get("sql") });
-							}
-						} catch (IOException e) {
-							log.error(e.getMessage(), e);
-						} finally {
-							IOUtils.closeQuietly(rd);
+			session.doWork(new Work() {
+				@Override
+				public void execute(Connection con) throws SQLException {
+					try {
+						for (HashMap<String, String> error : LegacyDAO.executeScript(con, rd)) {
+							log.error("Error during script execution at line {}: {} [ {} ]",
+									new Object[] { error.get("ln"), error.get("msg"), error.get("sql") });
 						}
+					} catch (IOException e) {
+						log.error(e.getMessage(), e);
+					} finally {
+						IOUtils.closeQuietly(rd);
 					}
 				}
-			);
+			});
 			
 			commit(tx);
 		} catch (Exception e) {
@@ -420,28 +394,28 @@ public class HibernateUtil {
 	 * Generate database schema and initial data for a defined dialect
 	 */
 	public static void generateDatabase(String dialect) throws IOException {
-        // Configure Hibernate
-        log.info("Exporting Database Schema...");
-        String dbSchema = EnvironmentDetector.getUserHome() + "/schema.sql";
-        Configuration cfg = getConfiguration().configure();
-        cfg.setProperty("hibernate.dialect", dialect);
-        SchemaExport se = new SchemaExport(cfg);
-        se.setOutputFile(dbSchema);
-        se.setDelimiter(";");
-        se.setFormat(false);
-        se.create(false, false);
-        log.info("Database Schema exported to {}", dbSchema);
-        
-        String initialData = new File("").getAbsolutePath() + "/src/main/resources/default.sql";
-        log.info("Exporting Initial Data from '{}'...", initialData);
-        String initData = EnvironmentDetector.getUserHome() + "/data.sql";
-        FileInputStream fis = new FileInputStream(initialData);
-        String ret = DatabaseDialectAdapter.dialectAdapter(fis, dialect);
-        FileWriter fw = new FileWriter(initData);
-        IOUtils.write(ret, fw);
-        fw.flush();
-        fw.close();
-        log.info("Initial Data exported to {}", initData);
+		// Configure Hibernate
+		log.info("Exporting Database Schema...");
+		String dbSchema = EnvironmentDetector.getUserHome() + "/schema.sql";
+		Configuration cfg = getConfiguration().configure();
+		cfg.setProperty("hibernate.dialect", dialect);
+		SchemaExport se = new SchemaExport(cfg);
+		se.setOutputFile(dbSchema);
+		se.setDelimiter(";");
+		se.setFormat(false);
+		se.create(false, false);
+		log.info("Database Schema exported to {}", dbSchema);
+		
+		String initialData = new File("").getAbsolutePath() + "/src/main/resources/default.sql";
+		log.info("Exporting Initial Data from '{}'...", initialData);
+		String initData = EnvironmentDetector.getUserHome() + "/data.sql";
+		FileInputStream fis = new FileInputStream(initialData);
+		String ret = DatabaseDialectAdapter.dialectAdapter(fis, dialect);
+		FileWriter fw = new FileWriter(initData);
+		IOUtils.write(ret, fw);
+		fw.flush();
+		fw.close();
+		log.info("Initial Data exported to {}", initData);
 	}
 	
 	/**

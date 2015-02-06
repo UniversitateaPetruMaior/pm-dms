@@ -38,12 +38,13 @@ public class ExtendedStackPanel extends StackPanel implements HasNavigatorEvent,
 	private boolean startupFinished		= false; // to indicate process starting up has finished
 	private boolean taxonomyVisible		= false;
 	private boolean categoriesVisible	= false;
+	private boolean metadataVisible		= false;
 	private boolean thesaurusVisible 	= false;
 	private boolean templatesVisible 	= false;
 	private boolean personalVisible 	= false;
 	private boolean mailVisible			= false;
 	private boolean trashVisible		= false;
-	private int hiddenStacks = 7;
+	private int hiddenStacks = 8;
 	private int stackIndex = 0;
 	private List<NavigatorHandlerExtension> navHandlerExtensionList;
 	
@@ -140,6 +141,17 @@ public class ExtendedStackPanel extends StackPanel implements HasNavigatorEvent,
 					}
 					Main.get().mainPanel.desktop.browser.tabMultiple.setVisibleButtons(true);
 					break;
+					
+				case UIDesktopConstants.NAVIGATOR_METADATA:
+					Main.get().activeFolderTree = Main.get().mainPanel.desktop.navigator.metadataTree;
+					Main.get().mainPanel.desktop.browser.fileBrowser.changeView(UIDesktopConstants.NAVIGATOR_METADATA);
+					Main.get().mainPanel.topPanel.toolBar.changeView(UIDesktopConstants.NAVIGATOR_METADATA,UIDockPanelConstants.DESKTOP);
+					if (refresh) {
+						Main.get().activeFolderTree.forceSetSelectedPanel();
+						Main.get().activeFolderTree.refresh(true); // When opening a path document must not refreshing
+					}
+					Main.get().mainPanel.desktop.browser.tabMultiple.setVisibleButtons(true);
+					break;
 				
 				case UIDesktopConstants.NAVIGATOR_TEMPLATES:
 					Main.get().activeFolderTree = Main.get().mainPanel.desktop.navigator.templateTree;
@@ -209,6 +221,15 @@ public class ExtendedStackPanel extends StackPanel implements HasNavigatorEvent,
 	}
 	
 	/**
+	 * isMetadataVisible
+	 * 
+	 * @return
+	 */
+	public boolean isMetadataVisible() {
+		return metadataVisible;
+	}
+	
+	/**
 	 * isThesaurusVisible
 	 * 
 	 * @return
@@ -272,6 +293,16 @@ public class ExtendedStackPanel extends StackPanel implements HasNavigatorEvent,
 	}
 	
 	/**
+	 * showMetadata
+	 * 
+	 * @param 
+	 */
+	public void showMetadata() {
+		hiddenStacks--;
+		metadataVisible = true;
+	}
+	
+	/**
 	 * showThesaurus
 	 * 
 	 */
@@ -332,6 +363,9 @@ public class ExtendedStackPanel extends StackPanel implements HasNavigatorEvent,
 		if (!categoriesVisible && corrected>=UIDesktopConstants.NAVIGATOR_CATEGORIES) {
 			corrected++;
 		}
+		if (!metadataVisible && corrected>=UIDesktopConstants.NAVIGATOR_METADATA) {
+			corrected++;
+		}
 		if (!thesaurusVisible && corrected>=UIDesktopConstants.NAVIGATOR_THESAURUS) {
 			corrected++;
 		}
@@ -373,6 +407,9 @@ public class ExtendedStackPanel extends StackPanel implements HasNavigatorEvent,
 			corrected--;
 		}
 		if (!templatesVisible && corrected>=UIDesktopConstants.NAVIGATOR_TEMPLATES) {
+			corrected--;
+		}
+		if (!metadataVisible && corrected>=UIDesktopConstants.NAVIGATOR_METADATA) {
 			corrected--;
 		}
 		if (!categoriesVisible && corrected>=UIDesktopConstants.NAVIGATOR_CATEGORIES) {

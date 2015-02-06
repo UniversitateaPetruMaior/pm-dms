@@ -30,6 +30,7 @@ import javax.jws.WebService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openkm.automation.AutomationException;
 import com.openkm.bean.Mail;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.DatabaseException;
@@ -49,7 +50,7 @@ public class MailService {
 	@WebMethod
 	public Mail create(@WebParam(name = "token") String token, @WebParam(name = "mail") Mail mail)
 			throws PathNotFoundException, ItemExistsException, VirusDetectedException, AccessDeniedException,
-			RepositoryException, DatabaseException, UserQuotaExceededException {
+			RepositoryException, DatabaseException, UserQuotaExceededException, AutomationException {
 		log.debug("create({}, {})", token, mail);
 		MailModule mm = ModuleManager.getMailModule();
 		Mail newMail = mm.create(token, mail);

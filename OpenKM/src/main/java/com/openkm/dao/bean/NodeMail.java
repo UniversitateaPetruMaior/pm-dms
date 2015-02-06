@@ -52,6 +52,7 @@ import com.openkm.module.db.stuff.SetFieldBridge;
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class NodeMail extends NodeBase {
 	private static final long serialVersionUID = 1L;
+	private static final int MAX_SUBJECT = 256;
 	public static final String CONTENT_FIELD = "content";
 	
 	@Column(name = "NML_SIZE")
@@ -98,8 +99,8 @@ public class NodeMail extends NodeBase {
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
 	@CalendarBridge(resolution = Resolution.DAY)
 	private Calendar receivedDate;
-	
-	@Column(name = "NML_SUBJECT", length = 256)
+
+	@Column(name = "NML_SUBJECT", length = MAX_SUBJECT)
 	@Field(index = Index.TOKENIZED, store = Store.YES)
 	private String subject;
 	
@@ -181,7 +182,11 @@ public class NodeMail extends NodeBase {
 	}
 	
 	public void setSubject(String subject) {
-		this.subject = subject;
+		if (subject != null && subject.length() > MAX_SUBJECT) {
+			this.subject = subject.substring(0, MAX_SUBJECT);
+		} else {
+			this.subject = subject;
+		}
 	}
 	
 	public String getContent() {
@@ -205,6 +210,7 @@ public class NodeMail extends NodeBase {
 		sb.append("{");
 		sb.append("uuid=").append(uuid);
 		sb.append(", context=").append(context);
+		sb.append(", path=").append(path);
 		sb.append(", parent=").append(parent);
 		sb.append(", author=").append(author);
 		sb.append(", name=").append(name);

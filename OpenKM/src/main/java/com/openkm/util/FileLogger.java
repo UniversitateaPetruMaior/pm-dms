@@ -138,7 +138,7 @@ public class FileLogger {
 	 */
 	private static String getLogFile(String baseName) {
 		String fileDate = new SimpleDateFormat("yyyyMMdd").format(new Date());
-		return Config.HOME_DIR + File.separator + baseName + "_" + fileDate + ".log";
+		return Config.LOG_DIR + File.separator + baseName + "_" + fileDate + ".log";
 	}
 	
 	/**

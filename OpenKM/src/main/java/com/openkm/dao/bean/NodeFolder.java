@@ -56,6 +56,7 @@ public class NodeFolder extends NodeBase {
 		sb.append("{");
 		sb.append("uuid=").append(uuid);
 		sb.append(", context=").append(context);
+		sb.append(", path=").append(path);
 		sb.append(", parent=").append(parent);
 		sb.append(", author=").append(author);
 		sb.append(", name=").append(name);

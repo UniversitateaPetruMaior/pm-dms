@@ -24,9 +24,10 @@ package com.openkm.frontend.client.service;
 import java.util.List;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.openkm.frontend.client.bean.GWTConfig;
 import com.openkm.frontend.client.bean.GWTConverterStatus;
 import com.openkm.frontend.client.bean.GWTFileUploadingStatus;
-import com.openkm.frontend.client.bean.GWTTestImap;
+import com.openkm.frontend.client.bean.GWTTestMail;
 
 
 /**
@@ -36,6 +37,8 @@ import com.openkm.frontend.client.bean.GWTTestImap;
 public interface OKMGeneralServiceAsync {
 	public void getFileUploadStatus(AsyncCallback<GWTFileUploadingStatus> callback);
 	public void getConversionStatus(AsyncCallback<GWTConverterStatus> callback);
-	public void testImapConnection(String host, String user, String password, String imapFolder, AsyncCallback<GWTTestImap> callback);
+	public void testMailConnection(String protocol, String host, String user, String password, String mailFolder,
+			AsyncCallback<GWTTestMail> callback);
 	public void getEnabledExtensions(AsyncCallback<List<String>> callback);
+	public void getConfigValue(String key,AsyncCallback<GWTConfig> callback);
 }

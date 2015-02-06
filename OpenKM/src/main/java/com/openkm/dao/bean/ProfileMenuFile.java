@@ -44,6 +44,7 @@ public class ProfileMenuFile implements Serializable {
 	private boolean purgeTrashVisible;
 	private boolean sendDocumentLinkVisible;
 	private boolean sendDocumentAttachmentVisible;
+	private boolean forwardMailVisible;
 
 	public boolean isCreateFolderVisible() {
 		return createFolderVisible;
@@ -197,6 +198,14 @@ public class ProfileMenuFile implements Serializable {
 		this.sendDocumentAttachmentVisible = sendDocumentAttachmentVisible;
 	}
 	
+	public boolean isForwardMailVisible() {
+		return forwardMailVisible;
+	}
+
+	public void setForwardMailVisible(boolean forwardMailVisible) {
+		this.forwardMailVisible = forwardMailVisible;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");

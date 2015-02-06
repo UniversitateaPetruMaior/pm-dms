@@ -23,6 +23,8 @@ package com.openkm.frontend.client.widget.searchin;
 
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HTML;
@@ -30,7 +32,9 @@ import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTQueryParams;
+import com.openkm.frontend.client.util.JSONUtil;
 import com.openkm.frontend.client.util.OKMBundleResources;
+import com.openkm.frontend.client.util.Util;
 
 
 /**
@@ -44,6 +48,7 @@ public class ControlSearchIn extends Composite {
 	private HTML textResults;
 	private Image previous;
 	private Image next;
+	private Image export;
 	private FlexTable table;
 	private int offset = 0;
 	private int limit = 10;
@@ -59,6 +64,32 @@ public class ControlSearchIn extends Composite {
 		textResults = new HTML(Main.i18n("search.results"));
 		previous = new Image(OKMBundleResources.INSTANCE.previous());
 		next = new Image(OKMBundleResources.INSTANCE.next());
+		export = new Image(OKMBundleResources.INSTANCE.exportCSV());
+		export.setTitle(Main.i18n("search.export.to.csv"));
+		export.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				boolean compact = false;
+				String params = "action=" + ((gwtParams!=null)?"find":"findSimpleQuery");
+				params += "&lang=" + Main.get().getLang();
+				if (Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.advancedView.getValue() && 
+					Main.get().mainPanel.search.searchBrowser.searchIn.searchControl.compactResultsView.getValue()) {
+					compact = true;
+				}
+				if (gwtParams!=null) {
+					params += "&json="+JSONUtil.toJson(gwtParams).toString();
+					params += "&compact="+String.valueOf(compact);
+				} else {
+					JSONObject json = new JSONObject();
+					json.put("statement", new JSONString(statement));
+					params += "&json="+json.toString();
+					params += "&compact="+String.valueOf(compact);
+				}
+			
+				Util.downloadCSVFile(params);
+			}
+		});
+		export.setStyleName("okm-Hyperlink");
 		
 		previous.addClickHandler(new ClickHandler() { 
 			@Override
@@ -95,6 +126,7 @@ public class ControlSearchIn extends Composite {
 		table.setWidget(0,2, previous);
 		table.setHTML(0,3, "");
 		table.setWidget(0,4, next);
+		table.setWidget(0,5, export);
 		
 		controlPanel.add(table);
 		
@@ -166,6 +198,7 @@ public class ControlSearchIn extends Composite {
 	 */
 	public void langRefresh() {
 		refreshControl(total);
+		export.setTitle(Main.i18n("search.export.to.csv"));
 	}
 	
 	/**

@@ -1,30 +1,28 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.db.base;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -35,7 +33,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.JcrConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,15 +40,14 @@ import com.openkm.automation.AutomationException;
 import com.openkm.automation.AutomationManager;
 import com.openkm.automation.AutomationUtils;
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.FileUploadResponse;
 import com.openkm.bean.Folder;
 import com.openkm.bean.LockInfo;
 import com.openkm.bean.Note;
 import com.openkm.bean.Permission;
-import com.openkm.bean.Signature;
 import com.openkm.bean.workflow.ProcessDefinition;
 import com.openkm.bean.workflow.ProcessInstance;
-import com.openkm.cache.UserItemsManager;
 import com.openkm.core.AccessDeniedException;
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
@@ -65,7 +61,6 @@ import com.openkm.dao.NodeDocumentDAO;
 import com.openkm.dao.NodeDocumentVersionDAO;
 import com.openkm.dao.NodeFolderDAO;
 import com.openkm.dao.NodeNoteDAO;
-import com.openkm.dao.NodeSignatureDAO;
 import com.openkm.dao.UserConfigDAO;
 import com.openkm.dao.bean.AutomationRule;
 import com.openkm.dao.bean.NodeBase;
@@ -74,19 +69,13 @@ import com.openkm.dao.bean.NodeDocumentVersion;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeLock;
 import com.openkm.dao.bean.NodeNote;
-import com.openkm.dao.bean.NodeSignature;
+import com.openkm.dao.bean.NodeProperty;
 import com.openkm.dao.bean.ProfileMisc;
 import com.openkm.dao.bean.UserConfig;
-import com.openkm.dao.bean.cache.UserItems;
-import com.openkm.module.DocumentModule;
-import com.openkm.module.ModuleManager;
 import com.openkm.module.common.CommonWorkflowModule;
-import com.openkm.module.db.stuff.DbAccessManager;
 import com.openkm.module.db.stuff.DbUtils;
-import com.openkm.module.db.stuff.SecurityHelper;
 import com.openkm.util.CloneUtils;
 import com.openkm.util.DocConverter;
-import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
 
 public class BaseDocumentModule {
@@ -96,10 +85,10 @@ public class BaseDocumentModule {
 	 * Create a new document
 	 */
 	@SuppressWarnings("unchecked")
-	public static NodeDocument create(String user, String parentPath, NodeBase parentNode, String name, String title,
-			Calendar created, String mimeType, InputStream is, long size, Set<String> keywords, Set<String> categories,
-			Ref<FileUploadResponse> fuResponse) throws PathNotFoundException, AccessDeniedException, ItemExistsException,
-			UserQuotaExceededException,	AutomationException, DatabaseException, IOException {
+	public static NodeDocument create(String user, String parentPath, NodeBase parentNode, String name, String title, Calendar created,
+			String mimeType, InputStream is, long size, Set<String> keywords, Set<String> categories, Set<NodeProperty> propertyGroups,
+			List<NodeNote> notes, Ref<FileUploadResponse> fuResponse) throws PathNotFoundException, AccessDeniedException,
+			ItemExistsException, UserQuotaExceededException, AutomationException, DatabaseException, IOException {
 		
 		// Check user quota
 		UserConfig uc = UserConfigDAO.findByPk(user);
@@ -107,14 +96,7 @@ public class BaseDocumentModule {
 		
 		// System user don't care quotas
 		if (!Config.SYSTEM_USER.equals(user) && pm.getUserQuota() > 0) {
-			long currentQuota = 0;
-			
-			if (Config.USER_ITEM_CACHE) {
-				UserItems ui = UserItemsManager.get(user);
-				currentQuota = ui.getSize();
-			} else {
-				currentQuota = DbUtils.calculateQuota(user);
-			}
+			long currentQuota = currentQuota = DbUtils.calculateQuota(user);
 			
 			if (currentQuota + size > pm.getUserQuota() * 1024 * 1024) {
 				throw new UserQuotaExceededException(Long.toString(currentQuota + size));
@@ -148,13 +130,27 @@ public class BaseDocumentModule {
 		documentNode.setCreated(created != null ? created : Calendar.getInstance());
 		documentNode.setLastModified(documentNode.getCreated());
 		
+		if (Config.STORE_NODE_PATH) {
+			documentNode.setPath(parentNode.getPath() + "/" + name);
+		}
+		
+		// Extended Copy Attributes
+		documentNode.setKeywords(CloneUtils.clone(keywords));
+		documentNode.setCategories(CloneUtils.clone(categories));
+		
+		for (NodeProperty nProp : CloneUtils.clone(propertyGroups)) {
+			nProp.setNode(documentNode);
+			documentNode.getProperties().add(nProp);
+		}
+		
 		// Get parent node auth info
 		Map<String, Integer> userPerms = parentNode.getUserPermissions();
 		Map<String, Integer> rolePerms = parentNode.getRolePermissions();
 		
 		// Always assign all grants to creator
 		if (Config.USER_ASSIGN_DOCUMENT_CREATION) {
-			userPerms.put(user, Permission.ALL_GRANTS);
+			int allGrants = Permission.ALL_GRANTS;
+			userPerms.put(user, allGrants);
 		}
 		
 		// Set auth info
@@ -164,15 +160,14 @@ public class BaseDocumentModule {
 		
 		NodeDocumentDAO.getInstance().create(documentNode, is, size);
 		
+		// Extended Copy Attributes
+		for (NodeNote nNote : CloneUtils.clone(notes)) {
+			BaseNoteModule.create(documentNode.getUuid(), nNote.getAuthor(), nNote.getText());
+		}
+		
 		// AUTOMATION - POST
 		env.put(AutomationUtils.DOCUMENT_NODE, documentNode);
 		AutomationManager.getInstance().fireEvent(AutomationRule.EVENT_DOCUMENT_CREATE, AutomationRule.AT_POST, env);
-		
-		// Update user items size
-		if (Config.USER_ITEM_CACHE) {
-			UserItemsManager.incSize(user, size);
-			UserItemsManager.incDocuments(user, 1);
-		}
 		
 		// Setting wizard properties
 		fuResponse.set((FileUploadResponse) env.get(AutomationUtils.UPLOAD_RESPONSE));
@@ -183,9 +178,9 @@ public class BaseDocumentModule {
 	/**
 	 * Get folder properties
 	 */
-	public static Document getProperties(String user, NodeDocument nDocument) throws PathNotFoundException,
-			DatabaseException {
+	public static Document getProperties(String user, NodeDocument nDocument) throws PathNotFoundException, DatabaseException {
 		log.debug("getProperties({}, {})", user, nDocument);
+		long begin = System.currentTimeMillis();
 		Document doc = new Document();
 		
 		// Properties
@@ -213,27 +208,7 @@ public class BaseDocumentModule {
 		doc.setActualVersion(BaseModule.getProperties(currentVersion));
 		
 		// Get permissions
-		if (Config.SYSTEM_READONLY) {
-			doc.setPermissions(Permission.NONE);
-		} else {
-			DbAccessManager am = SecurityHelper.getAccessManager();
-			
-			if (am.isGranted(nDocument, Permission.READ)) {
-				doc.setPermissions(Permission.READ);
-			}
-			
-			if (am.isGranted(nDocument, Permission.WRITE)) {
-				doc.setPermissions(doc.getPermissions() | Permission.WRITE);
-			}
-			
-			if (am.isGranted(nDocument, Permission.DELETE)) {
-				doc.setPermissions(doc.getPermissions() | Permission.DELETE);
-			}
-			
-			if (am.isGranted(nDocument, Permission.SECURITY)) {
-				doc.setPermissions(doc.getPermissions() | Permission.SECURITY);
-			}
-		}
+		BaseModule.setPermissions(nDocument, doc);
 		
 		// Document conversion capabilities
 		DocConverter convert = DocConverter.getInstance();
@@ -266,40 +241,7 @@ public class BaseDocumentModule {
 		
 		doc.setNotes(notes);
 		
-		// Get signatures
-		List<Signature> signatures = new ArrayList<Signature>();
-		List<NodeSignature> nSignatureList = NodeSignatureDAO.getInstance().findByParent(nDocument.getUuid());
-		
-		if (nSignatureList !=null && nSignatureList.size() > 0 ) {
-			
-			// load file content digest value
-			// get the content of the node
-			String docUuid = NodeBaseDAO.getInstance().getUuidFromPath(docPath);
-			
-			MessageDigest md1 = null;
-			try {
-				InputStream docInputStream = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(docUuid);
-				byte[] docInBytes = IOUtils.toByteArray(docInputStream);
-				md1 = MessageDigest.getInstance("SHA1");
-				md1.update(docInBytes);
-			} catch (NoSuchAlgorithmException e) {
-				log.warn("Couldn't get Digest value for " + docPath + " because of error NoSuchAlgorithmException: " + e.getMessage());				
-			} catch (IOException e) {
-				log.warn("Couldn't get Digest value for " + docPath + " because of error IOException: " + e.getMessage());
-			} catch (AccessDeniedException e) {
-				log.warn("Couldn't get Digest value for " + docPath + " because of error AccessDeniedException: " + e.getMessage());
-			}
-			final String digestValue = md1!=null ? SecureStore.b64Encode(md1.digest()) : "";
-			
-			for (NodeSignature nSignature : nSignatureList) {
-				Signature sig = BaseSignatureModule.getProperties(nSignature, nSignature.getUuid());
-				sig.setValid(digestValue.equals(sig.getSignDigest()));
-				signatures.add(sig);
-			}
-		}
-		
-		doc.setSignatures(signatures);
-		
+		log.trace("getProperties.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getProperties: {}", doc);
 		return doc;
 	}
@@ -308,24 +250,25 @@ public class BaseDocumentModule {
 	 * Retrieve the content input stream from a document
 	 * 
 	 * @param user The user who make the content petition.
+	 * @param docUuid UUID of the document to get the content.
 	 * @param docPath Path of the document to get the content.
 	 * @param checkout If the content is retrieved due to a checkout or not.
 	 * @param extendedSecurity If the extended security DOWNLOAD permission should be evaluated.
-	 * This is used to enable the document preview.
+	 *        This is used to enable the document preview.
 	 */
-	public static InputStream getContent(String user, String docPath, boolean checkout, boolean extendedSecurity)
+	public static InputStream getContent(String user, String docUuid, String docPath, boolean checkout, boolean extendedSecurity)
 			throws IOException, PathNotFoundException, AccessDeniedException, DatabaseException {
-		String docUuid = NodeBaseDAO.getInstance().getUuidFromPath(docPath);
-		InputStream is = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(docUuid);
+		InputStream is = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(docUuid, extendedSecurity);
 		
 		// Activity log
-		UserActivity.log(user, (checkout ? "GET_DOCUMENT_CONTENT_CHECKOUT" : "GET_DOCUMENT_CONTENT"), docUuid, docPath, Integer.toString(is.available()));
+		UserActivity.log(user, (checkout ? "GET_DOCUMENT_CONTENT_CHECKOUT" : "GET_DOCUMENT_CONTENT"), docUuid, docPath,
+				Integer.toString(is.available()));
 		
 		return is;
 	}
 	
 	/**
-	 * Check if a node is being used in a running workflow 
+	 * Check if a node is being used in a running workflow
 	 */
 	public static boolean hasWorkflowNodes(String docUuid) throws WorkflowException, PathNotFoundException, DatabaseException {
 		Set<String> workflowNodes = new HashSet<String>();
@@ -349,22 +292,42 @@ public class BaseDocumentModule {
 	/**
 	 * Is invoked from DbDocumentNode and DbFolderNode.
 	 */
-	public static NodeDocument copy(String user, NodeDocument srcDocNode, String dstPath, NodeBase dstNode,
-			String docName) throws PathNotFoundException, AccessDeniedException, ItemExistsException,
+	public static NodeDocument copy(String user, NodeDocument srcDocNode, String dstPath, NodeBase dstNode, String docName,
+			ExtendedAttributes extAttr) throws PathNotFoundException, AccessDeniedException, ItemExistsException,
 			UserQuotaExceededException, AutomationException, DatabaseException, IOException {
-		log.debug("copy({}, {}, {}, {}, {})", new Object[] { user, srcDocNode, dstNode, docName });
+		log.debug("copy({}, {}, {}, {}, {})", new Object[] { user, srcDocNode, dstNode, docName, extAttr });
 		InputStream is = null;
 		NodeDocument newDocument = null;
 		
 		try {
 			Set<String> keywords = new HashSet<String>();
 			Set<String> categories = new HashSet<String>();
+			Set<NodeProperty> propertyGroups = new HashSet<NodeProperty>();
+			List<NodeNote> notes = new ArrayList<NodeNote>();
+			
+			if (extAttr != null) {
+				if (extAttr.isKeywords()) {
+					keywords = srcDocNode.getKeywords();
+				}
+				
+				if (extAttr.isCategories()) {
+					categories = srcDocNode.getCategories();
+				}
+				
+				if (extAttr.isPropertyGroups()) {
+					propertyGroups = srcDocNode.getProperties();
+				}
+				
+				if (extAttr.isNotes()) {
+					notes = NodeNoteDAO.getInstance().findByParent(srcDocNode.getUuid());
+				}
+			}
 			
 			Ref<FileUploadResponse> fuResponse = new Ref<FileUploadResponse>(new FileUploadResponse());
-			is = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(srcDocNode.getUuid());
+			is = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(srcDocNode.getUuid(), true);
 			NodeDocumentVersion nDocVer = NodeDocumentVersionDAO.getInstance().findCurrentVersion(srcDocNode.getUuid());
-			newDocument = create(user, dstPath, dstNode, docName, srcDocNode.getTitle(), Calendar.getInstance(),
-					srcDocNode.getMimeType(), is, nDocVer.getSize(), keywords, categories, fuResponse);
+			newDocument = create(user, dstPath, dstNode, docName, srcDocNode.getTitle(), Calendar.getInstance(), srcDocNode.getMimeType(),
+					is, nDocVer.getSize(), keywords, categories, propertyGroups, notes, fuResponse);
 		} finally {
 			IOUtils.closeQuietly(is);
 		}

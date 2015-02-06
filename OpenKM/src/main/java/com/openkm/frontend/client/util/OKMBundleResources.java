@@ -286,9 +286,6 @@ public interface OKMBundleResources extends ClientBundle {
 	@Source("com/openkm/frontend/public/img/icon/quota/quota6.gif")
 	public ImageResource quota6();
 	
-	@Source("com/openkm/frontend/public/img/logo_openkm_tiny.gif")
-	public ImageResource logoOpenKM();
-	
 	@Source("com/openkm/frontend/public/img/icon/search/calendar.gif")
 	public ImageResource calendar();
 	
@@ -466,9 +463,6 @@ public interface OKMBundleResources extends ClientBundle {
 	@Source("com/openkm/frontend/public/img/icon/actions/filter.png")
 	public ImageResource filter();
 	
-	@Source("com/openkm/frontend/public/img/icon/actions/omr.png")
-	public ImageResource omr();
-	
-	@Source("com/openkm/frontend/public/img/icon/actions/omr_disabled.png")
-	public ImageResource omrDisabled();
+	@Source("com/openkm/frontend/public/img/icon/actions/export_csv.png")
+	public ImageResource exportCSV();
 }

@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.Folder;
 import com.openkm.bean.Mail;
 import com.openkm.bean.Permission;
@@ -52,9 +53,14 @@ import com.openkm.dao.bean.NodeBase;
 import com.openkm.dao.bean.NodeDocument;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeMail;
+import com.openkm.dao.bean.NodeNote;
 import com.openkm.dao.bean.NodeProperty;
 import com.openkm.dao.bean.RegisteredPropertyGroup;
+import com.openkm.module.db.base.BaseNoteModule;
 import com.openkm.module.db.stuff.SecurityHelper;
+import com.openkm.util.CloneUtils;
+import com.openkm.util.FormatUtil;
+import com.openkm.util.PathUtils;
 
 public class NodeBaseDAO {
 	private static Logger log = LoggerFactory.getLogger(NodeBaseDAO.class);
@@ -169,6 +175,10 @@ public class NodeBaseDAO {
 		log.debug("calculatePathFromUuid({})", uuid);
 		Session session = null;
 		
+		if (Config.ROOT_NODE_UUID.equals(uuid)) {
+			return "/";
+		}
+		
 		try {
 			session = HibernateUtil.getSessionFactory().openSession();
 			String path = getPathFromUuid(session, uuid);
@@ -238,6 +248,9 @@ public class NodeBaseDAO {
 		Query q = session.createQuery(qs);
 		String uuid = Config.ROOT_NODE_UUID;
 		String name = "";
+		
+		// Fix for & and &amp; strings in the path
+		path = PathUtils.encodeEntities(path);
 		
 		for (StringTokenizer st = new StringTokenizer(path, "/"); st.hasMoreTokens();) {
 			name = st.nextToken();
@@ -362,8 +375,8 @@ public class NodeBaseDAO {
 	/**
 	 * Grant user permissions
 	 */
-	public void grantUserPermissions(String uuid, String user, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException {
+	public void grantUserPermissions(String uuid, String user, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException {
 		log.debug("grantUserPermissions({})", uuid);
 		Session session = null;
 		Transaction tx = null;
@@ -376,8 +389,10 @@ public class NodeBaseDAO {
 			NodeBase node = (NodeBase) session.load(NodeBase.class, uuid);
 			
 			if (recursive) {
+				long begin = System.currentTimeMillis();
 				int total = grantUserPermissionsInDepth(session, node, user, permissions);
-				log.info("grantUserPermissions.Total: {}", total);
+				log.trace("grantUserPermissions.Total: {}", total);
+				log.info("grantUserPermissions.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 			} else {
 				grantUserPermissions(session, node, user, permissions, false);
 			}
@@ -437,8 +452,8 @@ public class NodeBaseDAO {
 	 * Grant recursively
 	 */
 	@SuppressWarnings("unchecked")
-	private int grantUserPermissionsInDepth(Session session, NodeBase node, String user, int permissions)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException, HibernateException {
+	private int grantUserPermissionsInDepth(Session session, NodeBase node, String user, int permissions) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException, HibernateException {
 		int total = grantUserPermissions(session, node, user, permissions, true);
 		
 		// Calculate children nodes
@@ -460,8 +475,8 @@ public class NodeBaseDAO {
 	/**
 	 * Revoke user permissions
 	 */
-	public void revokeUserPermissions(String uuid, String user, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException {
+	public void revokeUserPermissions(String uuid, String user, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException {
 		log.debug("revokeUserPermissions({})", uuid);
 		Session session = null;
 		Transaction tx = null;
@@ -474,7 +489,9 @@ public class NodeBaseDAO {
 			NodeBase node = (NodeBase) session.load(NodeBase.class, uuid);
 			
 			if (recursive) {
+				long begin = System.currentTimeMillis();
 				int total = revokeUserPermissionsInDepth(session, node, user, permissions);
+				log.trace("revokeUserPermissions.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 				log.info("revokeUserPermissions.Total: {}", total);
 			} else {
 				revokeUserPermissions(session, node, user, permissions, false);
@@ -539,8 +556,8 @@ public class NodeBaseDAO {
 	 * Revoke recursively
 	 */
 	@SuppressWarnings("unchecked")
-	private int revokeUserPermissionsInDepth(Session session, NodeBase node, String user, int permissions)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException, HibernateException {
+	private int revokeUserPermissionsInDepth(Session session, NodeBase node, String user, int permissions) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException, HibernateException {
 		int total = revokeUserPermissions(session, node, user, permissions, true);
 		
 		// Calculate children nodes
@@ -600,8 +617,8 @@ public class NodeBaseDAO {
 	/**
 	 * Grant role permissions
 	 */
-	public void grantRolePermissions(String uuid, String role, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException {
+	public void grantRolePermissions(String uuid, String role, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException {
 		log.debug("grantRolePermissions({}, {}, {}, {})", new Object[] { uuid, role, permissions, recursive });
 		Session session = null;
 		Transaction tx = null;
@@ -614,7 +631,9 @@ public class NodeBaseDAO {
 			NodeBase node = (NodeBase) session.load(NodeBase.class, uuid);
 			
 			if (recursive) {
+				long begin = System.currentTimeMillis();
 				int total = grantRolePermissionsInDepth(session, node, role, permissions);
+				log.trace("grantRolePermissions.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 				log.info("grantRolePermissions.Total: {}", total);
 			} else {
 				grantRolePermissions(session, node, role, permissions, false);
@@ -675,8 +694,8 @@ public class NodeBaseDAO {
 	 * Grant recursively
 	 */
 	@SuppressWarnings("unchecked")
-	private int grantRolePermissionsInDepth(Session session, NodeBase node, String role, int permissions)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException, HibernateException {
+	private int grantRolePermissionsInDepth(Session session, NodeBase node, String role, int permissions) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException, HibernateException {
 		int total = grantRolePermissions(session, node, role, permissions, true);
 		
 		// Calculate children nodes
@@ -698,8 +717,8 @@ public class NodeBaseDAO {
 	/**
 	 * Revoke role permissions
 	 */
-	public void revokeRolePermissions(String uuid, String role, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException {
+	public void revokeRolePermissions(String uuid, String role, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException {
 		log.debug("revokeRolePermissions({}, {}, {}, {})", new Object[] { uuid, role, permissions, recursive });
 		Session session = null;
 		Transaction tx = null;
@@ -712,7 +731,9 @@ public class NodeBaseDAO {
 			NodeBase node = (NodeBase) session.load(NodeBase.class, uuid);
 			
 			if (recursive) {
+				long begin = System.currentTimeMillis();
 				int total = revokeRolePermissionsInDepth(session, node, role, permissions);
+				log.trace("revokeRolePermissions.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 				log.info("revokeRolePermissions.Total: {}", total);
 			} else {
 				revokeRolePermissions(session, node, role, permissions, false);
@@ -777,8 +798,8 @@ public class NodeBaseDAO {
 	 * Revoke recursively
 	 */
 	@SuppressWarnings("unchecked")
-	private int revokeRolePermissionsInDepth(Session session, NodeBase node, String role, int permissions)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException, HibernateException {
+	private int revokeRolePermissionsInDepth(Session session, NodeBase node, String role, int permissions) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException, HibernateException {
 		int total = revokeRolePermissions(session, node, role, permissions, true);
 		
 		// Calculate children nodes
@@ -815,7 +836,9 @@ public class NodeBaseDAO {
 			NodeBase node = (NodeBase) session.load(NodeBase.class, uuid);
 			
 			if (recursive) {
+				long begin = System.currentTimeMillis();
 				int total = changeSecurityInDepth(session, node, grantUsers, revokeUsers, grantRoles, revokeRoles);
+				log.trace("changeSecurity.Time: {}", FormatUtil.formatMiliSeconds(System.currentTimeMillis() - begin));
 				log.info("changeSecurity.Total: {}", total);
 			} else {
 				changeSecurity(session, node, grantUsers, revokeUsers, grantRoles, revokeRoles, false);
@@ -842,10 +865,12 @@ public class NodeBaseDAO {
 	
 	/**
 	 * Change security.
+	 * 
+	 * @see com.openkm.util.pendtask.ChangeSecurityTask
 	 */
-	public int changeSecurity(Session session, NodeBase node, Map<String, Integer> grantUsers,
-			Map<String, Integer> revokeUsers, Map<String, Integer> grantRoles, Map<String, Integer> revokeRoles,
-			boolean recursive) throws PathNotFoundException, AccessDeniedException, DatabaseException, HibernateException {
+	public int changeSecurity(Session session, NodeBase node, Map<String, Integer> grantUsers, Map<String, Integer> revokeUsers,
+			Map<String, Integer> grantRoles, Map<String, Integer> revokeRoles, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException, HibernateException {
 		log.debug("changeSecurity({}, {}, {}, {}, {})", new Object[] { node.getUuid(), grantUsers, revokeUsers, grantRoles, revokeRoles });
 		boolean canModify = true;
 		
@@ -859,7 +884,7 @@ public class NodeBaseDAO {
 		
 		if (canModify) {
 			// Grant Users
-			for (Entry<String, Integer> userGrant: grantUsers.entrySet()) {
+			for (Entry<String, Integer> userGrant : grantUsers.entrySet()) {
 				Integer currentPermissions = node.getUserPermissions().get(userGrant.getKey());
 				
 				if (currentPermissions == null) {
@@ -870,7 +895,7 @@ public class NodeBaseDAO {
 			}
 			
 			// Revoke Users
-			for (Entry<String, Integer> userRevoke: revokeUsers.entrySet()) {
+			for (Entry<String, Integer> userRevoke : revokeUsers.entrySet()) {
 				Integer currentPermissions = node.getUserPermissions().get(userRevoke.getKey());
 				
 				if (currentPermissions != null) {
@@ -885,7 +910,7 @@ public class NodeBaseDAO {
 			}
 			
 			// Grant Roles
-			for (Entry<String, Integer> roleGrant: grantRoles.entrySet()) {
+			for (Entry<String, Integer> roleGrant : grantRoles.entrySet()) {
 				Integer currentPermissions = node.getRolePermissions().get(roleGrant.getKey());
 				
 				if (currentPermissions == null) {
@@ -896,7 +921,7 @@ public class NodeBaseDAO {
 			}
 			
 			// Revoke Roles
-			for (Entry<String, Integer> roleRevoke: revokeRoles.entrySet()) {
+			for (Entry<String, Integer> roleRevoke : revokeRoles.entrySet()) {
 				Integer currentPermissions = node.getRolePermissions().get(roleRevoke.getKey());
 				
 				if (currentPermissions != null) {
@@ -919,11 +944,13 @@ public class NodeBaseDAO {
 	
 	/**
 	 * Change security recursively
+	 * 
+	 * @see com.openkm.dao.PendingTaskDAO.processChangeSecurity(Session, NodeBase)
 	 */
 	@SuppressWarnings("unchecked")
-	public int changeSecurityInDepth(Session session, NodeBase node, Map<String, Integer> grantUsers,
-			Map<String, Integer> revokeUsers, Map<String, Integer> grantRoles, Map<String, Integer> revokeRoles)
-			throws PathNotFoundException, AccessDeniedException, DatabaseException, HibernateException {
+	public int changeSecurityInDepth(Session session, NodeBase node, Map<String, Integer> grantUsers, Map<String, Integer> revokeUsers,
+			Map<String, Integer> grantRoles, Map<String, Integer> revokeRoles) throws PathNotFoundException, AccessDeniedException,
+			DatabaseException, HibernateException {
 		int total = changeSecurity(session, node, grantUsers, revokeUsers, grantRoles, revokeRoles, true);
 		
 		// Calculate children nodes
@@ -945,8 +972,8 @@ public class NodeBaseDAO {
 	/**
 	 * Add category to node
 	 */
-	public void addCategory(String uuid, String catId) throws PathNotFoundException, AccessDeniedException, DatabaseException {
-		log.debug("addCategory({}, {})", uuid, catId);
+	public void addCategory(String uuid, String catUuid) throws PathNotFoundException, AccessDeniedException, DatabaseException {
+		log.debug("addCategory({}, {})", uuid, catUuid);
 		Session session = null;
 		Transaction tx = null;
 		
@@ -959,8 +986,8 @@ public class NodeBaseDAO {
 			SecurityHelper.checkRead(node);
 			SecurityHelper.checkWrite(node);
 			
-			if (!node.getCategories().contains(catId)) {
-				node.getCategories().add(catId);
+			if (!node.getCategories().contains(catUuid)) {
+				node.getCategories().add(catUuid);
 			}
 			
 			session.update(node);
@@ -986,9 +1013,8 @@ public class NodeBaseDAO {
 	/**
 	 * Remove category from node
 	 */
-	public void removeCategory(String uuid, String catId) throws PathNotFoundException, AccessDeniedException,
-			DatabaseException {
-		log.debug("removeCategory({}, {})", uuid, catId);
+	public void removeCategory(String uuid, String catUuid) throws PathNotFoundException, AccessDeniedException, DatabaseException {
+		log.debug("removeCategory({}, {})", uuid, catUuid);
 		Session session = null;
 		Transaction tx = null;
 		
@@ -1001,7 +1027,7 @@ public class NodeBaseDAO {
 			SecurityHelper.checkRead(node);
 			SecurityHelper.checkWrite(node);
 			
-			node.getCategories().remove(catId);
+			node.getCategories().remove(catUuid);
 			session.update(node);
 			HibernateUtil.commit(tx);
 			log.debug("removeCategory: void");
@@ -1064,6 +1090,7 @@ public class NodeBaseDAO {
 	public boolean isCategoryInUse(String catUuid) throws DatabaseException {
 		log.debug("isCategoryInUse({}, {})", catUuid);
 		final String qs = "from NodeBase nb where :category in elements(nb.categories)";
+		final String sql = "select NCT_NODE from OKM_NODE_CATEGORY where NCT_CATEGORY = :catUuid";
 		Session session = null;
 		Transaction tx = null;
 		boolean check;
@@ -1131,8 +1158,7 @@ public class NodeBaseDAO {
 	/**
 	 * Remove keyword from node
 	 */
-	public void removeKeyword(String uuid, String keyword) throws PathNotFoundException, AccessDeniedException,
-			DatabaseException {
+	public void removeKeyword(String uuid, String keyword) throws PathNotFoundException, AccessDeniedException, DatabaseException {
 		log.debug("removeCategory({}, {})", uuid, keyword);
 		Session session = null;
 		Transaction tx = null;
@@ -1461,6 +1487,42 @@ public class NodeBaseDAO {
 	}
 	
 	/**
+	 * Get parent node permissions
+	 */
+	@SuppressWarnings("unchecked")
+	public NodeBase getParentNodePermissions(Session session, String uuid) throws HibernateException {
+		log.debug("getParentNodePermissions({}, {})", session, uuid);
+		String qs = "select nb1.uuid, index(userPermissions), userPermissions, index(rolePermissions), rolePermissions "
+				+ "from NodeBase nb1 join nb1.userPermissions userPermissions join nb1.rolePermissions rolePermissions "
+				+ "where nb1.uuid = (select nb2.parent from NodeBase nb2 where nb2.uuid=:uuid)";
+		Query q = session.createQuery(qs);
+		q.setString("uuid", uuid);
+		List<Object[]> perms = (List<Object[]>) q.list();
+		NodeBase nBase = null;
+		
+		if (!perms.isEmpty()) {
+			nBase = new NodeBase();
+			
+			for (Object[] tupla : (List<Object[]>) q.list()) {
+				if (nBase.getUuid() == null) {
+					nBase.setUuid((String) tupla[0]);
+				}
+				
+				if (!nBase.getUserPermissions().containsKey((String) tupla[1])) {
+					nBase.getUserPermissions().put((String) tupla[1], (Integer) tupla[2]);
+				}
+				
+				if (!nBase.getRolePermissions().containsKey((String) tupla[3])) {
+					nBase.getRolePermissions().put((String) tupla[3], (Integer) tupla[4]);
+				}
+			}
+		}
+		
+		log.debug("getParentNodePermissions: {}", nBase);
+		return nBase;
+	}
+	
+	/**
 	 * Get result node count.
 	 * 
 	 * @see com.openkm.module.db.DbStatsModule
@@ -1468,6 +1530,7 @@ public class NodeBaseDAO {
 	public long getCount(String nodeType) throws PathNotFoundException, DatabaseException {
 		log.debug("getCount({})", new Object[] { nodeType });
 		String qs = "select count(*) from " + nodeType + " nt";
+		long begin = System.currentTimeMillis();
 		Session session = null;
 		Transaction tx = null;
 		long total = 0;
@@ -1480,7 +1543,75 @@ public class NodeBaseDAO {
 			total = (Long) q.setMaxResults(1).uniqueResult();
 			
 			HibernateUtil.commit(tx);
+			log.trace("getCount.Time: {}", System.currentTimeMillis() - begin);
 			log.debug("getCount: {}", total);
+			return total;
+		} catch (HibernateException e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.close(session);
+		}
+	}
+	
+	/**
+	 * Get result node count.
+	 * 
+	 * @see com.openkm.module.db.DbStatsModule
+	 */
+	public long getCount(String nodeType, String context) throws PathNotFoundException, DatabaseException {
+		log.debug("getCount({}, {})", new Object[] { nodeType, context });
+		String qs = "select count(*) from " + nodeType + " nt where nt.context = :context";
+		long begin = System.currentTimeMillis();
+		Session session = null;
+		Transaction tx = null;
+		long total = 0;
+		
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			
+			Query q = session.createQuery(qs);
+			q.setString("context", PathUtils.fixContext(context));
+			total = (Long) q.setMaxResults(1).uniqueResult();
+			
+			HibernateUtil.commit(tx);
+			log.trace("Context: {}, Time: {}", context, System.currentTimeMillis() - begin);
+			log.debug("getCount: {}", total);
+			return total;
+		} catch (HibernateException e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.close(session);
+		}
+	}
+	
+	/**
+	 * Get result node count.
+	 * 
+	 * @see com.openkm.module.db.DbStatsModule
+	 */
+	public long getBaseCount(String nodeType, String path) throws PathNotFoundException, DatabaseException {
+		log.debug("getBaseCount({}, {})", new Object[] { nodeType, path });
+		String qs = "select coalesce(count(*), 0) from NodeFolder n where n.parent=:parent";
+		long begin = System.currentTimeMillis();
+		Session session = null;
+		Transaction tx = null;
+		long total = 0;
+		
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			
+			String uuid = getUuidFromPath(path);
+			Query q = session.createQuery(qs);
+			q.setString("parent", uuid);
+			total = (Long) q.setMaxResults(1).uniqueResult();
+			
+			HibernateUtil.commit(tx);
+			log.trace("getBaseCount.Path: {}, Time: {}", path, System.currentTimeMillis() - begin);
+			log.debug("getBaseCount: {}", total);
 			return total;
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);
@@ -1497,6 +1628,7 @@ public class NodeBaseDAO {
 	 */
 	public long getSubtreeCount(String nodeType, String path, int depth) throws PathNotFoundException, DatabaseException {
 		log.debug("getSubtreeCount({}, {}, {})", new Object[] { nodeType, path, depth });
+		long begin = System.currentTimeMillis();
 		Session session = null;
 		Transaction tx = null;
 		long total = 0;
@@ -1509,6 +1641,7 @@ public class NodeBaseDAO {
 			total = getSubtreeCountHelper(session, nodeType, uuid, depth, 1);
 			
 			HibernateUtil.commit(tx);
+			log.trace("getSubtreeCount.Path: {}, Time: {}", path, System.currentTimeMillis() - begin);
 			log.debug("getSubtreeCount: {}", total);
 			return total;
 		} catch (PathNotFoundException e) {
@@ -1558,6 +1691,80 @@ public class NodeBaseDAO {
 	}
 	
 	/**
+	 * Check if a subtree contains more than maxNodes nodes
+	 */
+	public boolean subTreeHasMoreThanNodes(String path, long maxNodes) throws PathNotFoundException, DatabaseException {
+		log.debug("subTreeHasMoreThanNodes({}, {})", path, maxNodes);
+		long begin = System.currentTimeMillis();
+		Session session = null;
+		Transaction tx = null;
+		boolean ret = false;
+		
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			
+			String uuid = getUuidFromPath(path);
+			long count = subTreeHasMoreThanNodesHelper(session, uuid, maxNodes, 0);
+			ret = count > maxNodes;
+			
+			HibernateUtil.commit(tx);
+			log.trace("subTreeHasMoreThanNodes.Path: {}, Time: {}", path, System.currentTimeMillis() - begin);
+			log.debug("subTreeHasMoreThanNodes: {}", ret);
+			return ret;
+		} catch (PathNotFoundException e) {
+			HibernateUtil.rollback(tx);
+			throw e;
+		} catch (DatabaseException e) {
+			HibernateUtil.rollback(tx);
+			throw e;
+		} catch (HibernateException e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.close(session);
+		}
+	}
+	
+	/**
+	 * Helper method.
+	 */
+	@SuppressWarnings("unchecked")
+	private long subTreeHasMoreThanNodesHelper(Session session, String parentUuid, long maxNodes, long curNodes) throws HibernateException,
+			DatabaseException {
+		log.debug("getSubtreeCountHelper({}, {}, {})", new Object[] { parentUuid, maxNodes, curNodes });
+		String qs = "from NodeBase n where n.parent=:parent";
+		Query q = session.createQuery(qs);
+		q.setString("parent", parentUuid);
+		List<NodeBase> nodes = q.list();
+		long total = 0;
+		
+		for (NodeBase nBase : nodes) {
+			if (nBase instanceof NodeDocument) {
+				total += 1;
+				
+				if (total + curNodes > maxNodes) {
+					return total;
+				}
+			} else if (nBase instanceof NodeMail) {
+				total += 1;
+				
+				if (total + curNodes > maxNodes) {
+					return total;
+				}
+			} else if (nBase instanceof NodeFolder) {
+				total += subTreeHasMoreThanNodesHelper(session, nBase.getUuid(), maxNodes, total + curNodes + 1) + 1;
+				
+				if (total + curNodes > maxNodes) {
+					return total;
+				}
+			}
+		}
+		
+		return total;
+	}
+	
+	/**
 	 * Check for same node name in same parent
 	 * 
 	 * @param Session Hibernate session.
@@ -1577,12 +1784,12 @@ public class NodeBaseDAO {
 	/**
 	 * Check for same node name in same parent
 	 * 
-	 * @param Session Hibernate session.
+	 * @param session Hibernate session.
 	 * @param parent Parent node uuid.
 	 * @param name Name of the child node to test.
 	 */
-	public void checkItemExistence(Session session, String parent, String name) throws PathNotFoundException,
-			HibernateException, DatabaseException, ItemExistsException {
+	public void checkItemExistence(Session session, String parent, String name) throws PathNotFoundException, HibernateException,
+			DatabaseException, ItemExistsException {
 		if (testItemExistence(session, parent, name)) {
 			String path = getPathFromUuid(session, parent);
 			throw new ItemExistsException(path + "/" + name);
@@ -1625,8 +1832,8 @@ public class NodeBaseDAO {
 	/**
 	 * Add property group
 	 */
-	public void addPropertyGroup(String uuid, String grpName) throws PathNotFoundException, AccessDeniedException,
-			RepositoryException, DatabaseException {
+	public void addPropertyGroup(String uuid, String grpName) throws PathNotFoundException, AccessDeniedException, RepositoryException,
+			DatabaseException {
 		log.info("addPropertyGroup({}, {})", uuid, grpName);
 		Session session = null;
 		Transaction tx = null;
@@ -1639,7 +1846,7 @@ public class NodeBaseDAO {
 			NodeBase node = (NodeBase) session.load(NodeBase.class, uuid);
 			SecurityHelper.checkRead(node);
 			SecurityHelper.checkWrite(node);
-			
+
 			RegisteredPropertyGroup rpg = (RegisteredPropertyGroup) session.get(RegisteredPropertyGroup.class, grpName);
 			
 			if (rpg != null) {
@@ -1689,8 +1896,7 @@ public class NodeBaseDAO {
 	/**
 	 * Remove property group
 	 */
-	public void removePropertyGroup(String uuid, String grpName) throws PathNotFoundException, AccessDeniedException,
-			DatabaseException {
+	public void removePropertyGroup(String uuid, String grpName) throws PathNotFoundException, AccessDeniedException, DatabaseException {
 		log.debug("removePropertyGroup({}, {})", uuid, grpName);
 		Session session = null;
 		Transaction tx = null;
@@ -1776,6 +1982,7 @@ public class NodeBaseDAO {
 	 */
 	public Map<String, String> getProperties(String uuid, String grpName) throws PathNotFoundException, DatabaseException {
 		log.debug("getProperties({}, {})", uuid, grpName);
+		long begin = System.currentTimeMillis();
 		Map<String, String> ret = new HashMap<String, String>();
 		Session session = null;
 		Transaction tx = null;
@@ -1795,6 +2002,7 @@ public class NodeBaseDAO {
 			}
 			
 			HibernateUtil.commit(tx);
+			log.trace("getProperties.Time: {}", System.currentTimeMillis() - begin);
 			log.debug("getProperties: {}", ret);
 			return ret;
 		} catch (PathNotFoundException e) {
@@ -1816,6 +2024,7 @@ public class NodeBaseDAO {
 	 */
 	public String getProperty(String uuid, String grpName, String propName) throws PathNotFoundException, DatabaseException {
 		log.debug("getProperty({}, {}, {})", new Object[] { uuid, grpName, propName });
+		long begin = System.currentTimeMillis();
 		String propValue = null;
 		Session session = null;
 		Transaction tx = null;
@@ -1836,6 +2045,7 @@ public class NodeBaseDAO {
 			}
 			
 			HibernateUtil.commit(tx);
+			log.trace("getProperty.Time: {}", System.currentTimeMillis() - begin);
 			log.debug("getProperty: {}", propValue);
 			return propValue;
 		} catch (PathNotFoundException e) {
@@ -1855,8 +2065,8 @@ public class NodeBaseDAO {
 	/**
 	 * Set properties from property group
 	 */
-	public Map<String, String> setProperties(String uuid, String grpName, Map<String, String> properties)
-			throws PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
+	public Map<String, String> setProperties(String uuid, String grpName, Map<String, String> properties) throws PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("setProperties({}, {}, {})", new Object[] { uuid, grpName, properties });
 		Map<String, String> ret = new HashMap<String, String>();
 		Session session = null;
@@ -1878,12 +2088,17 @@ public class NodeBaseDAO {
 				
 				// Set new property group values
 				for (NodeProperty nodProp : node.getProperties()) {
-					if (grpName.equals(nodProp.getGroup())) {
-						if (prop.getKey().equals(nodProp.getName())) {
-							log.debug("UPDATE - Group: {}, Property: {}, Value: {}", new Object[] { grpName, prop.getKey(), prop.getValue() });
-							nodProp.setValue(prop.getValue());
-							alreadyAssigned = true;
-							
+					if (grpName.equals(nodProp.getGroup()) && prop.getKey().equals(nodProp.getName())) {
+						log.debug("UPDATE - Group: {}, Property: {}, Value: {}", new Object[] { grpName, prop.getKey(), prop.getValue() });
+						nodProp.setValue(prop.getValue());
+						alreadyAssigned = true;
+
+						// TODO: Workaround for Hibernate Search
+						tmp.add(nodProp);
+					} else if (nodProp.getValue() != null && !nodProp.getValue().isEmpty()) {
+						if (!tmp.contains(nodProp)) {
+							log.debug("KEEP - Group: {}, Property: {}, Value: {}", new Object[]{nodProp.getGroup(), nodProp.getName(), nodProp.getValue()});
+
 							// TODO: Workaround for Hibernate Search
 							tmp.add(nodProp);
 						}
@@ -1908,6 +2123,124 @@ public class NodeBaseDAO {
 			HibernateUtil.commit(tx);
 			log.debug("setProperties: {}", ret);
 			return ret;
+		} catch (PathNotFoundException e) {
+			HibernateUtil.rollback(tx);
+			throw e;
+		} catch (AccessDeniedException e) {
+			HibernateUtil.rollback(tx);
+			throw e;
+		} catch (DatabaseException e) {
+			HibernateUtil.rollback(tx);
+			throw e;
+		} catch (HibernateException e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.close(session);
+		}
+	}
+	
+	/**
+	 * Fix node stored path. Also valid for initialize when upgrading.
+	 */
+	@SuppressWarnings("unchecked")
+	public void fixNodePath() throws DatabaseException {
+		log.debug("fixNodePath()");
+		String qs = "from NodeBase nb where nb.parent=:parent";
+		Session session = null;
+		Transaction tx = null;
+		
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			
+			// First level nodes
+			Query q = session.createQuery(qs);
+			q.setString("parent", Config.ROOT_NODE_UUID);
+			
+			for (NodeBase nb : (List<NodeBase>) q.list()) {
+				nb.setPath("/" + nb.getName());
+				session.update(nb);
+				
+				// Process in depth
+				fixNodePathHelper(session, nb);
+			}
+			
+			HibernateUtil.commit(tx);
+			log.debug("fixNodePath: void");
+		} catch (HibernateException e) {
+			HibernateUtil.rollback(tx);
+			throw new DatabaseException(e.getMessage(), e);
+		} finally {
+			HibernateUtil.close(session);
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void fixNodePathHelper(Session session, NodeBase parentNode) throws HibernateException {
+		String qs = "from NodeBase nb where nb.parent=:parent";
+		Query q = session.createQuery(qs);
+		q.setString("parent", parentNode.getUuid());
+		
+		for (NodeBase nb : (List<NodeBase>) q.list()) {
+			nb.setPath(parentNode.getPath() + "/" + nb.getName());
+			session.update(nb);
+			
+			// Process in depth
+			fixNodePathHelper(session, nb);
+		}
+	}
+	
+	public void copyAttributes(String srcUuid, String dstUuid, ExtendedAttributes extAttr) throws PathNotFoundException,
+			AccessDeniedException, DatabaseException {
+		log.info("copyAttributes({}, {}, {})", new Object[] { srcUuid, dstUuid, extAttr });
+		Session session = null;
+		Transaction tx = null;
+		
+		try {
+			session = HibernateUtil.getSessionFactory().openSession();
+			tx = session.beginTransaction();
+			
+			// Security Check
+			NodeBase srcNode = (NodeBase) session.load(NodeBase.class, srcUuid);
+			SecurityHelper.checkRead(srcNode);
+			
+			NodeBase dstNode = (NodeBase) session.load(NodeBase.class, dstUuid);
+			SecurityHelper.checkRead(dstNode);
+			SecurityHelper.checkWrite(dstNode);
+			
+			if (extAttr != null) {
+				if (extAttr.isKeywords()) {
+					Set<String> keywords = srcNode.getKeywords();
+					dstNode.setKeywords(CloneUtils.clone(keywords));
+				}
+				
+				if (extAttr.isCategories()) {
+					Set<String> categories = srcNode.getCategories();
+					dstNode.setCategories(CloneUtils.clone(categories));
+				}
+				
+				if (extAttr.isPropertyGroups()) {
+					Set<NodeProperty> propertyGroups = srcNode.getProperties();
+					
+					for (NodeProperty nProp : CloneUtils.clone(propertyGroups)) {
+						nProp.setNode(dstNode);
+						dstNode.getProperties().add(nProp);
+					}
+				}
+				
+				if (extAttr.isNotes()) {
+					List<NodeNote> notes = NodeNoteDAO.getInstance().findByParent(srcNode.getUuid());
+					
+					for (NodeNote nNote : CloneUtils.clone(notes)) {
+						BaseNoteModule.create(dstNode.getUuid(), nNote.getAuthor(), nNote.getText());
+					}
+				}
+			}
+			
+			session.update(dstNode);
+			HibernateUtil.commit(tx);
+			log.debug("copyAttributes: void");
 		} catch (PathNotFoundException e) {
 			HibernateUtil.rollback(tx);
 			throw e;

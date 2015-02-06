@@ -72,9 +72,11 @@ public class CssServlet extends HttpServlet {
 							if (Css.CONTEXT_FRONTEND.equals(context)) {
 								
 							} else if (Css.CONTEXT_EXTENSION.equals(context)) {
-								
+								if ("htmlEditor".equals(name)) {
+									is = getServletContext().getResourceAsStream("/css/tiny_mce/content.css");
+								}
 							}
-							/*
+							
 							if (is != null) {
 								css = new Css();
 								css.setContent(IOUtils.toString(is));
@@ -82,7 +84,6 @@ public class CssServlet extends HttpServlet {
 								css.setName(name);
 								css.setActive(true);
 							}
-							*/
 						} finally {
 							IOUtils.closeQuietly(is);	
 						}

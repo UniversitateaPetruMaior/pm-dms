@@ -69,21 +69,21 @@ public class NodeDocument extends NodeBase {
 	private String mimeType;
 	
 	@Column(name = "NDC_TEXT")
-	@Lob @Type(type = "org.hibernate.type.TextType")
+	@Lob @Type(type = "org.hibernate.type.StringClobType")
 	@Field(index = Index.TOKENIZED, store = Store.NO)
 	private String text;
 	
-	@Column(name = "NDC_CHECKED_OUT")
+	@Column(name = "NDC_CHECKED_OUT", nullable = false)
 	@Type(type = "true_false")
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
 	private boolean checkedOut;
 	
-	@Column(name = "NDC_TEXT_EXTRACTED")
+	@Column(name = "NDC_TEXT_EXTRACTED", nullable = false)
 	@Type(type = "true_false")
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
 	private boolean textExtracted;
 	
-	@Column(name = "NDC_LOCKED")
+	@Column(name = "NDC_LOCKED", nullable = false)
 	@Type(type = "true_false")
 	@Field(index = Index.UN_TOKENIZED, store = Store.YES)
 	private boolean locked;
@@ -176,6 +176,7 @@ public class NodeDocument extends NodeBase {
 		sb.append("{");
 		sb.append("uuid=").append(uuid);
 		sb.append(", context=").append(context);
+		sb.append(", path=").append(path);
 		sb.append(", parent=").append(parent);
 		sb.append(", author=").append(author);
 		sb.append(", name=").append(name);

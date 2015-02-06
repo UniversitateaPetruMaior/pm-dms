@@ -64,6 +64,7 @@ import com.openkm.frontend.client.util.WindowUtils;
 import com.openkm.frontend.client.util.WorkspaceUserProperties;
 import com.openkm.frontend.client.widget.AboutPopup;
 import com.openkm.frontend.client.widget.ConfirmPopup;
+import com.openkm.frontend.client.widget.massive.ConvertPopup;
 import com.openkm.frontend.client.widget.DebugConsolePopup;
 import com.openkm.frontend.client.widget.Dragable;
 import com.openkm.frontend.client.widget.ErrorPopup;
@@ -77,13 +78,15 @@ import com.openkm.frontend.client.widget.WorkflowPopup;
 import com.openkm.frontend.client.widget.chat.OnlineUsersPopup;
 import com.openkm.frontend.client.widget.finddocument.FindDocumentSelectPopup;
 import com.openkm.frontend.client.widget.findfolder.FindFolderSelectPopup;
+import com.openkm.frontend.client.widget.findsimilar.FindSimilarDocumentSelectPopup;
 import com.openkm.frontend.client.widget.foldertree.FolderTree;
+import com.openkm.frontend.client.widget.massive.CategoriesPopup;
+import com.openkm.frontend.client.widget.massive.KeywordsPopup;
+import com.openkm.frontend.client.widget.massive.NotesPopup;
+import com.openkm.frontend.client.widget.massive.PdfMergePopup;
+import com.openkm.frontend.client.widget.massive.PropertyGroupPopup;
+import com.openkm.frontend.client.widget.massive.UpdatePropertyGroupPopup;
 import com.openkm.frontend.client.widget.notify.NotifyPopup;
-import com.openkm.frontend.client.widget.popup.CategoriesPopup;
-import com.openkm.frontend.client.widget.popup.KeywordsPopup;
-import com.openkm.frontend.client.widget.popup.NotesPopup;
-import com.openkm.frontend.client.widget.popup.OmrPopup;
-import com.openkm.frontend.client.widget.popup.PropertyGroupPopup;
 import com.openkm.frontend.client.widget.security.SecurityPopup;
 import com.openkm.frontend.client.widget.startup.StartUp;
 import com.openkm.frontend.client.widget.startup.StartUpPopup;
@@ -136,6 +139,7 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 	public DebugConsolePopup debugConsolePopup;
 	public FindFolderSelectPopup findFolderSelectPopup;
 	public FindDocumentSelectPopup findDocumentSelectPopup;
+	public FindSimilarDocumentSelectPopup findSimilarDocumentSelectPopup;
 	public WizardPopup wizardPopup;
 	public ReportPopup reportPopup;
 	public TemplateWizardPopup templateWizardPopup;
@@ -144,9 +148,11 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 	public NotesPopup notesPopup;
 	public CategoriesPopup categoriesPopup;
 	public KeywordsPopup keywordsPopup;
+	public PdfMergePopup pdfMergePopup;
 	public TemplatePopup templatePopup;
 	public ConversionStatus conversionStatus;
-	public OmrPopup omrPopup;
+	public UpdatePropertyGroupPopup updatePropertyGroupPopup;
+	public ConvertPopup convertPopup;
 	
 	// User workspace properties
 	public WorkspaceUserProperties workspaceUserProperties;
@@ -163,12 +169,14 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 	public String docPath = ""; // Used for folderTree because docPath is set to null by filebroeser on this case the
 								// refreshing
 								// panels are not sincronized ( loading )
+	
 	private String uuid = "";
 	public String taskInstanceId = ""; // Used for workflowDashboard for set pending user task
 	
 	// Main root folders and user home general values for all app
 	public GWTFolder taxonomyRootFolder;
 	public GWTFolder categoriesRootFolder;
+	public GWTFolder metadataRootFolder;
 	public GWTFolder thesaurusRootFolder;
 	public GWTFolder personalRootFolder;
 	public GWTFolder templatesRootFolder;
@@ -199,6 +207,7 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 	public void onModuleLoad() {
 		Log.getLogger(DivLogger.class).getWidget().setVisible(false);
 		Log.setUncaughtExceptionHandler();
+		
 		if (GWT.isProdMode()) {
 			Log.setCurrentLogLevel(Log.LOG_LEVEL_OFF);
 		} else {
@@ -223,6 +232,7 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 			// Otherwise we try to guess
 			CONTEXT = loc.getContext();
 		}
+		
 		if (loc.getParameter("uuid") != null && !loc.getParameter("uuid").equals("")) {
 			uuid = loc.getParameter("uuid");
 		} else if (loc.getParameter("docPath") != null && !loc.getParameter("docPath").equals("")) {
@@ -230,6 +240,8 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 			fldPath = Util.getParent(docPath);
 		} else if (loc.getParameter("fldPath") != null && !loc.getParameter("fldPath").equals("")) {
 			fldPath = loc.getParameter("fldPath");
+		} else if (loc.getParameter("mailPath") != null && !loc.getParameter("mailPath").equals("")) {
+			fldPath = Util.getParent(loc.getParameter("mailPath"));
 		} else if (loc.getParameter("taskInstanceId") != null && !loc.getParameter("taskInstanceId").equals("")) {
 			taskInstanceId = loc.getParameter("taskInstanceId");
 		}
@@ -361,8 +373,8 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 		errorPopupLogout.setHeight("205px");
 		msgPopup = new MsgPopup();
 		msgPopup.setStyleName("okm-Popup");
-		msgPopup.setWidth("300px");
-		msgPopup.setHeight("205px");
+		msgPopup.setWidth("550px");
+		msgPopup.setHeight("290px");
 		externalURLPopup = new ExternalURLPopup();
 		externalURLPopup.setStyleName("okm-Popup");
 		logoutPopup = new LogoutPopup();
@@ -420,6 +432,11 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 		findDocumentSelectPopup.setHeight("390px");
 		findDocumentSelectPopup.setStyleName("okm-Popup");
 		findDocumentSelectPopup.addStyleName("okm-DisableSelect");
+		findSimilarDocumentSelectPopup = new FindSimilarDocumentSelectPopup();
+		findSimilarDocumentSelectPopup.setWidth("700px");
+		findSimilarDocumentSelectPopup.setHeight("390px");
+		findSimilarDocumentSelectPopup.setStyleName("okm-Popup");
+		findSimilarDocumentSelectPopup.addStyleName("okm-DisableSelect");
 		wizardPopup = new WizardPopup();
 		wizardPopup.setWidth("400px");
 		wizardPopup.setHeight("40px");
@@ -456,24 +473,29 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 		keywordsPopup.setWidth("470px");
 		keywordsPopup.setHeight("100px");
 		keywordsPopup.setStyleName("okm-Popup");
+		pdfMergePopup = new PdfMergePopup();
+		pdfMergePopup.setWidth("400px");
+		pdfMergePopup.setHeight("75px");
+		pdfMergePopup.setStyleName("okm-Popup");
 		templatePopup = new TemplatePopup();
 		templatePopup.setWidth("350px");
 		templatePopup.setHeight("75px");
 		templatePopup.setStyleName("okm-Popup");
 		conversionStatus = new ConversionStatus();
-		omrPopup = new OmrPopup();
-		omrPopup.setWidth("150px");
-		omrPopup.setHeight("75px");
-		omrPopup.setStyleName("okm-Popup");
+		updatePropertyGroupPopup = new UpdatePropertyGroupPopup();
+		updatePropertyGroupPopup.setWidth("250px");
+		updatePropertyGroupPopup.setHeight("50px");
+		updatePropertyGroupPopup.setStyleName("okm-Popup");
+		convertPopup = new ConvertPopup();
+		convertPopup.setWidth("150px");
+		convertPopup.setHeight("50px");
+		convertPopup.setStyleName("okm-Popup");
 		
 		// Get grid of scrollbars, and clear out the window's built-in margin,
 		// because we want to take advantage of the entire client area.
 		Window.enableScrolling(false);
 		Window.setMargin("0px");
 		
-		//RootPanel.get().add(new Test());
-		//RootPanel.get().add(new Test2());
-		//RootPanel.get().add(new Test3());
 		RootPanel.get().add(mainPanel);
 		RootPanel.get().add(dragable);
 		
@@ -550,8 +572,10 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 				notesPopup.langRefresh();
 				categoriesPopup.langRefresh();
 				keywordsPopup.langRefresh();
+				pdfMergePopup.langRefresh();
 				templatePopup.langRefresh();
-				omrPopup.langRefresh();
+				updatePropertyGroupPopup.langRefresh();
+				convertPopup.langRefresh();
 				// Refreshing all menus on tabs not only the active
 				mainPanel.desktop.navigator.taxonomyTree.langRefresh();
 				mainPanel.desktop.navigator.thesaurusTree.langRefresh();
@@ -591,6 +615,15 @@ public final class Main implements EntryPoint, HasLanguageHandlerExtension, HasL
 	 * Shows popup error message ( unique entry point for error on all application )
 	 * 
 	 * @param okme The exception error
+	 */
+	public void showError(Class<?> clazz, String callback, Throwable caught) {
+		showError(clazz + "." + callback, caught);
+	}
+	
+	/**
+	 * Shows popup error message ( unique entry point for error on all application )
+	 * 
+	 * @param okm The exception error
 	 */
 	public void showError(String callback, Throwable caught) {
 		startUp.recoverFromError();

@@ -123,6 +123,7 @@ public class ExtendedDockPanel extends Composite {
 			@Override
 			public void onResize(ResizeEvent event) {
 				SetWidgetsSize();
+				Main.get().mainPanel.topPanel.toolBar.windowResized(); // splitter changes
 			}
 		});
 		
@@ -286,8 +287,8 @@ public class ExtendedDockPanel extends Composite {
 						
 						case Keyboard.KEY_C:
 						case Keyboard.KEY_X:
-							// Case CTRL + C
-							if (event.getNativeEvent().getCtrlKey()) {
+							// Case CTRL + SHIFT + C
+							if (event.getNativeEvent().getCtrlKey() && event.getNativeEvent().getShiftKey()) {
 								if (actualView == UIDockPanelConstants.DESKTOP
 										&& Main.get().activeFolderTree.isPanelSelected()
 										&& Main.get().mainPanel.topPanel.toolBar.getToolBarOption().copyOption
@@ -379,8 +380,8 @@ public class ExtendedDockPanel extends Composite {
 							break;
 						
 						case Keyboard.KEY_V:
-							// Case CTRL + V
-							if (event.getNativeEvent().getCtrlKey()
+							// Case CTRL + SHIFT + V
+							if (event.getNativeEvent().getCtrlKey() && event.getNativeEvent().getShiftKey()
 									&& (folderSelectPopup.getAction() == FolderSelectPopup.ACTION_COPY || folderSelectPopup
 											.getAction() == FolderSelectPopup.ACTION_MOVE)) {
 								

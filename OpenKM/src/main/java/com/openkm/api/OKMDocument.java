@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.automation.AutomationException;
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
 import com.openkm.bean.LockInfo;
 import com.openkm.bean.Version;
 import com.openkm.core.AccessDeniedException;
@@ -107,42 +108,42 @@ public class OKMDocument implements DocumentModule {
 	}
 	
 	@Override
-	public InputStream getContent(String token, String docPath, boolean checkout) throws PathNotFoundException,
+	public InputStream getContent(String token, String docId, boolean checkout) throws PathNotFoundException,
 			AccessDeniedException, RepositoryException, IOException, DatabaseException {
-		log.debug("getContent({}, {}, {})", new Object[] { token, docPath, checkout });
+		log.debug("getContent({}, {}, {})", new Object[] { token, docId, checkout });
 		DocumentModule dm = ModuleManager.getDocumentModule();
-		InputStream is = dm.getContent(token, docPath, checkout);
+		InputStream is = dm.getContent(token, docId, checkout);
 		log.debug("getContent: {}", is);
 		return is;
 	}
 	
 	@Override
-	public InputStream getContentByVersion(String token, String docPath, String versionId) throws RepositoryException,
+	public InputStream getContentByVersion(String token, String docId, String versionId) throws RepositoryException,
 			PathNotFoundException, IOException, DatabaseException {
-		log.debug("getContentByVersion({}, {}, {})", new Object[] { token, docPath, versionId });
+		log.debug("getContentByVersion({}, {}, {})", new Object[] { token, docId, versionId });
 		DocumentModule dm = ModuleManager.getDocumentModule();
-		InputStream is = dm.getContentByVersion(token, docPath, versionId);
+		InputStream is = dm.getContentByVersion(token, docId, versionId);
 		log.debug("getContentByVersion: {}", is);
 		return is;
 	}
 	
 	@Override
 	@Deprecated
-	public List<Document> getChilds(String token, String fldPath) throws PathNotFoundException, RepositoryException,
+	public List<Document> getChilds(String token, String fldId) throws PathNotFoundException, RepositoryException,
 			DatabaseException {
-		log.debug("getChilds({}, {})", token, fldPath);
+		log.debug("getChilds({}, {})", token, fldId);
 		DocumentModule dm = ModuleManager.getDocumentModule();
-		List<Document> col = dm.getChilds(token, fldPath);
+		List<Document> col = dm.getChilds(token, fldId);
 		log.debug("getChilds: {}", col);
 		return col;
 	}
 	
 	@Override
-	public List<Document> getChildren(String token, String fldPath) throws PathNotFoundException, RepositoryException,
+	public List<Document> getChildren(String token, String fldId) throws PathNotFoundException, RepositoryException,
 			DatabaseException {
-		log.debug("getChildren({}, {})", token, fldPath);
+		log.debug("getChildren({}, {})", token, fldId);
 		DocumentModule dm = ModuleManager.getDocumentModule();
-		List<Document> col = dm.getChildren(token, fldPath);
+		List<Document> col = dm.getChildren(token, fldId);
 		log.debug("getChildren: {}", col);
 		return col;
 	}
@@ -208,10 +209,22 @@ public class OKMDocument implements DocumentModule {
 	public Version checkin(String token, String docPath, InputStream is, String comment)
 			throws FileSizeExceededException, UserQuotaExceededException, VirusDetectedException, LockException,
 			VersionException, PathNotFoundException, AccessDeniedException, RepositoryException, IOException,
-			DatabaseException, ExtensionException {
+			DatabaseException, ExtensionException, AutomationException {
 		log.debug("checkin({}, {}, {})", new Object[] { token, docPath, comment });
 		DocumentModule dm = ModuleManager.getDocumentModule();
 		Version version = dm.checkin(token, docPath, is, comment);
+		log.debug("checkin: {}", version);
+		return version;
+	}
+	
+	@Override
+	public Version checkin(String token, String docPath, InputStream is, String comment, int increment)
+			throws FileSizeExceededException, UserQuotaExceededException, VirusDetectedException, LockException,
+			VersionException, PathNotFoundException, AccessDeniedException, RepositoryException, IOException,
+			DatabaseException, ExtensionException, AutomationException {
+		log.debug("checkin({}, {}, {}, {})", new Object[] { token, docPath, comment, increment });
+		DocumentModule dm = ModuleManager.getDocumentModule();
+		Version version = dm.checkin(token, docPath, is, comment, increment);
 		log.debug("checkin: {}", version);
 		return version;
 	}
@@ -304,6 +317,16 @@ public class OKMDocument implements DocumentModule {
 	}
 	
 	@Override
+	public void extendedCopy(String token, String docPath, String destPath, String docName, ExtendedAttributes extAttr)
+			throws ItemExistsException, PathNotFoundException, AccessDeniedException, RepositoryException, IOException,
+			DatabaseException, UserQuotaExceededException, ExtensionException, AutomationException {
+		log.debug("extendedCopy({}, {}, {}, {})", new Object[] { token, docPath, destPath, docName, extAttr });
+		DocumentModule dm = ModuleManager.getDocumentModule();
+		dm.extendedCopy(token, docPath, destPath, docName, extAttr);
+		log.debug("extendedCopy: void");
+	}
+	
+	@Override
 	public void restoreVersion(String token, String docPath, String versionId) throws PathNotFoundException,
 			AccessDeniedException, LockException, RepositoryException, DatabaseException, ExtensionException {
 		log.debug("restoreVersion({}, {}, {})", new Object[] { token, docPath, versionId });
@@ -332,10 +355,10 @@ public class OKMDocument implements DocumentModule {
 	}
 	
 	@Override
-	public boolean isValid(String token, String docPath) throws PathNotFoundException, RepositoryException, DatabaseException {
-		log.debug("isValid({}, {})", token, docPath);
+	public boolean isValid(String token, String docId) throws PathNotFoundException, RepositoryException, DatabaseException {
+		log.debug("isValid({}, {})", token, docId);
 		DocumentModule dm = ModuleManager.getDocumentModule();
-		boolean valid = dm.isValid(token, docPath);
+		boolean valid = dm.isValid(token, docId);
 		log.debug("isValid: {}", valid);
 		return valid;
 	}

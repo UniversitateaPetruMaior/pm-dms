@@ -1,18 +1,23 @@
 <!doctype html>
 <html>
-  <head>
-    <title>CodeMirror 2: Oracle PL/SQL mode</title>
-    <link rel="stylesheet" href="../../lib/codemirror.css">
-    <script src="../../lib/codemirror.js"></script>
-    <script src="plsql.js"></script>
-    <link rel="stylesheet" href="plsql.css">
-    <link rel="stylesheet" href="../../css/docs.css">
-    <style>.CodeMirror {border: 2px inset #dee;}</style>
-  </head>
-  <body>
-    <h1>CodeMirror 2: Oracle PL/SQL mode</h1>
+<head>
+<title>CodeMirror 2: Oracle PL/SQL mode</title>
+<link rel="stylesheet" href="../../lib/codemirror.css">
+<script src="../../lib/codemirror.js"></script>
+<script src="plsql.js"></script>
+<link rel="stylesheet" href="plsql.css">
+<link rel="stylesheet" href="../../css/docs.css">
+<style>
+.CodeMirror {
+	border: 2px inset #dee;
+}
+</style>
+</head>
+<body>
+	<h1>CodeMirror 2: Oracle PL/SQL mode</h1>
 
-<form><textarea id="code" name="code">
+	<form>
+		<textarea id="code" name="code">
 -- Oracle PL/SQL Code Demo
 /*
    based on c-like mode, adapted to PL/SQL by Peter Raganitsch ( http://www.oracle-and-apex.com/ )
@@ -43,9 +48,10 @@ BEGIN
     SYS.DBMS_OUTPUT.Put_Line (cText);
 END;
 --
-</textarea></form>
+</textarea>
+	</form>
 
-    <script>
+	<script>
       var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
         lineNumbers: true,
         matchBrackets: true,
@@ -54,10 +60,11 @@ END;
       });
     </script>
 
-    <p>
-        Simple mode that handles Oracle PL/SQL language (and Oracle SQL, of course).
-    </p>
+	<p>Simple mode that handles Oracle PL/SQL language (and Oracle SQL,
+		of course).</p>
 
-    <p><strong>MIME type defined:</strong> <code>text/x-plsql</code>
-    (PLSQL code)
+	<p>
+		<strong>MIME type defined:</strong>
+		<code>text/x-plsql</code>
+		(PLSQL code)
 </html>

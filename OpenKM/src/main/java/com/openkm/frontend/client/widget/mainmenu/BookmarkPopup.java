@@ -69,8 +69,8 @@ public class BookmarkPopup extends DialogBox {
 		
 		textBox = new TextBox();
 		textBox.setStyleName("okm-Input");
-		textBox.setVisibleLength(40);
 		textBox.setMaxLength(90);
+		textBox.setWidth("300");
 		
 		textBox.addKeyPressHandler(new KeyPressHandler() {
 			@Override

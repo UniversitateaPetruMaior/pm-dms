@@ -31,6 +31,7 @@ import com.allen_sauer.gwt.log.client.Log;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.gen2.table.client.FixedWidthGrid;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
@@ -39,7 +40,6 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.gen2.table.client.FixedWidthGrid;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTGrantedUser;
 import com.openkm.frontend.client.bean.GWTPermission;
@@ -65,7 +65,7 @@ public class SecurityUser extends Composite {
 	private SimplePanel spHeight;
 	private Image addButton;
 	private Image removeButton;
-	private String path = "";
+	private String uuid = "";
 	private int width = 612;
 	private Map<String, Integer> actualGrants;
 	private Map<String, Integer> changedGrants;
@@ -114,6 +114,15 @@ public class SecurityUser extends Composite {
 		panel.setSize(String.valueOf(width), "365");
 		
 		initWidget(panel);
+	}
+	
+	/**
+	 * initSecurity
+	 */
+	public void initSecurity() {
+		assignedUser.initSecurity();
+		unassignedUser.initSecurity();
+		panel.setSize(String.valueOf(width), "365");
 	}
 	
 	/**
@@ -170,10 +179,10 @@ public class SecurityUser extends Composite {
 	 * Gets the granted users
 	 */
 	public void getGrantedUsers() {
-		if (path != null) {
+		if (uuid != null) {
 			actualGrants = new HashMap<String, Integer>();
 			changedGrants = new HashMap<String, Integer>();
-			authService.getGrantedUsers(path, new AsyncCallback<List<GWTGrantedUser>>() {
+			authService.getGrantedUsers(uuid, new AsyncCallback<List<GWTGrantedUser>>() {
 				@Override
 				public void onSuccess(List<GWTGrantedUser> result) {
 					Collections.sort(result, GWTGrantedUserComparator.getInstance());
@@ -196,8 +205,8 @@ public class SecurityUser extends Composite {
 	 * Gets the ungranted users
 	 */
 	public void getUngrantedUsers() {
-		if (path != null) {
-			authService.getUngrantedUsers(path, new AsyncCallback<List<GWTGrantedUser>>() {
+		if (uuid != null) {
+			authService.getUngrantedUsers(uuid, new AsyncCallback<List<GWTGrantedUser>>() {
 				@Override
 				public void onSuccess(List<GWTGrantedUser> result) {
 					for (GWTGrantedUser gu : result) {
@@ -217,9 +226,9 @@ public class SecurityUser extends Composite {
 	 * Gets the ungranted users by filter
 	 */
 	public void getFilteredUngrantedUsers(String filter) {
-		if (path != null) {
+		if (uuid != null) {
 			resetUnassigned();
-			authService.getFilteredUngrantedUsers(path, filter, new AsyncCallback<List<GWTGrantedUser>>() {
+			authService.getFilteredUngrantedUsers(uuid, filter, new AsyncCallback<List<GWTGrantedUser>>() {
 				@Override
 				public void onSuccess(List<GWTGrantedUser> result) {
 					for (GWTGrantedUser gu : result) {
@@ -239,10 +248,10 @@ public class SecurityUser extends Composite {
 	 * Grant the user
 	 */
 	public void addUser(final GWTUser user) {
-		if (path != null) {
+		if (uuid != null) {
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.grantUser(path, user.getId(), GWTPermission.READ,
+				authService.grantUser(uuid, user.getId(), GWTPermission.READ,
 						Main.get().securityPopup.recursive.getValue(), new AsyncCallback<Object>() {
 							public void onSuccess(Object result) {
 								assignedUser.addRow(user, new Integer(GWTPermission.READ), false);
@@ -276,10 +285,10 @@ public class SecurityUser extends Composite {
 	 * Revokes all user permissions
 	 */
 	public void removeUser(final GWTUser user) {
-		if (path != null) {
+		if (uuid != null) {
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.revokeUser(path, user.getId(), Main.get().securityPopup.recursive.getValue(),
+				authService.revokeUser(uuid, user.getId(), Main.get().securityPopup.recursive.getValue(),
 						new AsyncCallback<Object>() {
 							public void onSuccess(Object result) {
 								unassignedUser.addRow(user, false);
@@ -318,12 +327,12 @@ public class SecurityUser extends Composite {
 	 * @param permissions The permissions value
 	 */
 	public void grant(String user, int permissions, boolean recursive, final int flag_property) {
-		if (path != null) {
+		if (uuid != null) {
 			Log.debug("UserScrollTable.grant(" + user + ", " + permissions + ", " + recursive + ")");
 			
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.grantUser(path, user, permissions, recursive, new AsyncCallback<Object>() {
+				authService.grantUser(uuid, user, permissions, recursive, new AsyncCallback<Object>() {
 					public void onSuccess(Object result) {
 						Log.debug("RoleScrollTable.callbackGrantUser.onSuccess(" + result + ")");
 						Main.get().securityPopup.status.unsetFlag_update();
@@ -406,12 +415,12 @@ public class SecurityUser extends Composite {
 	 * @param permissions The permissions value
 	 */
 	public void revoke(String user, int permissions, boolean recursive, final int flag_property) {
-		if (path != null) {
+		if (uuid != null) {
 			Log.debug("UserScrollTable.revoke(" + user + ", " + permissions + ", " + recursive + ")");
 			
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.revokeUser(path, user, permissions, recursive, new AsyncCallback<Object>() {
+				authService.revokeUser(uuid, user, permissions, recursive, new AsyncCallback<Object>() {
 					public void onSuccess(Object result) {
 						Log.debug("RoleScrollTable.callbackRevokeUser.onSuccess(" + result + ")");
 						FixedWidthGrid dataTable = assignedUser.getDataTable();
@@ -531,13 +540,13 @@ public class SecurityUser extends Composite {
 	}
 	
 	/**
-	 * Sets the path
+	 * Sets the uuid
 	 * 
-	 * @param path The path
+	 * @param uuid The uuid
 	 */
-	public void setPath(String path) {
-		assignedUser.setPath(path);
-		this.path = path;
+	public void setUuid(String uuid) {
+		assignedUser.setUuid(uuid);
+		this.uuid = uuid;
 	}
 	
 	/**

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import com.openkm.frontend.client.bean.form.GWTFormElement;
 
 /**
  * GWTMail
@@ -37,7 +38,6 @@ import com.google.gwt.user.client.rpc.IsSerializable;
  *
  */
 public class GWTMail implements IsSerializable {
-	
 	private String path;
 	private String uuid;
 	private int permissions;
@@ -60,6 +60,18 @@ public class GWTMail implements IsSerializable {
 	private Set<String> keywords = new HashSet<String>();
 	private String author;
 	private Date created;
+	
+	// Extra columns
+	private GWTFormElement column0;
+	private GWTFormElement column1;
+	private GWTFormElement column2;
+	private GWTFormElement column3;
+	private GWTFormElement column4;
+	private GWTFormElement column5;
+	private GWTFormElement column6;
+	private GWTFormElement column7;
+	private GWTFormElement column8;
+	private GWTFormElement column9;
 
 	public String getMimeType() {
 		return mimeType;
@@ -237,6 +249,86 @@ public class GWTMail implements IsSerializable {
 		this.created = created;
 	}
 	
+	public GWTFormElement getColumn0() {
+		return column0;
+	}
+
+	public void setColumn0(GWTFormElement column0) {
+		this.column0 = column0;
+	}
+
+	public GWTFormElement getColumn1() {
+		return column1;
+	}
+
+	public void setColumn1(GWTFormElement column1) {
+		this.column1 = column1;
+	}
+
+	public GWTFormElement getColumn2() {
+		return column2;
+	}
+
+	public void setColumn2(GWTFormElement column2) {
+		this.column2 = column2;
+	}
+
+	public GWTFormElement getColumn3() {
+		return column3;
+	}
+
+	public void setColumn3(GWTFormElement column3) {
+		this.column3 = column3;
+	}
+
+	public GWTFormElement getColumn4() {
+		return column4;
+	}
+
+	public void setColumn4(GWTFormElement column4) {
+		this.column4 = column4;
+	}
+	
+	public GWTFormElement getColumn5() {
+		return column5;
+	}
+
+	public void setColumn5(GWTFormElement column5) {
+		this.column5 = column5;
+	}
+
+	public GWTFormElement getColumn6() {
+		return column6;
+	}
+
+	public void setColumn6(GWTFormElement column6) {
+		this.column6 = column6;
+	}
+
+	public GWTFormElement getColumn7() {
+		return column7;
+	}
+
+	public void setColumn7(GWTFormElement column7) {
+		this.column7 = column7;
+	}
+
+	public GWTFormElement getColumn8() {
+		return column8;
+	}
+
+	public void setColumn8(GWTFormElement column8) {
+		this.column8 = column8;
+	}
+
+	public GWTFormElement getColumn9() {
+		return column9;
+	}
+
+	public void setColumn9(GWTFormElement column9) {
+		this.column9 = column9;
+	}
+
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("[");

@@ -36,9 +36,9 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openkm.core.Config;
 import com.openkm.core.MimeTypeConfig;
 import com.openkm.util.ArchiveUtils;
-import com.openkm.util.EnvironmentDetector;
 import com.openkm.util.FormatUtil;
 import com.openkm.util.UserActivity;
 import com.openkm.util.WebUtils;
@@ -49,16 +49,18 @@ import com.openkm.util.WebUtils;
 public class LogCatServlet extends BaseServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger log = LoggerFactory.getLogger(LogCatServlet.class);
-	private static File logFolder = new File(EnvironmentDetector.getServerLogDir());
+	private static File logFolder = new File(Config.LOG_DIR);
 	
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String method = request.getMethod();
 		
-		if (method.equals(METHOD_GET)) {
-			doGet(request, response);
-		} else if (method.equals(METHOD_POST)) {
-			doPost(request, response);
+		if (checkMultipleInstancesAccess(request, response)) {
+			if (method.equals(METHOD_GET)) {
+				doGet(request, response);
+			} else if (method.equals(METHOD_POST)) {
+				doPost(request, response);
+			}
 		}
 	}
 	

@@ -1,7 +1,22 @@
 package com.openkm.cache;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.openkm.bean.ContentInfo;
+import com.openkm.bean.Document;
+import com.openkm.bean.Repository;
+import com.openkm.core.Config;
+import com.openkm.core.DatabaseException;
+import com.openkm.core.PathNotFoundException;
+import com.openkm.core.RepositoryException;
+import com.openkm.dao.NodeBaseDAO;
+import com.openkm.dao.UserItemsDAO;
+import com.openkm.dao.bean.cache.UserItems;
+import com.openkm.module.db.base.BaseFolderModule;
+import com.openkm.module.db.stuff.DbSessionManager;
+import com.openkm.module.jcr.stuff.JcrSessionManager;
+import com.openkm.spring.PrincipalUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -10,20 +25,8 @@ import javax.jcr.Workspace;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.openkm.bean.ContentInfo;
-import com.openkm.bean.Document;
-import com.openkm.bean.Repository;
-import com.openkm.core.DatabaseException;
-import com.openkm.core.PathNotFoundException;
-import com.openkm.core.RepositoryException;
-import com.openkm.dao.NodeBaseDAO;
-import com.openkm.dao.UserItemsDAO;
-import com.openkm.dao.bean.cache.UserItems;
-import com.openkm.module.db.base.BaseFolderModule;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserItemsManager {
 	private static Logger log = LoggerFactory.getLogger(UserItemsManager.class);
@@ -106,7 +109,7 @@ public class UserItemsManager {
 		log.info("refreshJcrUserItems({})", session);
 		
 		try {
-			String statement = "/jcr:root/"+Repository.ROOT+"//element(*, okm:document)[okm:content/@okm:author='"+session.getUserID()+"']";
+			String statement = "/jcr:root/"+ Repository.ROOT+"//element(*, okm:document)[okm:content/@okm:author='"+session.getUserID()+"']";
 			Workspace workspace = session.getWorkspace();
 			QueryManager queryManager = workspace.getQueryManager();
 			Query query = queryManager.createQuery(statement, Query.XPATH);
@@ -129,16 +132,33 @@ public class UserItemsManager {
  		
  		log.info("refreshJcrUserItems: void");
 	}
-	
+
 	/**
 	 * Refresh user item cache from database.
 	 */
 	public static synchronized void refreshDbUserItems() throws RepositoryException {
-		log.debug("refreshDbUserItems({})");
+		String systemToken = null;
+
+		if (Config.REPOSITORY_NATIVE) {
+			systemToken = DbSessionManager.getInstance().getSystemToken();
+		} else {
+			systemToken = JcrSessionManager.getInstance().getSystemToken();
+		}
+
+		refreshDbUserItemsAs(systemToken);
+	}
+
+	/**
+	 * Refresh user item cache from database.
+	 */
+	public static synchronized void refreshDbUserItemsAs(String token) throws RepositoryException {
+		log.debug("refreshDbUserItemsAs({})", token);
 		Map<String, ContentInfo> totalUserContInfo = new HashMap<String, ContentInfo>();
 		String[] bases = new String[] { Repository.ROOT, Repository.CATEGORIES, Repository.TEMPLATES,
 				Repository.PERSONAL, Repository.MAIL, Repository.TRASH };
-		
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+
 		if (running) {
 			log.warn("*** Refresh user items already running ***");
 		} else {
@@ -146,6 +166,13 @@ public class UserItemsManager {
 			log.info("*** Begin refresh user items ***");
 			
 			try {
+				if (token == null) {
+					auth = PrincipalUtils.getAuthentication();
+				} else {
+					oldAuth = PrincipalUtils.getAuthentication();
+					auth = PrincipalUtils.getAuthenticationByToken(token);
+				}
+
 				for (String base : bases) {
 					log.info("Calculate user content info from '{}'...", base);
 					String uuid = NodeBaseDAO.getInstance().getUuidFromPath("/" + base);
@@ -182,13 +209,17 @@ public class UserItemsManager {
 			} catch (DatabaseException e) {
 				throw new RepositoryException("DatabaseException: " + e, e);
 			} finally {
+				if (token != null) {
+					PrincipalUtils.setAuthentication(oldAuth);
+				}
+
 				running = false;
 			}
 			
 			log.info("*** End refresh user items ***");
 		}
 		
- 		log.debug("refreshDbUserItems: void");
+ 		log.debug("refreshDbUserItemsAs: void");
 	}
 
 	/**

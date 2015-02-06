@@ -91,6 +91,11 @@ public class Menu extends Composite {
 		Main.get().mainPanel.search.historySearch.userNews.menuPopup.hide();
 	}
 	
+	/**
+	 * evaluateMenuOptions
+	 */
+	public void evaluateMenuOptions() {
+	}
 	
 	/**
 	 * Enables menu item

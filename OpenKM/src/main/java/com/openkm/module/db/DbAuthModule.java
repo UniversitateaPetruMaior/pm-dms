@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.db;
@@ -38,6 +38,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.Gson;
+import com.openkm.bean.ChangeSecurityParams;
 import com.openkm.bean.Permission;
 import com.openkm.bean.Repository;
 import com.openkm.core.AccessDeniedException;
@@ -48,7 +50,9 @@ import com.openkm.core.PathNotFoundException;
 import com.openkm.core.RepositoryException;
 import com.openkm.dao.NodeBaseDAO;
 import com.openkm.dao.NodeFolderDAO;
+import com.openkm.dao.PendingTaskDAO;
 import com.openkm.dao.bean.NodeFolder;
+import com.openkm.dao.bean.PendingTask;
 import com.openkm.module.AuthModule;
 import com.openkm.module.common.CommonAuthModule;
 import com.openkm.module.db.stuff.DbSessionManager;
@@ -102,8 +106,7 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public String login(String user, String password) throws AccessDeniedException, RepositoryException,
-			DatabaseException {
+	public String login(String user, String password) throws AccessDeniedException, RepositoryException, DatabaseException {
 		log.debug("login({}, {})", user, password);
 		String token = UUID.randomUUID().toString();
 		
@@ -172,10 +175,12 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public void grantUser(String token, String nodePath, String guser, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("grantUser({}, {}, {}, {}, {})", new Object[] { token, nodePath, guser, permissions, recursive });
+	public void grantUser(String token, String nodeId, String guser, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException {
+		log.debug("grantUser({}, {}, {}, {}, {})", new Object[] { token, nodeId, guser, permissions, recursive });
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -185,7 +190,14 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			NodeBaseDAO.getInstance().grantUserPermissions(nodeUuid, guser, permissions, recursive);
 			
 			// Activity log
@@ -202,10 +214,12 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public void revokeUser(String token, String nodePath, String guser, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("revokeUser({}, {}, {}, {}, {})", new Object[] { token, nodePath, guser, permissions, recursive });
+	public void revokeUser(String token, String nodeId, String guser, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException {
+		log.debug("revokeUser({}, {}, {}, {}, {})", new Object[] { token, nodeId, guser, permissions, recursive });
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -215,7 +229,14 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			NodeBaseDAO.getInstance().revokeUserPermissions(nodeUuid, guser, permissions, recursive);
 			
 			// Activity log
@@ -232,12 +253,15 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public Map<String, Integer> getGrantedUsers(String token, String nodePath) throws PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("getGrantedUsers({}, {})", token, nodePath);
+	public Map<String, Integer> getGrantedUsers(String token, String nodeId) throws PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
+		log.debug("getGrantedUsers({}, {})", token, nodeId);
 		Map<String, Integer> users = new HashMap<String, Integer>();
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
+		@SuppressWarnings("unused")
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -247,7 +271,14 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			users = NodeBaseDAO.getInstance().getUserPermissions(nodeUuid);
 		} catch (DatabaseException e) {
 			throw e;
@@ -262,10 +293,12 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public void grantRole(String token, String nodePath, String role, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("grantRole({}, {}, {}, {}, {})", new Object[] { token, nodePath, role, permissions, recursive });
+	public void grantRole(String token, String nodeId, String role, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException {
+		log.debug("grantRole({}, {}, {}, {}, {})", new Object[] { token, nodeId, role, permissions, recursive });
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -275,7 +308,14 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			NodeBaseDAO.getInstance().grantRolePermissions(nodeUuid, role, permissions, recursive);
 			
 			// Activity log
@@ -292,10 +332,12 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public void revokeRole(String token, String nodePath, String role, int permissions, boolean recursive)
-			throws PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("revokeRole({}, {}, {}, {}, {})", new Object[] { token, nodePath, role, permissions, recursive });
+	public void revokeRole(String token, String nodeId, String role, int permissions, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException {
+		log.debug("revokeRole({}, {}, {}, {}, {})", new Object[] { token, nodeId, role, permissions, recursive });
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -305,7 +347,14 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			NodeBaseDAO.getInstance().revokeRolePermissions(nodeUuid, role, permissions, recursive);
 			
 			// Activity log
@@ -322,11 +371,14 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public void changeSecurity(String token, String nodePath, Map<String, Integer> grantUsers,
-			Map<String, Integer> revokeUsers, Map<String, Integer> grantRoles, Map<String, Integer> revokeRoles,
-			boolean recursive) throws PathNotFoundException, AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("changeSecurity({}, {}, {}, {}, {}, {}, {})", new Object[] { token, nodePath, grantUsers, revokeUsers, grantRoles, revokeRoles, recursive });
+	public void changeSecurity(String token, String nodeId, Map<String, Integer> grantUsers, Map<String, Integer> revokeUsers,
+			Map<String, Integer> grantRoles, Map<String, Integer> revokeRoles, boolean recursive) throws PathNotFoundException,
+			AccessDeniedException, RepositoryException, DatabaseException {
+		log.debug("changeSecurity({}, {}, {}, {}, {}, {}, {})", new Object[] { token, nodeId, grantUsers, revokeUsers, grantRoles,
+				revokeRoles, recursive });
 		Authentication auth = null, oldAuth = null;
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -336,11 +388,41 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
-			NodeBaseDAO.getInstance().changeSecurity(nodeUuid, grantUsers, revokeUsers, grantRoles, revokeRoles, recursive);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
+			if (recursive) {
+				if (NodeBaseDAO.getInstance().subTreeHasMoreThanNodes(nodePath, Config.SECURITY_LIVE_CHANGE_NODE_LIMIT)) {
+					// Add pending task because will take too long to complete
+					ChangeSecurityParams params = new ChangeSecurityParams();
+					params.setUser(PrincipalUtils.getUser());
+					params.setRoles(PrincipalUtils.getRoles());
+					params.setGrantUsers(grantUsers);
+					params.setRevokeUsers(revokeUsers);
+					params.setGrantRoles(grantRoles);
+					params.setRevokeRoles(revokeRoles);
+					Gson gson = new Gson();
+					PendingTask pt = new PendingTask();
+					pt.setNode(nodeUuid);
+					pt.setTask(PendingTask.TASK_CHANGE_SECURITY);
+					pt.setParams(gson.toJson(params));
+					pt.setCreated(Calendar.getInstance());
+					PendingTaskDAO.getInstance().create(pt);
+				} else {
+					NodeBaseDAO.getInstance().changeSecurity(nodeUuid, grantUsers, revokeUsers, grantRoles, revokeRoles, true);
+				}
+			} else {
+				NodeBaseDAO.getInstance().changeSecurity(nodeUuid, grantUsers, revokeUsers, grantRoles, revokeRoles, false);
+			}
 			
 			// Activity log
-			UserActivity.log(auth.getName(), "CHANGE_SECURITY", nodeUuid, nodePath, grantUsers + ", " + revokeUsers + ", " + grantRoles + ", " + revokeRoles + ", " + recursive);
+			UserActivity.log(auth.getName(), "CHANGE_SECURITY", nodeUuid, nodePath, grantUsers + ", " + revokeUsers + ", " + grantRoles
+					+ ", " + revokeRoles + ", " + recursive);
 		} catch (DatabaseException e) {
 			throw e;
 		} finally {
@@ -353,12 +435,15 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	}
 	
 	@Override
-	public Map<String, Integer> getGrantedRoles(String token, String nodePath) throws PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException {
-		log.debug("getGrantedRoles({}, {})", token, nodePath);
+	public Map<String, Integer> getGrantedRoles(String token, String nodeId) throws PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException {
+		log.debug("getGrantedRoles({}, {})", token, nodeId);
 		Map<String, Integer> roles = new HashMap<String, Integer>();
 		@SuppressWarnings("unused")
 		Authentication auth = null, oldAuth = null;
+		@SuppressWarnings("unused")
+		String nodePath = null;
+		String nodeUuid = null;
 		
 		try {
 			if (token == null) {
@@ -368,7 +453,14 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 				auth = PrincipalUtils.getAuthenticationByToken(token);
 			}
 			
-			String nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodePath);
+			if (PathUtils.isPath(nodeId)) {
+				nodePath = nodeId;
+				nodeUuid = NodeBaseDAO.getInstance().getUuidFromPath(nodeId);
+			} else {
+				nodePath = NodeBaseDAO.getInstance().getPathFromUuid(nodeId);
+				nodeUuid = nodeId;
+			}
+			
 			roles = NodeBaseDAO.getInstance().getRolePermissions(nodeUuid);
 		} catch (DatabaseException e) {
 			throw e;
@@ -415,8 +507,8 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	/**
 	 * Load user data
 	 */
-	public static void loadUserData(String user) throws PathNotFoundException, AccessDeniedException,
-			ItemExistsException, DatabaseException {
+	public static void loadUserData(String user) throws PathNotFoundException, AccessDeniedException, ItemExistsException,
+			DatabaseException {
 		log.debug("loadUserData({})", user);
 		String baseTrashPath = "/" + Repository.TRASH;
 		String basePersonalPath = "/" + Repository.PERSONAL;
@@ -448,8 +540,8 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 	/**
 	 * Create base node
 	 */
-	private static void createBase(String user, String basePath) throws PathNotFoundException, AccessDeniedException,
-			ItemExistsException, DatabaseException {
+	private static void createBase(String user, String basePath) throws PathNotFoundException, AccessDeniedException, ItemExistsException,
+			DatabaseException {
 		log.debug("createBase({}, {})", user, basePath);
 		String baseUuid = NodeBaseDAO.getInstance().getUuidFromPath(basePath);
 		NodeFolder nFolder = new NodeFolder();
@@ -462,9 +554,185 @@ public class DbAuthModule implements AuthModule, ApplicationContextAware {
 		nFolder.setUuid(UUID.randomUUID().toString());
 		nFolder.setCreated(Calendar.getInstance());
 		
+		if (Config.STORE_NODE_PATH) {
+			nFolder.setPath(basePath + "/" + user);
+		}
+		
 		// Auth info
 		int perms = Permission.READ | Permission.WRITE | Permission.DELETE | Permission.SECURITY;
 		nFolder.getUserPermissions().put(user, perms);
 		NodeFolderDAO.getInstance().create(nFolder);
+	}
+	
+	/*
+	 * ------------------------------------------------------------------
+	 * These methods only works if using the OpenKM user database.
+	 * ------------------------------------------------------------------
+	 */
+	@Override
+	public void createUser(String token, String user, String password, String email, String name, boolean active)
+			throws PrincipalAdapterException {
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			CommonAuthModule.getPrincipalAdapter().createUser(user, password, email, name, active);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+	
+	@Override
+	public void deleteUser(String token, String user) throws PrincipalAdapterException {
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			CommonAuthModule.getPrincipalAdapter().deleteUser(user);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+
+	@Override
+	public void updateUser(String token, String user, String password, String email, String name, boolean active) throws PrincipalAdapterException {
+		Authentication auth = null, oldAuth = null;
+
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+
+			CommonAuthModule.getPrincipalAdapter().updateUser(user, password, email, name, active);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+
+	@Override
+	public void createRole(String token, String role, boolean active) throws PrincipalAdapterException {
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			CommonAuthModule.getPrincipalAdapter().createRole(role, active);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+	
+	@Override
+	public void deleteRole(String token, String role) throws PrincipalAdapterException {
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			CommonAuthModule.getPrincipalAdapter().deleteRole(role);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+
+	@Override
+	public void updateRole(String token, String role, boolean active) throws PrincipalAdapterException {
+		Authentication auth = null, oldAuth = null;
+
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+
+			CommonAuthModule.getPrincipalAdapter().updateRole(role, active);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+
+	@Override
+	public void assignRole(String token, String user, String role) throws PrincipalAdapterException {
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			CommonAuthModule.getPrincipalAdapter().assignRole(user, role);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
+	}
+	
+	@Override
+	public void removeRole(String token, String user, String role) throws PrincipalAdapterException {
+		@SuppressWarnings("unused")
+		Authentication auth = null, oldAuth = null;
+		
+		try {
+			if (token == null) {
+				auth = PrincipalUtils.getAuthentication();
+			} else {
+				oldAuth = PrincipalUtils.getAuthentication();
+				auth = PrincipalUtils.getAuthenticationByToken(token);
+			}
+			
+			CommonAuthModule.getPrincipalAdapter().removeRole(user, role);
+		} finally {
+			if (token != null) {
+				PrincipalUtils.setAuthentication(oldAuth);
+			}
+		}
 	}
 }

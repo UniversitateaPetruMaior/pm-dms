@@ -91,6 +91,12 @@ public class Menu extends Composite {
 	}
 	
 	/**
+	 * evaluateMenuOptions
+	 */
+	public void evaluateMenuOptions() {
+	}
+	
+	/**
 	 * Enables menu item
 	 * 
 	 * @param menuItem The menu item

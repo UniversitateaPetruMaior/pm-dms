@@ -44,7 +44,6 @@ public interface OKMSearchService extends RemoteService {
 	public GWTResultSet findPaginated(GWTQueryParams params, int offset, int limit)  throws OKMException;
 	public List<GWTKeyword> getKeywordMap(List<String> filter) throws OKMException;
 	public GWTResultSet find(GWTQueryParams params) throws OKMException;
-	public void share(long qpId) throws OKMException;
-	public void unshare(long qpId) throws OKMException;
 	public GWTResultSet findSimpleQueryPaginated(String statement, int offset, int limit)  throws OKMException;
+	public GWTResultSet findMoreLikeThis(String uuid) throws OKMException;
 }

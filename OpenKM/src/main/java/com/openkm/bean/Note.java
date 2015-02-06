@@ -24,6 +24,9 @@ package com.openkm.bean;
 import java.io.Serializable;
 import java.util.Calendar;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "note")
 public class Note implements Serializable {
 	private static final long serialVersionUID = 913105621262127904L;
 	

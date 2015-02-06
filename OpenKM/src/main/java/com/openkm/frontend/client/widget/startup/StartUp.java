@@ -62,17 +62,18 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 	public static final int STARTUP_GET_USER_VALUES = 1;
 	public static final int STARTUP_GET_TAXONOMY_ROOT = 2;
 	public static final int STARTUP_GET_CATEGORIES_ROOT = 3;
-	public static final int STARTUP_GET_THESAURUS_ROOT = 4;
-	public static final int STARTUP_GET_TEMPLATE_ROOT = 5;
-	public static final int STARTUP_GET_PERSONAL = 6;
-	public static final int STARTUP_GET_MAIL = 7;
-	public static final int STARTUP_GET_TRASH = 8;
-	public static final int STARTUP_GET_USER_HOME = 9;
-	public static final int STARTUP_GET_BOOKMARKS = 10;
-	public static final int STARTUP_INIT_TREE_NODES = 11;
-	public static final int STARTUP_LOADING_HISTORY_SEARCH = 12;
-	public static final int STARTUP_LOADING_TAXONOMY_EVAL_PARAMS = 13;
-	public static final int STARTUP_LOADING_OPEN_PATH = 14;
+	public static final int STARTUP_GET_METADATA_ROOT = 4;
+	public static final int STARTUP_GET_THESAURUS_ROOT = 5;
+	public static final int STARTUP_GET_TEMPLATE_ROOT = 6;
+	public static final int STARTUP_GET_PERSONAL = 7;
+	public static final int STARTUP_GET_MAIL = 8;
+	public static final int STARTUP_GET_TRASH = 9;
+	public static final int STARTUP_GET_USER_HOME = 10;
+	public static final int STARTUP_GET_BOOKMARKS = 11;
+	public static final int STARTUP_INIT_TREE_NODES = 12;
+	public static final int STARTUP_LOADING_HISTORY_SEARCH = 13;
+	public static final int STARTUP_LOADING_TAXONOMY_EVAL_PARAMS = 14;
+	public static final int STARTUP_LOADING_OPEN_PATH = 15;
 	
 	private final OKMRepositoryServiceAsync repositoryService = (OKMRepositoryServiceAsync) GWT
 			.create(OKMRepositoryService.class);
@@ -189,6 +190,21 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 		public void onSuccess(GWTFolder result) {
 			// Only executes on initialization
 			Main.get().categoriesRootFolder = result;
+			nextStatus(STARTUP_GET_METADATA_ROOT);
+		}
+		
+		public void onFailure(Throwable caught) {
+			Main.get().showError("GetCategoriesFolder", caught);
+		}
+	};
+	
+	/**
+	 * Gets asynchronous metadata root node
+	 */
+	final AsyncCallback<GWTFolder> callbackGetMetadataFolder = new AsyncCallback<GWTFolder>() {
+		public void onSuccess(GWTFolder result) {
+			// Only executes on initialization
+			Main.get().metadataRootFolder = result;
 			nextStatus(STARTUP_GET_THESAURUS_ROOT);
 		}
 		
@@ -316,6 +332,13 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 	}
 	
 	/**
+	 * getCategories
+	 */
+	public void getMetadata() {
+		repositoryService.getMetadataFolder(callbackGetMetadataFolder);
+	}
+	
+	/**
 	 * Gets the taxonomy
 	 */
 	public void getRoot() {
@@ -337,48 +360,9 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 	}
 	
 	/**
-	 * Call back opens document passed by url param
-	 */
-	final AsyncCallback<Boolean> callbackIsValidDocument = new AsyncCallback<Boolean>() {
-		public void onSuccess(Boolean result) {
-			if (result.booleanValue()) {
-				// Opens folder passed by parameter
-				CommonUI.openPath(fldPath, docPath);
-			}
-			
-			Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
-		}
-		
-		public void onFailure(Throwable caught) {
-			Main.get().showError("isValid", caught);
-			Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
-		}
-	};
-	
-	/**
-	 * Call back opens folder passed by url param
-	 */
-	final AsyncCallback<Boolean> callbackIsValidFolder = new AsyncCallback<Boolean>() {
-		public void onSuccess(Boolean result) {
-			if (result.booleanValue()) {
-				// Opens folder passed by parameter
-				CommonUI.openPath(fldPath, "");
-			}
-			
-			Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
-		}
-		
-		public void onFailure(Throwable caught) {
-			Main.get().showError("isValid", caught);
-			Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
-		}
-	};
-	
-	/**
 	 * Opens a document destination passed by url parameter
 	 */
 	private void openDocumentByBrowserURLParam() {
-		Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_TAXONOMY_EVAL_PARAMS);
 		fldPath = Main.get().fldPath;
 		docPath = Main.get().docPath;
 		taskInstanceId = Main.get().taskInstanceId;
@@ -417,6 +401,8 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 					if (result.booleanValue()) {
 						// Opens folder passed by parameter
 						CommonUI.openPath(fldPath, docPath);
+					} else {
+						CommonUI.openPath(CommonUI.getDefaultRootPathByProfile(), "");
 					}
 					CommonUI.openUserTaskInstance(taskInstanceId); // Always trying opening taskInstance
 					Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
@@ -424,6 +410,8 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 				@Override
 				public void onFailure(Throwable caught) {
 					Main.get().showError("isValid", caught);
+					CommonUI.openPath(CommonUI.getDefaultRootPathByProfile(), "");
+					CommonUI.openUserTaskInstance(taskInstanceId); // Always trying opening taskInstance
 					Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
 				}
 			});
@@ -457,6 +445,8 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 										@Override
 										public void onFailure(Throwable caught) {
 											Main.get().showError("getProperties", caught);
+											CommonUI.openPath(fldPath, "");
+											CommonUI.openUserTaskInstance(taskInstanceId); // Always trying opening taskInstance
 											Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
 										}
 									});
@@ -465,21 +455,29 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 								@Override
 								public void onFailure(Throwable caught) {
 									Main.get().showError("getProperties", caught);
+									CommonUI.openPath(fldPath, "");
+									CommonUI.openUserTaskInstance(taskInstanceId); // Always trying opening taskInstance
 									Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
 								}
 							});
 						}
+					} else {
+						CommonUI.openPath(CommonUI.getDefaultRootPathByProfile(), "");
+						CommonUI.openUserTaskInstance(taskInstanceId); // Always trying opening taskInstance
+						Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
 					}
-					
-					Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
 				}
 				
 				public void onFailure(Throwable caught) {
 					Main.get().showError("isValid", caught);
+					CommonUI.openPath(CommonUI.getDefaultRootPathByProfile(), "");
+					CommonUI.openUserTaskInstance(taskInstanceId); // Always trying opening taskInstance
 					Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
 				}
 			});
 		} else {
+			CommonUI.openPath(CommonUI.getDefaultRootPathByProfile(), "");
+			CommonUI.openUserTaskInstance(taskInstanceId); // Always trying opening taskInstance
 			Main.get().startUp.nextStatus(StartUp.STARTUP_LOADING_OPEN_PATH);
 		}
 	}
@@ -521,6 +519,16 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 						if (Main.get().workspaceUserProperties.getWorkspace().isStackCategoriesVisible()) {
 							Main.get().startUpPopup.addStatus(Main.i18n("startup.categories"), STARTUP_GET_CATEGORIES_ROOT);
 							getCategories();
+						} else {
+							Main.get().startUpPopup.jumpActual();
+							nextStatus(STARTUP_GET_METADATA_ROOT);
+						}
+						break;
+					
+					case STARTUP_GET_METADATA_ROOT:
+						if (Main.get().workspaceUserProperties.getWorkspace().isStackMetadataVisible()) {
+							Main.get().startUpPopup.addStatus(Main.i18n("startup.metadata"), STARTUP_GET_METADATA_ROOT);
+							getMetadata();
 						} else {
 							Main.get().startUpPopup.jumpActual();
 							nextStatus(STARTUP_GET_THESAURUS_ROOT);
@@ -583,6 +591,8 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 							Main.get().activeFolderTree = Main.get().mainPanel.desktop.navigator.taxonomyTree;
 						} else if (Main.get().workspaceUserProperties.getWorkspace().isStackCategoriesVisible()) {
 							Main.get().activeFolderTree = Main.get().mainPanel.desktop.navigator.categoriesTree;
+						} else if (Main.get().workspaceUserProperties.getWorkspace().isStackMetadataVisible()) {
+							Main.get().activeFolderTree = Main.get().mainPanel.desktop.navigator.metadataTree;
 						} else if (Main.get().workspaceUserProperties.getWorkspace().isStackThesaurusVisible()) {
 							Main.get().activeFolderTree = Main.get().mainPanel.desktop.navigator.thesaurusTree;
 						} else if (Main.get().workspaceUserProperties.getWorkspace().isStackTemplatesVisible()) {
@@ -619,6 +629,9 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 						}
 						if (Main.get().workspaceUserProperties.getWorkspace().isStackCategoriesVisible()) {
 							Main.get().mainPanel.desktop.navigator.categoriesTree.init();
+						}
+						if (Main.get().workspaceUserProperties.getWorkspace().isStackMetadataVisible()) {
+							Main.get().mainPanel.desktop.navigator.metadataTree.init();
 						}
 						if (Main.get().workspaceUserProperties.getWorkspace().isStackThesaurusVisible()) {
 							Main.get().mainPanel.desktop.navigator.thesaurusTree.init();
@@ -664,7 +677,6 @@ public class StartUp implements HasWidgetHandlerExtension, HasWidgetEvent {
 					case STARTUP_LOADING_OPEN_PATH:
 						Main.get().startUpPopup.addStatus(Main.i18n("startup.loading.taxonomy.open.path"), STARTUP_LOADING_OPEN_PATH);
 						enabled = false;
-						Main.get().mainPanel.desktop.setLoadFinish();
 						Main.get().mainPanel.search.setLoadFinish();
 						
 						fireEvent(HasWidgetEvent.FINISH_STARTUP);

@@ -76,6 +76,8 @@ public class NotifyRole extends Composite {
 		
 		addButton.addClickHandler(addButtonHandler);
 		removeButton.addClickHandler(removeButtonHandler);
+		addButton.setStyleName("okm-Hyperlink");
+		removeButton.setStyleName("okm-Hyperlink");
 		
 		hPanel.setSize("374","140");
 		hPanel.add(rolesTable);

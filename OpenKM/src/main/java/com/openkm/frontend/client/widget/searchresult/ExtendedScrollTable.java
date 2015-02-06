@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.allen_sauer.gwt.log.client.Log;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.gen2.table.client.FixedWidthFlexTable;
 import com.google.gwt.gen2.table.client.FixedWidthGrid;
 import com.google.gwt.gen2.table.client.ScrollTable;
@@ -32,15 +34,16 @@ import com.google.gwt.gen2.table.client.SelectionGrid;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
-import com.google.gwt.user.client.ui.Hyperlink;
-
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTDocument;
 import com.openkm.frontend.client.bean.GWTFolder;
 import com.openkm.frontend.client.bean.GWTMail;
 import com.openkm.frontend.client.bean.GWTPermission;
+import com.openkm.frontend.client.bean.GWTProfileFileBrowser;
 import com.openkm.frontend.client.bean.GWTQueryResult;
+import com.openkm.frontend.client.util.CommonUI;
 import com.openkm.frontend.client.util.Util;
 
 /**
@@ -61,6 +64,10 @@ public class ExtendedScrollTable extends ScrollTable {
 	private FixedWidthFlexTable headerTable;
 	private ExtendedColumnSorter columnSorter;
 	
+	// Columns
+	private GWTProfileFileBrowser profileFileBrowser;
+	public int colDataIndex = 0;
+	
 	/**
 	 * ExtendedScrollTable
 	 */
@@ -70,7 +77,7 @@ public class ExtendedScrollTable extends ScrollTable {
 		this.headerTable = headerTable;
 		
 		dataTable.setSelectionPolicy(SelectionGrid.SelectionPolicy.ONE_ROW);
-		setResizePolicy(ResizePolicy.UNCONSTRAINED);
+		setResizePolicy(ResizePolicy.FILL_WIDTH);
 		setScrollPolicy(ScrollPolicy.BOTH);
 		
 		columnSorter = new ExtendedColumnSorter();
@@ -241,6 +248,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 * @param score Document score
 	 */
 	private void addDocumentRow(GWTQueryResult gwtQueryResult, Score score) {
+		int col = 0;
 		int rows = dataTable.getRowCount();
 		dataTable.insertRow(rows);
 		
@@ -254,45 +262,60 @@ public class ExtendedScrollTable extends ScrollTable {
 		// Sets folder object
 		data.put(new Integer(dataIndexValue), gwtQueryResult);
 		
-		dataTable.setHTML(rows, 0, score.getHTML());
-		
-		if(doc.isAttachment())  {
-			dataTable.setHTML(rows, 1, Util.imageItemHTML("img/email_attach.gif"));
-		} else {
-			dataTable.setHTML(rows, 1, "&nbsp;");
-		}
-		
-		dataTable.setHTML(rows, 1, dataTable.getHTML(rows,1) + Util.mimeImageHTML(doc.getMimeType()));
-		Hyperlink hLink = new Hyperlink();
-		hLink.setHTML(doc.getName());
-		hLink.setStyleName("okm-Hyperlink");
-		
-		// On attachemt case must remove last folder path, because it's internal usage not for visualization
-		if (doc.isAttachment()) {
-			hLink.setTitle(doc.getParentPath().substring(0, doc.getParentPath().lastIndexOf("/")));
-		} else {
-			hLink.setTitle(doc.getParentPath());
-		}
-		
-		dataTable.setWidget(rows, 2, hLink);
-		dataTable.setHTML(rows, 3, Util.formatSize(doc.getActualVersion().getSize()));
-		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
-		dataTable.setHTML(rows, 4, dtf.format(doc.getLastModified()));
-		dataTable.setHTML(rows, 5, doc.getActualVersion().getUser().getUsername());
-		dataTable.setHTML(rows, 6, doc.getActualVersion().getName());
-		dataTable.setHTML(rows, 7, ""+(dataIndexValue++));
-		
-		// Format
+		// Score is always visible
+		dataTable.setHTML(rows, col++, score.getHTML());
 		dataTable.getCellFormatter().setHorizontalAlignment(rows, 0, HasHorizontalAlignment.ALIGN_LEFT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 1, HasHorizontalAlignment.ALIGN_RIGHT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 2, HasHorizontalAlignment.ALIGN_LEFT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 3, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 4, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 5, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 6, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setVisible(rows,7,false);
 		
-		for (int i=0; i<7; i++) {
+		if (profileFileBrowser.isIconVisible()) {
+			dataTable.setHTML(rows, col, dataTable.getHTML(rows,col) + Util.mimeImageHTML(doc.getMimeType()));
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_RIGHT);
+		}
+		if (profileFileBrowser.isNameVisible()) {
+			Anchor anchor = new Anchor();
+			anchor.setHTML(doc.getName());
+			anchor.setStyleName("okm-Hyperlink");
+			
+			// On attachemt case must remove last folder path, because it's internal usage not for visualization
+			String path = "";
+			if (doc.isAttachment()) {
+				anchor.setTitle(Util.getParent(doc.getParentPath()));
+				path = doc.getParentPath();
+			} else {
+				anchor.setTitle(doc.getParentPath());
+				path = doc.getPath();
+			}
+			final String docPath = path;
+			anchor.addClickHandler(new ClickHandler() {
+				@Override
+				public void onClick(ClickEvent event) {
+					CommonUI.openPath(Util.getParent(docPath), docPath);
+				}
+			});
+			
+			dataTable.setWidget(rows, col, anchor);
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_LEFT);
+		}
+		if (profileFileBrowser.isSizeVisible()) {
+			dataTable.setHTML(rows, 3, Util.formatSize(doc.getActualVersion().getSize()));
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isLastModifiedVisible()) {
+			DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
+			dataTable.setHTML(rows, col, dtf.format(doc.getLastModified()));
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isAuthorVisible()) {
+			dataTable.setHTML(rows, col, doc.getActualVersion().getUser().getUsername());
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isVersionVisible()) {
+			dataTable.setHTML(rows, col, doc.getActualVersion().getName());
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		dataTable.setHTML(rows, col, ""+(dataIndexValue++));
+		dataTable.getCellFormatter().setVisible(rows,col,false);
+		
+		for (int i=0; i<col; i++) {
 			dataTable.getCellFormatter().addStyleName(rows, i, "okm-DisableSelect");
 		}
 	}
@@ -304,54 +327,72 @@ public class ExtendedScrollTable extends ScrollTable {
 	 * @param score The folder score
 	 */
 	private void addFolderRow(GWTQueryResult gwtQueryResult, Score score) {
+		int col = 0;
 		int rows = dataTable.getRowCount();
 		dataTable.insertRow(rows);
 		
-		GWTFolder folder = gwtQueryResult.getFolder();
+		final GWTFolder folder = gwtQueryResult.getFolder();
 		
 		// Sets folder object
 		data.put(new Integer(dataIndexValue), gwtQueryResult);
+
+		// Score is always visible 
+		dataTable.setHTML(rows, col, score.getHTML());
+		dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_LEFT);
 		
-		dataTable.setHTML(rows, 0, score.getHTML());
-		
-		// Looks if must change icon on parent if now has no childs and properties with user security atention
-		if ( (folder.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE) {
-			if (folder.isHasChildren()) {
-				dataTable.setHTML(rows, 1, Util.imageItemHTML("img/menuitem_childs.gif"));
+		if (profileFileBrowser.isIconVisible()) {
+			// Looks if must change icon on parent if now has no childs and properties with user security atention
+			if ( (folder.getPermissions() & GWTPermission.WRITE) == GWTPermission.WRITE) {
+				if (folder.isHasChildren()) {
+					dataTable.setHTML(rows, col, Util.imageItemHTML("img/menuitem_childs.gif"));
+				} else {
+					dataTable.setHTML(rows, col, Util.imageItemHTML("img/menuitem_empty.gif"));
+				}
 			} else {
-				dataTable.setHTML(rows, 1, Util.imageItemHTML("img/menuitem_empty.gif"));
+				if (folder.isHasChildren()) {
+					dataTable.setHTML(rows, col, Util.imageItemHTML("img/menuitem_childs_ro.gif"));
+				} else {
+					dataTable.setHTML(rows, col, Util.imageItemHTML("img/menuitem_empty_ro.gif"));
+				}
 			}
-		} else {
-			if (folder.isHasChildren()) {
-				dataTable.setHTML(rows, 1, Util.imageItemHTML("img/menuitem_childs_ro.gif"));
-			} else {
-				dataTable.setHTML(rows, 1, Util.imageItemHTML("img/menuitem_empty_ro.gif"));
-			}
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_RIGHT);
 		}
 		
-		Hyperlink hLink = new Hyperlink();
-		hLink.setHTML(folder.getName());
-		hLink.setTitle(folder.getParentPath());
-		hLink.setStyleName("okm-Hyperlink");
-		dataTable.setWidget(rows, 2, hLink);
-		dataTable.setHTML(rows, 3, "&nbsp;");
-		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
-		dataTable.setHTML(rows, 4, dtf.format(folder.getCreated()));
-		dataTable.setHTML(rows, 5, folder.getUser().getUsername());
-		dataTable.setHTML(rows, 6, "&nbsp;");
-		dataTable.setHTML(rows, 7, ""+(dataIndexValue++));
+		if (profileFileBrowser.isNameVisible()) {
+			Anchor anchor = new Anchor();
+			anchor.setHTML(folder.getName());
+			anchor.setTitle(folder.getParentPath());
+			anchor.addClickHandler(new ClickHandler() {
+				@Override
+				public void onClick(ClickEvent event) {
+					CommonUI.openPath(folder.getPath(), "");
+				}
+			});
+			anchor.setStyleName("okm-Hyperlink");
+			dataTable.setWidget(rows, col, anchor);
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_LEFT);
+		}
+		if (profileFileBrowser.isSizeVisible()) {
+			dataTable.setHTML(rows, col, "&nbsp;");
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isLastModifiedVisible()) {
+			DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
+			dataTable.setHTML(rows, col, dtf.format(folder.getCreated()));
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isAuthorVisible()) {
+			dataTable.setHTML(rows, col, folder.getUser().getUsername());
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isVersionVisible()) {
+			dataTable.setHTML(rows, col, "&nbsp;");
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		dataTable.setHTML(rows, col, ""+(dataIndexValue++));
+		dataTable.getCellFormatter().setVisible(rows,col,false);
 		
-		// Format
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 0, HasHorizontalAlignment.ALIGN_LEFT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 1, HasHorizontalAlignment.ALIGN_RIGHT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 2, HasHorizontalAlignment.ALIGN_LEFT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 3, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 4, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 5, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 6, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setVisible(rows,7,false);
-		
-		for (int i=0; i<7; i++) {
+		for (int i=0; i<col; i++) {
 			dataTable.getCellFormatter().addStyleName(rows, i, "okm-DisableSelect");
 		}
 	}
@@ -363,45 +404,64 @@ public class ExtendedScrollTable extends ScrollTable {
 	 * @param score The mail score
 	 */
 	private void addMailRow(GWTQueryResult gwtQueryResult, Score score) {
+		int col = 0;
 		int rows = dataTable.getRowCount();
 		dataTable.insertRow(rows);
 		
-		GWTMail mail = gwtQueryResult.getMail();
+		final GWTMail mail = gwtQueryResult.getMail();
 		
 		// Sets folder object
 		data.put(new Integer(dataIndexValue), gwtQueryResult);
 		
-		dataTable.setHTML(rows, 0, score.getHTML());
+		// Score is always visible
+		dataTable.setHTML(rows, col, score.getHTML());
+		dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_LEFT);
 		
-		if (mail.getAttachments().size()>0) {
-			dataTable.setHTML(rows, 1, Util.imageItemHTML("img/email_attach.gif"));
-		} else {
-			dataTable.setHTML(rows, 1, Util.imageItemHTML("img/email.gif"));
+		if (profileFileBrowser.isIconVisible()) {
+			if (mail.getAttachments().size()>0) {
+				dataTable.setHTML(rows, col	, Util.imageItemHTML("img/email_attach.gif"));
+			} else {
+				dataTable.setHTML(rows, col, Util.imageItemHTML("img/email.gif"));
+			}
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_RIGHT);
 		}
+		if (profileFileBrowser.isNameVisible()) {
+			Anchor anchor = new Anchor();
+			anchor.setHTML(mail.getSubject());
+			anchor.setTitle(mail.getParentPath());
+			anchor.addClickHandler(new ClickHandler() {
+				@Override
+				public void onClick(ClickEvent event) {
+					String docPath = mail.getPath();
+					CommonUI.openPath(Util.getParent(docPath), docPath);
+				}
+			});
+			anchor.setStyleName("okm-Hyperlink");
+			dataTable.setWidget(rows, col, anchor);
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_LEFT);
+		}
+		if (profileFileBrowser.isSizeVisible()) {
+			dataTable.setHTML(rows, col, Util.formatSize(mail.getSize()));
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isLastModifiedVisible()) {
+			DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
+			dataTable.setHTML(rows, col, dtf.format(mail.getReceivedDate()));
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isAuthorVisible()) {
+			dataTable.setHTML(rows, col, mail.getFrom());
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+		if (profileFileBrowser.isVersionVisible()) {
+			dataTable.setHTML(rows, col, "&nbsp;");
+			dataTable.getCellFormatter().setHorizontalAlignment(rows, col++, HasHorizontalAlignment.ALIGN_CENTER);
+		}
+
+		dataTable.setHTML(rows, col, ""+(dataIndexValue++));
+		dataTable.getCellFormatter().setVisible(rows,col,false);
 		
-		Hyperlink hLink = new Hyperlink();
-		hLink.setHTML(mail.getSubject());
-		hLink.setTitle(mail.getParentPath());
-		hLink.setStyleName("okm-Hyperlink");
-		dataTable.setWidget(rows, 2, hLink);
-		dataTable.setHTML(rows, 3, Util.formatSize(mail.getSize()));
-		DateTimeFormat dtf = DateTimeFormat.getFormat(Main.i18n("general.date.pattern"));
-		dataTable.setHTML(rows, 4, dtf.format(mail.getReceivedDate()));
-		dataTable.setHTML(rows, 5, mail.getFrom());
-		dataTable.setHTML(rows, 6, "&nbsp;");
-		dataTable.setHTML(rows, 7, ""+(dataIndexValue++));
-		
-		// Format
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 0, HasHorizontalAlignment.ALIGN_LEFT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 1, HasHorizontalAlignment.ALIGN_RIGHT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 2, HasHorizontalAlignment.ALIGN_LEFT);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 3, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 4, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 5, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setHorizontalAlignment(rows, 6, HasHorizontalAlignment.ALIGN_CENTER);
-		dataTable.getCellFormatter().setVisible(rows,7,false);
-		
-		for (int i=0; i<7; i++) {
+		for (int i=0; i<col; i++) {
 			dataTable.getCellFormatter().addStyleName(rows, i, "okm-DisableSelect");
 		}
 	}
@@ -423,7 +483,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public GWTDocument getDocument() {
 		if (isDocumentSelected()) {
-			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getDocument();
+			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getDocument();
 		} else {
 			return null;
 		}
@@ -436,7 +496,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public GWTDocument getAttachment() {
 		if (isAttachmentSelected()) {
-			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getAttachment();
+			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getAttachment();
 		} else {
 			return null;
 		}
@@ -449,7 +509,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public GWTFolder getFolder() {
 		if (isFolderSelected()) {
-			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getFolder();
+			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getFolder();
 		} else {
 			return null;
 		}
@@ -462,7 +522,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public GWTMail getMail() {
 		if (isMailSelected()) {
-			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getMail();
+			return ((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getMail();
 		} else {
 			return null;
 		}
@@ -475,7 +535,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public boolean isDocumentSelected() {
 		if (!dataTable.getSelectedRows().isEmpty()) {
-			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getDocument()!=null ) {
+			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getDocument()!=null ) {
 				return true;
 			} else {
 				return false;
@@ -492,7 +552,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public boolean isAttachmentSelected() {
 		if (!dataTable.getSelectedRows().isEmpty()) {
-			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getAttachment()!=null ) {
+			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getAttachment()!=null ) {
 				return true;
 			} else {
 				return false;
@@ -509,7 +569,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public boolean isFolderSelected() {
 		if (!dataTable.getSelectedRows().isEmpty()) {
-			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getFolder()!=null ) {
+			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getFolder()!=null ) {
 				return true;
 			} else {
 				return false;
@@ -526,7 +586,7 @@ public class ExtendedScrollTable extends ScrollTable {
 	 */
 	public boolean isMailSelected() {
 		if (!dataTable.getSelectedRows().isEmpty()) {
-			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),7)))).getMail()!=null ) {
+			if (((GWTQueryResult) data.get(Integer.parseInt(dataTable.getText(getSelectedRow(),colDataIndex)))).getMail()!=null ) {
 				return true;
 			} else {
 				return false;
@@ -534,5 +594,25 @@ public class ExtendedScrollTable extends ScrollTable {
 		} else {
 			return false;
 		}
+	}
+	
+	/**
+	 * setProfileFileBrowser
+	 * 
+	 * @param profileFileBrowser
+	 */
+	public void setProfileFileBrowser(GWTProfileFileBrowser profileFileBrowser) {
+		this.profileFileBrowser = profileFileBrowser;
+		columnSorter.setProfileFileBrowser(profileFileBrowser);
+	}
+	
+	/**
+	 * setDataColumn
+	 * 
+	 * @param dataColumn
+	 */
+	public void setColDataIndex(int colDataIndex) {
+		this.colDataIndex = colDataIndex;
+		columnSorter.setColDataIndex(colDataIndex);
 	}
 }

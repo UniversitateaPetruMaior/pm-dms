@@ -40,11 +40,11 @@ public class VersionNumerationFactory {
 				Object object = Class.forName(Config.VERSION_NUMERATION_ADAPTER).newInstance();
 				verNumAdapter = (VersionNumerationAdapter) object;
 			} catch (ClassNotFoundException e) {
-				//throw new PrincipalAdapterException(e.getMessage(), e);
+				log.warn("ClassNotFoundException: " + Config.VERSION_NUMERATION_ADAPTER, e);
 			} catch (InstantiationException e) {
-				//throw new PrincipalAdapterException(e.getMessage(), e);
+				log.warn("InstantiationException: " + Config.VERSION_NUMERATION_ADAPTER, e);
 			} catch (IllegalAccessException e) {
-				//throw new PrincipalAdapterException(e.getMessage(), e);
+				log.warn("IllegalAccessException: " + Config.VERSION_NUMERATION_ADAPTER, e);
 			}
 		}
 

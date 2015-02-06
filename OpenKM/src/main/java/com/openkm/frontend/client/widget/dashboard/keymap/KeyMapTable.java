@@ -135,7 +135,7 @@ public class KeyMapTable extends Composite {
 		gotoDocument.addClickHandler(new ClickHandler() { 
 			@Override
 			public void onClick(ClickEvent event) {
-				CommonUI.openPath(docPath.substring(0,docPath.lastIndexOf("/")), docPath);
+				CommonUI.openPath(Util.getParent(docPath), docPath);
 			}
 			
 		});
@@ -542,7 +542,7 @@ public class KeyMapTable extends Composite {
 		gotoMail.addClickHandler(new ClickHandler() { 
 			@Override
 			public void onClick(ClickEvent event) {
-				CommonUI.openPath(mailPath.substring(0,mailPath.lastIndexOf("/")), mailPath);
+				CommonUI.openPath(Util.getParent(mailPath), mailPath);
 			}
 			
 		});

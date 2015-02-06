@@ -74,7 +74,7 @@ public class RepositoryExporter {
 	 */
 	public static ImpExpStats exportDocuments(String token, String fldPath, File fs, boolean metadata, boolean history,
 			Writer out, InfoDecorator deco) throws PathNotFoundException, AccessDeniedException, RepositoryException,
-			FileNotFoundException, IOException, DatabaseException, ParseException, NoSuchGroupException, MessagingException {
+			IOException, DatabaseException, ParseException, NoSuchGroupException, MessagingException {
 		log.debug("exportDocuments({}, {}, {}, {}, {}, {}, {})", new Object[] { token, fldPath, fs, metadata, history, out, deco });
 		ImpExpStats stats;
 		
@@ -135,11 +135,9 @@ public class RepositoryExporter {
 	 * Performs a recursive repository content export with metadata
 	 */
 	private static ImpExpStats exportDocumentsHelper(String token, String fldPath, File fs, boolean metadata,
-			boolean history, Writer out, InfoDecorator deco) throws FileNotFoundException, PathNotFoundException,
-			AccessDeniedException, RepositoryException, IOException, DatabaseException, ParseException, 
-			NoSuchGroupException, MessagingException {
-		log.debug("exportDocumentsHelper({}, {}, {}, {}, {}, {}, {})", new Object[] { token, fldPath, fs, metadata, 
-				history, out, deco });
+			boolean history, Writer out, InfoDecorator deco) throws PathNotFoundException, AccessDeniedException,
+			RepositoryException, IOException, DatabaseException, ParseException, NoSuchGroupException, MessagingException {
+		log.debug("exportDocumentsHelper({}, {}, {}, {}, {}, {}, {})", new Object[] { token, fldPath, fs, metadata, history, out, deco });
 		ImpExpStats stats = new ImpExpStats();
 		DocumentModule dm = ModuleManager.getDocumentModule();
 		FolderModule fm = ModuleManager.getFolderModule();

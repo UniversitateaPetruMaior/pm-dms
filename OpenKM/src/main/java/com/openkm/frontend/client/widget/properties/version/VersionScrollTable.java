@@ -30,13 +30,13 @@ import java.util.Map;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.gen2.table.client.AbstractScrollTable.ResizePolicy;
+import com.google.gwt.gen2.table.client.AbstractScrollTable.ScrollPolicy;
+import com.google.gwt.gen2.table.client.AbstractScrollTable.ScrollTableImages;
 import com.google.gwt.gen2.table.client.FixedWidthFlexTable;
 import com.google.gwt.gen2.table.client.FixedWidthGrid;
 import com.google.gwt.gen2.table.client.ScrollTable;
 import com.google.gwt.gen2.table.client.SelectionGrid;
-import com.google.gwt.gen2.table.client.AbstractScrollTable.ResizePolicy;
-import com.google.gwt.gen2.table.client.AbstractScrollTable.ScrollPolicy;
-import com.google.gwt.gen2.table.client.AbstractScrollTable.ScrollTableImages;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.AbstractImagePrototype;
@@ -51,6 +51,7 @@ import com.openkm.frontend.client.bean.GWTPermission;
 import com.openkm.frontend.client.bean.GWTVersion;
 import com.openkm.frontend.client.service.OKMDocumentService;
 import com.openkm.frontend.client.service.OKMDocumentServiceAsync;
+import com.openkm.frontend.client.util.ScrollTableHelper;
 import com.openkm.frontend.client.util.Util;
 import com.openkm.frontend.client.widget.ConfirmPopup;
 
@@ -58,9 +59,8 @@ import com.openkm.frontend.client.widget.ConfirmPopup;
  * VersionScrollTable
  * 
  * @author jllort
- *
  */
-public class VersionScrollTable extends Composite implements ClickHandler  {
+public class VersionScrollTable extends Composite implements ClickHandler {
 	private final OKMDocumentServiceAsync documentService = (OKMDocumentServiceAsync) GWT.create(OKMDocumentService.class);
 	
 	// Number of columns
@@ -86,11 +86,11 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 		buttonView = new ArrayList<Button>();
 		buttonRestore = new ArrayList<Button>();
 		
-		purge = new Button(Main.i18n("version.purge.document"),this);
-		purge.setStyleName("okm-DeleteButton");
+		purge = new Button(Main.i18n("version.purge.document"), this);
+		purge.setStyleName("okm-CompactButton");
 		purge.setEnabled(false);
 		
-		ScrollTableImages scrollTableImages = new ScrollTableImages(){
+		ScrollTableImages scrollTableImages = new ScrollTableImages() {
 			public AbstractImagePrototype scrollTableAscending() {
 				return new AbstractImagePrototype() {
 					public void applyTo(Image image) {
@@ -98,10 +98,10 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 					}
 					
 					public Image createImage() {
-						return  new Image("img/sort_asc.gif");
+						return new Image("img/sort_asc.gif");
 					}
 					
-					public String getHTML(){
+					public String getHTML() {
 						return "<img border=\"0\" src=\"img/sort_asc.gif\"/>";
 					}
 				};
@@ -114,15 +114,15 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 					}
 					
 					public Image createImage() {
-						return  new Image("img/sort_desc.gif");
+						return new Image("img/sort_desc.gif");
 					}
 					
-					public String getHTML(){
+					public String getHTML() {
 						return "<img border=\"0\" src=\"img/sort_desc.gif\"/>";
 					}
 				};
 			}
-
+			
 			public AbstractImagePrototype scrollTableFillWidth() {
 				return new AbstractImagePrototype() {
 					public void applyTo(Image image) {
@@ -130,10 +130,10 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 					}
 					
 					public Image createImage() {
-						return  new Image("img/fill_width.gif");
+						return new Image("img/fill_width.gif");
 					}
 					
-					public String getHTML(){
+					public String getHTML() {
 						return "<img border=\"0\" src=\"img/fill_width.gif\"/>";
 					}
 				};
@@ -148,38 +148,36 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 		table.setCellSpacing(0);
 		table.setCellPadding(2);
 		table.setSize("540", "140");
-		table.setColumnWidth(0, 70);
-	    table.setColumnWidth(1, 150);
-	    table.setColumnWidth(2, 150);
-	    table.setColumnWidth(3, 100);
-	    table.setColumnWidth(4, 100);
-    	table.setColumnWidth(5, 150);
-    	
-    	table.setPreferredColumnWidth(0, 70);
-		table.setPreferredColumnWidth(1, 150);
+		ScrollTableHelper.setColumnWidth(table, 0, 60, ScrollTableHelper.FIXED);
+		ScrollTableHelper.setColumnWidth(table, 1, 120, ScrollTableHelper.MEDIUM);
+		ScrollTableHelper.setColumnWidth(table, 2, 120, ScrollTableHelper.MEDIUM, true, false);
+		ScrollTableHelper.setColumnWidth(table, 3, 60, ScrollTableHelper.MEDIUM);
+		ScrollTableHelper.setColumnWidth(table, 4, 90, ScrollTableHelper.FIXED);
+		ScrollTableHelper.setColumnWidth(table, 5, 140, ScrollTableHelper.FIXED);
+		ScrollTableHelper.setColumnWidth(table, 6, 150, ScrollTableHelper.MEDIUM, true, false);
 		
 		table.setColumnSortable(4, false);
 		table.setColumnSortable(5, false);
 		
 		// Level 1 headers
-	    headerTable.setHTML(0, 0, Main.i18n("version.name"));
-	    headerTable.setHTML(0, 1, Main.i18n("version.created"));
-	    headerTable.setHTML(0, 2, Main.i18n("version.author"));
-	    headerTable.setHTML(0, 3, Main.i18n("version.size"));
-	    headerTable.setHTML(0, 4, "&nbsp;");
-	    headerTable.setWidget(0, 5, purge);
-	    headerTable.setHTML(0, 6, Main.i18n("version.comment"));
-	    
-	    headerTable.getCellFormatter().setHorizontalAlignment(0,5,HasAlignment.ALIGN_CENTER);
-	    headerTable.getCellFormatter().setVerticalAlignment(0,5,HasAlignment.ALIGN_MIDDLE);
-	    
-	    // Table data
-	    dataTable.setSelectionPolicy(SelectionGrid.SelectionPolicy.ONE_ROW);
-	    table.setResizePolicy(ResizePolicy.UNCONSTRAINED);
-	    table.setScrollPolicy(ScrollPolicy.BOTH);
-	    
-	    headerTable.addStyleName("okm-DisableSelect");
-	    dataTable.addStyleName("okm-DisableSelect");
+		headerTable.setHTML(0, 0, Main.i18n("version.name"));
+		headerTable.setHTML(0, 1, Main.i18n("version.created"));
+		headerTable.setHTML(0, 2, Main.i18n("version.author"));
+		headerTable.setHTML(0, 3, Main.i18n("version.size"));
+		headerTable.setHTML(0, 4, "&nbsp;");
+		headerTable.setWidget(0, 5, purge);
+		headerTable.setHTML(0, 6, Main.i18n("version.comment"));
+		
+		headerTable.getCellFormatter().setHorizontalAlignment(0, 5, HasAlignment.ALIGN_CENTER);
+		headerTable.getCellFormatter().setVerticalAlignment(0, 5, HasAlignment.ALIGN_MIDDLE);
+		
+		// Table data
+		dataTable.setSelectionPolicy(SelectionGrid.SelectionPolicy.ONE_ROW);
+		table.setResizePolicy(ResizePolicy.FILL_WIDTH);
+		table.setScrollPolicy(ScrollPolicy.BOTH);
+		
+		headerTable.addStyleName("okm-DisableSelect");
+		dataTable.addStyleName("okm-DisableSelect");
 		
 		initWidget(table);
 	}
@@ -248,10 +246,12 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 		dataTable.setHTML(rows, 3, Util.formatSize(version.getSize()));
 		dataTable.setHTML(rows, 6, version.getComment());
 		versions.add(version.getName());
-		data = new HashMap<Integer, GWTVersion>();
+		data.put(rows, version);
 		
-		// Special case when visibleButtons are false, widget are on trash, must disable all buttons,
-		// but must enable the actual version to view ( on default is not enabled because is active one )
+		// Special case when visibleButtons are false, widget are on trash, must
+		// disable all buttons,
+		// but must enable the actual version to view ( on default is not
+		// enabled because is active one )
 		if (version.isActual() && visibleButtons) {
 			dataTable.selectRow(rows, true);
 		} else {
@@ -261,10 +261,10 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 				dataTable.selectRow(rows, true);
 			}
 			
-			Button restoreButton = new Button(Main.i18n("button.restore"), new ClickHandler() { 
+			Button restoreButton = new Button(Main.i18n("button.restore"), new ClickHandler() {
 				@Override
 				public void onClick(ClickEvent event) {
-					List<String> versions = Main.get().mainPanel.desktop.browser.tabMultiple.tabDocument.version.versions; 
+					List<String> versions = Main.get().mainPanel.desktop.browser.tabMultiple.tabDocument.version.versions;
 					String ver = (String) versions.get(rows);
 					Main.get().confirmPopup.setConfirm(ConfirmPopup.CONFIRM_RESTORE_HISTORY_DOCUMENT);
 					Main.get().confirmPopup.setValue(ver);
@@ -286,10 +286,10 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 			restoreButton.setStyleName("okm-YesButton");
 		}
 		
-		Button viewButton = new Button(Main.i18n("button.view"), new ClickHandler() { 
+		Button viewButton = new Button(Main.i18n("button.view"), new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
-				List<String> versions = Main.get().mainPanel.desktop.browser.tabMultiple.tabDocument.version.versions; 
+				List<String> versions = Main.get().mainPanel.desktop.browser.tabMultiple.tabDocument.version.versions;
 				String ver = (String) versions.get(rows);
 				Util.downloadFileByUUID(doc.getUuid(), "ver=" + ver);
 			}
@@ -327,7 +327,7 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 			
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.unsetVersionHistory();
 		}
-
+		
 		public void onFailure(Throwable caught) {
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.unsetVersionHistory();
 			Main.get().showError("GetVersionHistory", caught);
@@ -342,7 +342,7 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.unsetRestoreVersion();
 			Main.get().mainPanel.topPanel.toolBar.executeRefresh();
 		}
-
+		
 		public void onFailure(Throwable caught) {
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.unsetRestoreVersion();
 			Main.get().showError("GetVersionHistory", caught);
@@ -358,10 +358,10 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 			Main.get().mainPanel.topPanel.toolBar.executeRefresh();
 			Main.get().workspaceUserProperties.getUserDocumentsSize();
 		}
-
+		
 		public void onFailure(Throwable caught) {
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.unsetPurgeVersionHistory();
-			Main.get().showError("urgeVersionHistory", caught);
+			Main.get().showError("purgeVersionHistory", caught);
 		}
 	};
 	
@@ -371,7 +371,7 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 	public void getVersionHistory() {
 		if (doc != null) {
 			Main.get().mainPanel.desktop.browser.tabMultiple.status.setVersionHistory();
-			documentService.getVersionHistory(doc.getPath(), callbackGetVersionHistory);
+			documentService.getVersionHistory(doc.getUuid(), callbackGetVersionHistory);
 		}
 	}
 	
@@ -411,8 +411,11 @@ public class VersionScrollTable extends Composite implements ClickHandler  {
 		return dataTable;
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.google.gwt.event.dom.client.ClickHandler#onClick(com.google.gwt.event.dom.client.ClickEvent)
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * com.google.gwt.event.dom.client.ClickHandler#onClick(com.google.gwt.event
+	 * .dom.client.ClickEvent)
 	 */
 	public void onClick(ClickEvent event) {
 		Main.get().confirmPopup.setConfirm(ConfirmPopup.CONFIRM_PURGE_VERSION_HISTORY_DOCUMENT);

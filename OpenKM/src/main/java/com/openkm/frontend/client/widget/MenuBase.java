@@ -41,6 +41,8 @@ public abstract class MenuBase extends Composite {
 	public abstract void setAvailableOption(GWTAvailableOption option);
 	public abstract void disableAddPropertyGroup();
 	public abstract void enableAddPropertyGroup();
+	public abstract void disablePdfMerge();
+	public abstract void enablePdfMerge();
 	
 	/**
 	 * Enables menu item

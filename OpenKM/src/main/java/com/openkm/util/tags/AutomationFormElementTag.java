@@ -71,6 +71,7 @@ public class AutomationFormElementTag extends TagSupport {
 					 + ((value == null) ? "" : value);
 			} else {
 				html += "<select name=\"" + name + "\" id=\""+ name + "\">";
+				
 				if (value != null) {
 					if (Boolean.valueOf(value).booleanValue()) {
 						html += "<option value=\""+String.valueOf(Boolean.FALSE) +"\">false</option>";
@@ -83,6 +84,7 @@ public class AutomationFormElementTag extends TagSupport {
 					html += "<option value=\""+String.valueOf(Boolean.FALSE) +"\">false</option>";
 					html += "<option value=\""+String.valueOf(Boolean.TRUE)+"\">true</option>";
 				}
+				
 				html += "</select>";
 			}
 		} else if (type.equals(AutomationMetadata.TYPE_TEXTAREA)) {

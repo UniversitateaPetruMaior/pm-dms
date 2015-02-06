@@ -1,22 +1,22 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.principal;
@@ -60,7 +60,7 @@ public interface PrincipalAdapter {
 	/**
 	 * Method to retrieve the mail from a user.
 	 * 
-	 * @param users A user id.
+	 * @param user A user id.
 	 * @return The email of the user.
 	 * @throws PrincipalAdapterException If any error occurs.
 	 */
@@ -83,4 +83,82 @@ public interface PrincipalAdapter {
 	 * @throws PrincipalAdapterException If any error occurs.
 	 */
 	public String getPassword(String user) throws PrincipalAdapterException;
+	
+	/*
+	 * ------------------------------------------------------------------
+	 * These methods only works if using the OpenKM user database.
+	 * ------------------------------------------------------------------
+	 */
+	
+	/**
+	 * Method to create a new user
+	 * 
+	 * @param user A user id.
+	 * @param password The password of the user.
+	 * @param email The user mail.
+	 * @param name The full user name.
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void createUser(String user, String password, String email, String name, boolean active) throws PrincipalAdapterException;
+	
+	/**
+	 * Method to create a delete a user
+	 * 
+	 * @param user A user id.
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void deleteUser(String user) throws PrincipalAdapterException;
+
+	/**
+	 * Update user information
+	 *
+	 * @param user A user id.
+	 * @param password The password of the user.
+	 * @param email The user mail.
+	 * @param name The full user name.
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void updateUser(String user, String password, String email, String name, boolean active) throws PrincipalAdapterException;
+
+	/**
+	 * Method to create a new role
+	 * 
+	 * @param role A role id.
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void createRole(String role, boolean active) throws PrincipalAdapterException;
+	
+	/**
+	 * Method to create a delete a role
+	 * 
+	 * @param role A role id.
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void deleteRole(String role) throws PrincipalAdapterException;
+
+	/**
+	 * Update role information
+	 *
+	 * @param role A role id..
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void updateRole(String role, boolean active) throws PrincipalAdapterException;
+	
+	/**
+	 * Method to assign a role
+	 * 
+	 * @param user A user id.
+	 * @param role A role id.
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void assignRole(String user, String role) throws PrincipalAdapterException;
+	
+	/**
+	 * Method to remove a role
+	 * 
+	 * @param user A user id.
+	 * @param role A role id.
+	 * @throws PrincipalAdapterException If any error occurs.
+	 */
+	public void removeRole(String user, String role) throws PrincipalAdapterException;
 }

@@ -45,10 +45,12 @@ public class FileUploadForm extends Composite {
 	private CheckBox notifyToUser;
 	private CheckBox importZip;
 	private TextArea versionComment;
+	private TextBox mails;
 	private TextBox users;
 	private TextBox roles;
 	private FileUpload fileUpload;
 	private TextArea message;
+	private TextBox increaseVersion;
 	
 	/**
 	 * FileUploadForm
@@ -68,9 +70,11 @@ public class FileUploadForm extends Composite {
 		notifyToUser = new CheckBox();
 		importZip = new CheckBox();
 		versionComment = new TextArea();
+		mails = new TextBox();
 		users = new TextBox();
 		roles = new TextBox();
 		message = new TextArea();
+		increaseVersion = new TextBox();
 		
 		// Set Form details
 		// Set the action to call on submit
@@ -104,6 +108,10 @@ public class FileUploadForm extends Composite {
 		versionComment.setVisible(false);
 		vPanel.add(versionComment);
 		
+		mails.setName("mails");
+		mails.setVisible(false);
+		vPanel.add(mails);
+		
 		users.setName("users");
 		users.setVisible(false);
 		vPanel.add(users);
@@ -115,6 +123,11 @@ public class FileUploadForm extends Composite {
 		message.setName("message");
 		message.setVisible(false);
 		vPanel.add(message);
+		
+		increaseVersion.setName("increaseVersion");
+		increaseVersion.setText("0");
+		increaseVersion.setVisible(false);
+		vPanel.add(increaseVersion);
 		
 		vPanel.add(fileUpload);
 		
@@ -215,6 +228,15 @@ public class FileUploadForm extends Composite {
 	}
 	
 	/**
+	 * setMails
+	 * 
+	 * @param mails
+	 */
+	public void setMails(String mails) {
+		this.mails.setText(mails);
+	}
+	
+	/**
 	 * setUsers
 	 * 
 	 * @param users
@@ -239,6 +261,13 @@ public class FileUploadForm extends Composite {
 	 */
 	public void setMessage(String message) {
 		this.message.setText(message);
+	}
+	
+	/**
+	 * setIncreaseMajorVersion
+	 */
+	public void setIncreaseVersion(int increaseVersion) {
+		this.increaseVersion.setText(String.valueOf(increaseVersion));
 	}
 	
 	/**

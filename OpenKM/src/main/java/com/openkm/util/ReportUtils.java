@@ -272,6 +272,7 @@ public class ReportUtils {
 	 */
 	public static List<FormElement> getReportParameters(long rpId) throws ParseException, DatabaseException, IOException {
 		log.debug("getReportParameters({})", rpId);
+		long begin = System.currentTimeMillis();
 		List<FormElement> params = null;
 		ByteArrayInputStream bais = null;
 		ZipInputStream zis = null;
@@ -303,6 +304,7 @@ public class ReportUtils {
 			IOUtils.closeQuietly(bais);
 		}
 		
+		log.trace("getReportParameters.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getReportParameters: {}", params);
 		return params;
 	}

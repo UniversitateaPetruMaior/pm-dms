@@ -57,8 +57,7 @@ import com.openkm.frontend.client.widget.notify.NotifyPopup;
  * @author jllort
  */
 public class MainMenu extends Composite {
-	private final OKMDocumentServiceAsync documentService = (OKMDocumentServiceAsync) GWT
-			.create(OKMDocumentService.class);
+	private final OKMDocumentServiceAsync documentService = (OKMDocumentServiceAsync) GWT.create(OKMDocumentService.class);
 	
 	private static final int OUTPUT_PDF = 2;
 	private static final int OUTPUT_RTF = 3;
@@ -87,12 +86,14 @@ public class MainMenu extends Composite {
 	private MenuBar subMenuFile;
 	private MenuItem findFolder;
 	private MenuItem findDocument;
+	private MenuItem findSimilarDocument;
 	private MenuItem createFolder;
 	private MenuItem addDocument;
 	private MenuItem download;
 	private MenuItem downloadPdf;
 	private MenuItem sendDocumentLink;
 	private MenuItem sendDocumentAttachment;
+	private MenuItem forwardMail;
 	private MenuItem createFromTemplate;
 	private MenuItem export;
 	private MenuItem horizontalLineFile1;
@@ -124,8 +125,10 @@ public class MainMenu extends Composite {
 	private MenuItem note;
 	private MenuItem category;
 	private MenuItem keyword;
+	private MenuItem merge;
 	private MenuItem horizontalLineEdit3;
 	private MenuItem addPropertyGroup;
+	private MenuItem updatePropertyGroup;
 	private MenuItem removePropertyGroup;
 	private MenuItem horizontalLineEdit4;
 	private MenuItem addSubscription;
@@ -142,9 +145,9 @@ public class MainMenu extends Composite {
 	private MenuItem debugConsole;
 	public MenuItem administration;
 	private MenuItem preferences;
-	private MenuItem signTool;
 	private MenuBar subMenuPreferences;
 	private MenuItem userPreferences;
+	private MenuItem convert;
 	private MenuItem menuBookmark;
 	public MenuBar subMenuBookmark;
 	private MenuItem home;
@@ -195,70 +198,71 @@ public class MainMenu extends Composite {
 		
 		// File menu
 		// First we must create menus and submenus on inverse order
-		findFolder = new MenuItem(Util.menuHTML("img/icon/actions/folder_find.gif",
-				Main.i18n("general.menu.file.find.folder")), true, findFolderOKM);
+		findFolder = new MenuItem(Util.menuHTML("img/icon/actions/folder_find.gif", Main.i18n("general.menu.file.find.folder")), true,
+				findFolderOKM);
 		findFolder.addStyleName("okm-MainMenuItem");
-		findDocument = new MenuItem(Util.menuHTML("img/icon/actions/document_find.png",
-				Main.i18n("general.menu.file.find.document")), true, findDocumentOKM);
+		findDocument = new MenuItem(Util.menuHTML("img/icon/actions/document_find.png", Main.i18n("general.menu.file.find.document")),
+				true, findDocumentOKM);
 		findDocument.addStyleName("okm-MainMenuItem");
-		createFolder = new MenuItem(Util.menuHTML("img/icon/actions/add_folder.gif",
-				Main.i18n("general.menu.file.create.directory")), true, createFolderOKM);
+		findSimilarDocument = new MenuItem(Util.menuHTML("img/icon/actions/similar_find.png",
+				Main.i18n("general.menu.file.find.similar.document")), true, findSimilarDocumentOKM);
+		findSimilarDocument.addStyleName("okm-MainMenuItem");
+		createFolder = new MenuItem(Util.menuHTML("img/icon/actions/add_folder.gif", Main.i18n("general.menu.file.create.directory")),
+				true, createFolderOKM);
 		createFolder.addStyleName("okm-MainMenuItem");
-		addDocument = new MenuItem(Util.menuHTML("img/icon/actions/add_document.gif",
-				Main.i18n("general.menu.file.add.document")), true, addDocumentOKM);
+		addDocument = new MenuItem(Util.menuHTML("img/icon/actions/add_document.gif", Main.i18n("general.menu.file.add.document")), true,
+				addDocumentOKM);
 		addDocument.addStyleName("okm-MainMenuItem");
-		download = new MenuItem(Util.menuHTML("img/icon/actions/download.gif",
-				Main.i18n("general.menu.file.download.document")), true, downloadOKM);
+		download = new MenuItem(Util.menuHTML("img/icon/actions/download.gif", Main.i18n("general.menu.file.download.document")), true,
+				downloadOKM);
 		download.addStyleName("okm-MainMenuItem");
-		downloadPdf = new MenuItem(Util.menuHTML("img/icon/actions/download_pdf.gif",
-				Main.i18n("general.menu.file.download.document.pdf")), true, downloadPdfOKM);
+		downloadPdf = new MenuItem(
+				Util.menuHTML("img/icon/actions/download_pdf.gif", Main.i18n("general.menu.file.download.document.pdf")), true,
+				downloadPdfOKM);
 		downloadPdf.addStyleName("okm-MainMenuItem");
-		sendDocumentLink = new MenuItem(Util.menuHTML("img/icon/actions/send_document_link.gif",
-				Main.i18n("general.menu.file.send.link")), true, sendDocumentLinkOKM);
+		sendDocumentLink = new MenuItem(Util.menuHTML("img/icon/actions/send_document_link.gif", Main.i18n("general.menu.file.send.link")),
+				true, sendDocumentLinkOKM);
 		sendDocumentLink.addStyleName("okm-MainMenuItem");
 		sendDocumentAttachment = new MenuItem(Util.menuHTML("img/icon/actions/send_document_attachment.gif",
 				Main.i18n("general.menu.file.send.attachment")), true, sendDocumentAttachmentOKM);
 		sendDocumentAttachment.addStyleName("okm-MainMenuItem");
+		forwardMail = new MenuItem(Util.menuHTML("img/email_forward.png", Main.i18n("general.menu.file.send.forward.mail")), true,
+				sendMailForwardOKM);
+		forwardMail.addStyleName("okm-MainMenuItem");
 		createFromTemplate = new MenuItem(Util.menuHTML("img/icon/actions/create_from_template.gif",
 				Main.i18n("general.menu.file.create.from.template")), true, createFromTemplateOKM);
 		createFromTemplate.addStyleName("okm-MainMenuItem");
-		export = new MenuItem(Util.menuHTML("img/icon/actions/export.gif", Main.i18n("general.menu.file.export")),
-				true, exportToFile);
+		export = new MenuItem(Util.menuHTML("img/icon/actions/export.gif", Main.i18n("general.menu.file.export")), true, exportToFile);
 		export.addStyleName("okm-MainMenuItem");
 		horizontalLineFile1 = new MenuItem("", true, nullExecute);
 		horizontalLineFile1.setStyleName("okm-MainMenuItem");
 		horizontalLineFile1.addStyleName("okm-MainMenuItem-Base-HorizontalSeparator");
 		horizontalLineFile1.setHeight("2");
-		startWorkflow = new MenuItem(Util.menuHTML("img/icon/actions/start_workflow.gif",
-				Main.i18n("general.menu.file.start.workflow")), true, startWorkflowOKM);
+		startWorkflow = new MenuItem(Util.menuHTML("img/icon/actions/start_workflow.gif", Main.i18n("general.menu.file.start.workflow")),
+				true, startWorkflowOKM);
 		horizontalLineFile2 = new MenuItem("", true, nullExecute);
 		horizontalLineFile2.setStyleName("okm-MainMenuItem");
 		horizontalLineFile2.addStyleName("okm-MainMenuItem-Base-HorizontalSeparator");
 		horizontalLineFile2.setHeight("2");
-		refresh = new MenuItem(Util.menuHTML("img/icon/actions/refresh.gif", Main.i18n("general.menu.file.refresh")),
-				true, refreshOKM);
+		refresh = new MenuItem(Util.menuHTML("img/icon/actions/refresh.gif", Main.i18n("general.menu.file.refresh")), true, refreshOKM);
 		horizontalLineFile3 = new MenuItem("", true, nullExecute);
 		horizontalLineFile3.setStyleName("okm-MainMenuItem");
 		horizontalLineFile3.addStyleName("okm-MainMenuItem-Base-HorizontalSeparator");
 		horizontalLineFile3.setHeight("2");
-		scanner = new MenuItem(Util.menuHTML("img/icon/actions/scanner.gif", Main.i18n("general.menu.file.scanner")),
-				true, scanFile);
+		scanner = new MenuItem(Util.menuHTML("img/icon/actions/scanner.gif", Main.i18n("general.menu.file.scanner")), true, scanFile);
 		scanner.addStyleName("okm-MainMenuItem");
-		uploader = new MenuItem(Util.menuHTML("img/icon/actions/upload.gif", Main.i18n("general.menu.file.uploader")),
-				true, uploadFile);
+		uploader = new MenuItem(Util.menuHTML("img/icon/actions/upload.gif", Main.i18n("general.menu.file.uploader")), true, uploadFile);
 		uploader.addStyleName("okm-MainMenuItem");
 		horizontalLineFile4 = new MenuItem("", true, nullExecute);
 		horizontalLineFile4.setStyleName("okm-MainMenuItem");
 		horizontalLineFile4.addStyleName("okm-MainMenuItem-Base-HorizontalSeparator");
 		horizontalLineFile4.setHeight("2");
-		restore = new MenuItem(Util.menuHTML("img/icon/actions/restore.gif", Main.i18n("general.menu.file.restore")),
-				true, restoreOKM);
+		restore = new MenuItem(Util.menuHTML("img/icon/actions/restore.gif", Main.i18n("general.menu.file.restore")), true, restoreOKM);
 		restore.addStyleName("okm-MainMenuItem");
-		purge = new MenuItem(Util.menuHTML("img/icon/actions/purge.gif", Main.i18n("general.menu.file.purge")), true,
-				purgeOKM);
+		purge = new MenuItem(Util.menuHTML("img/icon/actions/purge.gif", Main.i18n("general.menu.file.purge")), true, purgeOKM);
 		purge.addStyleName("okm-MainMenuItem");
-		purgeTrash = new MenuItem(Util.menuHTML("img/icon/actions/purge_trash.gif",
-				Main.i18n("general.menu.file.purge.trash")), true, purgeTrashOKM);
+		purgeTrash = new MenuItem(Util.menuHTML("img/icon/actions/purge_trash.gif", Main.i18n("general.menu.file.purge.trash")), true,
+				purgeTrashOKM);
 		purgeTrash.addStyleName("okm-MainMenuItem");
 		horizontalLineFile5 = new MenuItem("", true, nullExecute);
 		horizontalLineFile5.setStyleName("okm-MainMenuItem");
@@ -271,12 +275,14 @@ public class MainMenu extends Composite {
 		subMenuFile.setAutoOpen(true);
 		subMenuFile.addItem(findFolder);
 		subMenuFile.addItem(findDocument);
+		subMenuFile.addItem(findSimilarDocument);
 		subMenuFile.addItem(createFolder);
 		subMenuFile.addItem(addDocument);
 		subMenuFile.addItem(download);
 		subMenuFile.addItem(downloadPdf);
 		subMenuFile.addItem(sendDocumentLink);
 		subMenuFile.addItem(sendDocumentAttachment);
+		subMenuFile.addItem(forwardMail);
 		subMenuFile.addItem(createFromTemplate);
 		subMenuFile.addItem(export);
 		subMenuFile.addItem(horizontalLineFile1);
@@ -297,51 +303,42 @@ public class MainMenu extends Composite {
 		
 		// Edit menu
 		// First we must create menus and submenus on inverse order
-		lock = new MenuItem(Util.menuHTML("img/icon/actions/lock.gif", Main.i18n("general.menu.edit.lock")), true,
-				lockOKM);
+		lock = new MenuItem(Util.menuHTML("img/icon/actions/lock.gif", Main.i18n("general.menu.edit.lock")), true, lockOKM);
 		lock.addStyleName("okm-MainMenuItem");
-		unlock = new MenuItem(Util.menuHTML("img/icon/actions/unlock.gif", Main.i18n("general.menu.edit.unlock")),
-				true, unlockOKM);
+		unlock = new MenuItem(Util.menuHTML("img/icon/actions/unlock.gif", Main.i18n("general.menu.edit.unlock")), true, unlockOKM);
 		unlock.addStyleName("okm-MainMenuItem");
 		horizontalLineEdit1 = new MenuItem("", true, nullExecute);
 		horizontalLineEdit1.setStyleName("okm-MainMenuItem");
 		horizontalLineEdit1.addStyleName("okm-MainMenuItem-Base-HorizontalSeparator");
 		horizontalLineEdit1.setHeight("2");
-		checkout = new MenuItem(
-				Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.edit.checkout")), true,
-				checkoutOKM);
+		checkout = new MenuItem(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.edit.checkout")), true, checkoutOKM);
 		checkout.addStyleName("okm-MainMenuItem");
-		checkin = new MenuItem(Util.menuHTML("img/icon/actions/checkin.gif", Main.i18n("general.menu.edit.checkin")),
-				true, checkinOKM);
+		checkin = new MenuItem(Util.menuHTML("img/icon/actions/checkin.gif", Main.i18n("general.menu.edit.checkin")), true, checkinOKM);
 		checkin.addStyleName("okm-MainMenuItem");
-		cancelCheckout = new MenuItem(Util.menuHTML("img/icon/actions/cancel_checkout.gif",
-				Main.i18n("general.menu.edit.cancel.checkout")), true, cancelCheckoutOKM);
+		cancelCheckout = new MenuItem(
+				Util.menuHTML("img/icon/actions/cancel_checkout.gif", Main.i18n("general.menu.edit.cancel.checkout")), true,
+				cancelCheckoutOKM);
 		cancelCheckout.addStyleName("okm-MainMenuItem");
 		horizontalLineEdit2 = new MenuItem("", true, nullExecute);
 		horizontalLineEdit2.setStyleName("okm-MainMenuItem");
 		horizontalLineEdit2.addStyleName("okm-MainMenuItem-Base-HorizontalSeparator");
 		horizontalLineEdit2.setHeight("2");
-		delete = new MenuItem(Util.menuHTML("img/icon/actions/delete.gif", Main.i18n("general.menu.edit.delete")),
-				true, deleteOKM);
+		delete = new MenuItem(Util.menuHTML("img/icon/actions/delete.gif", Main.i18n("general.menu.edit.delete")), true, deleteOKM);
 		delete.addStyleName("okm-MainMenuItem");
-		copy = new MenuItem(Util.menuHTML("img/icon/actions/copy.gif", Main.i18n("general.menu.edit.copy")), true,
-				copyOKM);
+		copy = new MenuItem(Util.menuHTML("img/icon/actions/copy.gif", Main.i18n("general.menu.edit.copy")), true, copyOKM);
 		copy.addStyleName("okm-MenuItem-strike");
-		move = new MenuItem(Util.menuHTML("img/icon/actions/move_document.gif", Main.i18n("general.menu.edit.move")),
-				true, moveOKM);
+		move = new MenuItem(Util.menuHTML("img/icon/actions/move_document.gif", Main.i18n("general.menu.edit.move")), true, moveOKM);
 		move.addStyleName("okm-MenuItem-strike");
-		rename = new MenuItem(Util.menuHTML("img/icon/actions/rename.gif", Main.i18n("general.menu.edit.rename")),
-				true, renameOKM);
+		rename = new MenuItem(Util.menuHTML("img/icon/actions/rename.gif", Main.i18n("general.menu.edit.rename")), true, renameOKM);
 		rename.addStyleName("okm-MenuItem-strike");
-		note = new MenuItem(Util.menuHTML("img/icon/actions/add_note.png", Main.i18n("general.menu.edit.add.note")),
-				true, addNote);
+		note = new MenuItem(Util.menuHTML("img/icon/actions/add_note.png", Main.i18n("general.menu.edit.add.note")), true, addNote);
 		note.addStyleName("okm-MenuItem-strike");
-		category = new MenuItem(Util.menuHTML("img/icon/stackpanel/table_key.gif", Main.i18n("category.add")), true,
-				addCategory);
+		category = new MenuItem(Util.menuHTML("img/icon/stackpanel/table_key.gif", Main.i18n("category.add")), true, addCategory);
 		category.addStyleName("okm-MenuItem-strike");
-		keyword = new MenuItem(Util.menuHTML("img/icon/actions/book_add.png", Main.i18n("keyword.add")), true,
-				addKeyword);
+		keyword = new MenuItem(Util.menuHTML("img/icon/actions/book_add.png", Main.i18n("keyword.add")), true, addKeyword);
 		keyword.addStyleName("okm-MenuItem-strike");
+		merge = new MenuItem(Util.menuHTML("img/icon/actions/merge_pdf.png", Main.i18n("general.menu.edit.merge.pdf")), true, mergePdf);
+		merge.addStyleName("okm-MenuItem-strike");
 		horizontalLineEdit3 = new MenuItem("", true, nullExecute);
 		horizontalLineEdit3.setStyleName("okm-MainMenuItem");
 		horizontalLineEdit3.addStyleName("okm-MainMenuItem-Base-HorizontalSeparator");
@@ -349,6 +346,9 @@ public class MainMenu extends Composite {
 		addPropertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/add_property_group.gif",
 				Main.i18n("general.menu.edit.add.property.group")), true, addPropertyGroupOKM);
 		addPropertyGroup.addStyleName("okm-MenuItem-strike");
+		updatePropertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/update_property_group.png",
+				Main.i18n("general.menu.edit.update.property.group")), true, updatePropertyGroupOKM);
+		updatePropertyGroup.addStyleName("okm-MenuItem-strike");
 		removePropertyGroup = new MenuItem(Util.menuHTML("img/icon/actions/remove_property_group.gif",
 				Main.i18n("general.menu.edit.remove.property.group")), true, removePropertyGroupOKM);
 		removePropertyGroup.addStyleName("okm-MenuItem-strike");
@@ -380,8 +380,10 @@ public class MainMenu extends Composite {
 		subMenuEdit.addItem(note);
 		subMenuEdit.addItem(category);
 		subMenuEdit.addItem(keyword);
+		subMenuEdit.addItem(merge);
 		subMenuEdit.addItem(horizontalLineEdit3);
 		subMenuEdit.addItem(addPropertyGroup);
+		subMenuEdit.addItem(updatePropertyGroup);
 		subMenuEdit.addItem(removePropertyGroup);
 		subMenuEdit.addItem(horizontalLineEdit4);
 		subMenuEdit.addItem(addSubscription);
@@ -397,20 +399,20 @@ public class MainMenu extends Composite {
 		subMenuLanguage = new MenuBar(true);
 		subMenuLanguage.setStyleName("okm-SubMenuBar");
 		// Submenu language
-		language = new MenuItem(Util.menuHTML("img/icon/menu/language.gif", Main.i18n("general.menu.tools.languages")),
-				true, subMenuLanguage);
+		language = new MenuItem(Util.menuHTML("img/icon/menu/language.gif", Main.i18n("general.menu.tools.languages")), true,
+				subMenuLanguage);
 		language.addStyleName("okm-MainMenuItem");
 		// language.addStyleName("okm-MainMenuItem-Base-Childs");
 		
 		// Submenu skin options
 		subMenuSkin = new MenuBar(true);
 		subMenuSkin.setStyleName("okm-SubMenuBar");
-		skinDefault = new MenuItem(Util.menuHTML("img/icon/menu/skin_default.gif",
-				Main.i18n("general.menu.tools.skin.default")), true, setSkinDefault);
-		skinMediumFont = new MenuItem(Util.menuHTML("img/icon/menu/skin_test.gif",
-				Main.i18n("general.menu.tools.skin.mediumfont")), true, setSkinMediumFont);
-		skinBigFont = new MenuItem(Util.menuHTML("img/icon/menu/skin_test.gif",
-				Main.i18n("general.menu.tools.skin.bigfont")), true, setSkinBigFont);
+		skinDefault = new MenuItem(Util.menuHTML("img/icon/menu/skin_default.gif", Main.i18n("general.menu.tools.skin.default")), true,
+				setSkinDefault);
+		skinMediumFont = new MenuItem(Util.menuHTML("img/icon/menu/skin_test.gif", Main.i18n("general.menu.tools.skin.mediumfont")), true,
+				setSkinMediumFont);
+		skinBigFont = new MenuItem(Util.menuHTML("img/icon/menu/skin_test.gif", Main.i18n("general.menu.tools.skin.bigfont")), true,
+				setSkinBigFont);
 		skinDefault.addStyleName("okm-MainMenuItem");
 		skinMediumFont.addStyleName("okm-MainMenuItem");
 		skinBigFont.addStyleName("okm-MainMenuItem");
@@ -419,35 +421,35 @@ public class MainMenu extends Composite {
 		subMenuSkin.addItem(skinBigFont);
 		
 		// Submenu skin
-		skin = new MenuItem(Util.menuHTML("img/icon/menu/skin.gif", Main.i18n("general.menu.tools.skin")), true,
-				subMenuSkin);
+		skin = new MenuItem(Util.menuHTML("img/icon/menu/skin.gif", Main.i18n("general.menu.tools.skin")), true, subMenuSkin);
 		skin.addStyleName("okm-MainMenuItem");
 		
 		// Other tools options
-		debugConsole = new MenuItem(Util.menuHTML("img/icon/menu/console.gif",
-				Main.i18n("general.menu.tools.debug.console")), true, setViewDebugConsole);
+		debugConsole = new MenuItem(Util.menuHTML("img/icon/menu/console.gif", Main.i18n("general.menu.tools.debug.console")), true,
+				setViewDebugConsole);
 		debugConsole.addStyleName("okm-MainMenuItem");
-		administration = new MenuItem(Util.menuHTML("img/icon/menu/administration.gif",
-				Main.i18n("general.menu.tools.administration")), true, showAdministration);
+		administration = new MenuItem(Util.menuHTML("img/icon/menu/administration.gif", Main.i18n("general.menu.tools.administration")),
+				true, showAdministration);
 		administration.addStyleName("okm-MainMenuItem");
 		administration.setVisible(false);
 		
 		// Submenu preferences opions
 		subMenuPreferences = new MenuBar(true);
 		subMenuPreferences.setStyleName("okm-SubMenuBar");
-		userPreferences = new MenuItem(Util.menuHTML("img/icon/menu/user_preferences.gif",
-				Main.i18n("general.menu.tools.user.preferences")), true, setUserPreferences);
+		userPreferences = new MenuItem(
+				Util.menuHTML("img/icon/menu/user_preferences.gif", Main.i18n("general.menu.tools.user.preferences")), true,
+				setUserPreferences);
 		userPreferences.addStyleName("okm-MainMenuItem");
 		subMenuPreferences.addItem(userPreferences);
 		
-		// Sign tool menu
-		signTool = new MenuItem(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.sign.tool")), true, downloadSignTool);
-		signTool.addStyleName("okm-MainMenuItem");
-		
 		// Submenu preferences
-		preferences = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif",
-				Main.i18n("general.menu.tools.preferences")), true, subMenuPreferences);
+		preferences = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.tools.preferences")), true,
+				subMenuPreferences);
 		preferences.addStyleName("okm-MainMenuItem");
+		
+		convert = new MenuItem(Util.menuHTML("img/icon/menu/convert.png", Main.i18n("general.menu.tools.convert")), true, showConvert);
+		convert.addStyleName("okm-MainMenuItem");
+		convert.setVisible(false);
 		
 		// Submenu tools
 		subMenuTools = new MenuBar(true);
@@ -458,23 +460,22 @@ public class MainMenu extends Composite {
 		subMenuTools.addItem(debugConsole);
 		subMenuTools.addItem(administration);
 		subMenuTools.addItem(preferences);
-		subMenuTools.addItem(signTool);
+		subMenuTools.addItem(convert);
 		
 		// Menu tools
 		menuTools = new MenuItem(Main.i18n("general.menu.tools"), subMenuTools);
 		menuTools.addStyleName("okm-MainMenuBar");
 		
-		home = new MenuItem(Util.menuHTML("img/icon/actions/bookmark_go.gif", Main.i18n("general.menu.bookmark.home")),
-				true, goToUserHome);
+		home = new MenuItem(Util.menuHTML("img/icon/actions/bookmark_go.gif", Main.i18n("general.menu.bookmark.home")), true, goToUserHome);
 		home.addStyleName("okm-MainMenuItem");
-		defaultHome = new MenuItem(Util.menuHTML("img/icon/actions/bookmark.gif",
-				Main.i18n("general.menu.bookmark.default.home")), true, setDefaultHome);
+		defaultHome = new MenuItem(Util.menuHTML("img/icon/actions/bookmark.gif", Main.i18n("general.menu.bookmark.default.home")), true,
+				setDefaultHome);
 		defaultHome.addStyleName("okm-MainMenuItem");
-		addBookmark = new MenuItem(Util.menuHTML("img/icon/actions/add_bookmark.gif",
-				Main.i18n("general.menu.bookmark.add")), true, addBookmarkOKM);
+		addBookmark = new MenuItem(Util.menuHTML("img/icon/actions/add_bookmark.gif", Main.i18n("general.menu.bookmark.add")), true,
+				addBookmarkOKM);
 		addBookmark.addStyleName("okm-MainMenuItem");
-		manageBookmark = new MenuItem(Util.menuHTML("img/icon/actions/bookmark_edit.gif",
-				Main.i18n("general.menu.bookmark.edit")), true, editBookmark);
+		manageBookmark = new MenuItem(Util.menuHTML("img/icon/actions/bookmark_edit.gif", Main.i18n("general.menu.bookmark.edit")), true,
+				editBookmark);
 		manageBookmark.addStyleName("okm-MainMenuItem");
 		horizontalLineBookmark1 = new MenuItem("", true, nullExecute);
 		horizontalLineBookmark1.setStyleName("okm-MainMenuItem");
@@ -496,8 +497,8 @@ public class MainMenu extends Composite {
 		menuBookmark.addStyleName("okm-MainMenuBar");
 		
 		// Submenu help option
-		help = new MenuItem(Util.menuHTML("img/icon/menu/help.gif",
-				Util.windowOpen(Main.i18n("general.menu.help"), URI_HELP)), true, nullExecute);
+		help = new MenuItem(Util.menuHTML("img/icon/menu/help.gif", Util.windowOpen(Main.i18n("general.menu.help"), URI_HELP)), true,
+				nullExecute);
 		help.addStyleName("okm-MainMenuItem");
 		documentation = new MenuItem(Util.menuHTML("img/icon/menu/documentation.gif",
 				Util.windowOpen(Main.i18n("general.menu.help.documentation"), URI_DOCUMENTATION)), true, nullExecute);
@@ -506,43 +507,40 @@ public class MainMenu extends Composite {
 				Util.windowOpen(Main.i18n("general.menu.help.bug.report"), URI_BUG_REPORT)), true, nullExecute);
 		bugReport.addStyleName("okm-MainMenuItem");
 		supportRequest = new MenuItem(Util.menuHTML("img/icon/menu/support.gif",
-				Util.windowOpen(Main.i18n("general.menu.help.support.request"), URI_SUPPORT_REQUEST)), true,
-				nullExecute);
+				Util.windowOpen(Main.i18n("general.menu.help.support.request"), URI_SUPPORT_REQUEST)), true, nullExecute);
 		supportRequest.addStyleName("okm-MainMenuItem");
 		publicForum = new MenuItem(Util.menuHTML("img/icon/menu/forum.gif",
 				Util.windowOpen(Main.i18n("general.menu.help.public.forum"), URI_PUBLIC_FORUM)), true, nullExecute);
 		publicForum.addStyleName("okm-MainMenuItem");
 		versionChanges = new MenuItem(Util.menuHTML("img/icon/menu/brick.gif",
-				Util.windowOpen(Main.i18n("general.menu.help.version.changes"), URI_VERSION_CHANGES)), true,
-				nullExecute);
+				Util.windowOpen(Main.i18n("general.menu.help.version.changes"), URI_VERSION_CHANGES)), true, nullExecute);
 		versionChanges.addStyleName("okm-MainMenuItem");
 		projectWeb = new MenuItem(Util.menuHTML("img/icon/menu/home.gif",
 				Util.windowOpen(Main.i18n("general.menu.help.project.web"), URI_PROJECT_WEB)), true, nullExecute);
 		projectWeb.addStyleName("okm-MainMenuItem");
-		about = new MenuItem(Util.menuHTML("img/icon/menu/about.gif", Main.i18n("general.menu.help.about")), true,
-				aboutOKM);
+		about = new MenuItem(Util.menuHTML("img/icon/menu/about.gif", Main.i18n("general.menu.help.about")), true, aboutOKM);
 		about.addStyleName("okm-MainMenuItem");
 		
 		// Submenu report format
 		subMenuReportFormat = new MenuBar(true);
 		subMenuReportFormat.setStyleName("okm-SubMenuBar");
-		reportFormatPdf = new MenuItem(Util.menuHTML("img/icon/security/yes.gif",
-				Main.i18n("general.menu.report.format.pdf")), true, enablePdfReporFormat);
+		reportFormatPdf = new MenuItem(Util.menuHTML("img/icon/security/yes.gif", Main.i18n("general.menu.report.format.pdf")), true,
+				enablePdfReporFormat);
 		reportFormatPdf.addStyleName("okm-MainMenuItem");
-		reportFormatRtf = new MenuItem(Util.menuHTML("img/icon/security/no.gif",
-				Main.i18n("general.menu.report.format.rtf")), true, enableTextReporFormat);
+		reportFormatRtf = new MenuItem(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.rtf")), true,
+				enableTextReporFormat);
 		reportFormatRtf.addStyleName("okm-MainMenuItem");
 		reportFormatRtf.addStyleName("okm-MenuItem-strike");
-		reportFormatCsv = new MenuItem(Util.menuHTML("img/icon/security/no.gif",
-				Main.i18n("general.menu.report.format.csv")), true, enableCsvReporFormat);
+		reportFormatCsv = new MenuItem(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.csv")), true,
+				enableCsvReporFormat);
 		reportFormatCsv.addStyleName("okm-MainMenuItem");
 		reportFormatCsv.addStyleName("okm-MenuItem-strike");
 		subMenuReportFormat.addItem(reportFormatPdf);
 		subMenuReportFormat.addItem(reportFormatRtf);
 		subMenuReportFormat.addItem(reportFormatCsv);
 		
-		reportFormat = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif",
-				Main.i18n("general.menu.report.format")), true, subMenuReportFormat);
+		reportFormat = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.report.format")), true,
+				subMenuReportFormat);
 		reportFormat.addStyleName("okm-MainMenuItem");
 		
 		// Submenu tools
@@ -555,8 +553,8 @@ public class MainMenu extends Composite {
 		menuReports = new MenuItem(Main.i18n("general.menu.report"), subMenuReports);
 		menuReports.addStyleName("okm-MainMenuBar");
 		
-		reportFormat = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif",
-				Main.i18n("general.menu.report.format")), true, subMenuReportFormat);
+		reportFormat = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.report.format")), true,
+				subMenuReportFormat);
 		reportFormat.addStyleName("okm-MainMenuItem");
 		
 		// Submenu documents
@@ -612,42 +610,35 @@ public class MainMenu extends Composite {
 		bookmarkPopup.langRefresh(); // Refreshing popup
 		manageBookmarkPopup.langRefresh(); // Refreshing management popup
 		menuFile.setText(Main.i18n("general.menu.file"));
-		findFolder
-				.setHTML(Util.menuHTML("img/icon/actions/folder_find.gif", Main.i18n("general.menu.file.find.folder")));
-		findDocument.setHTML(Util.menuHTML("img/icon/actions/document_find.png",
-				Main.i18n("general.menu.file.find.document")));
-		createFolder.setHTML(Util.menuHTML("img/icon/actions/add_folder.gif",
-				Main.i18n("general.menu.file.create.directory")));
-		download.setHTML(Util.menuHTML("img/icon/actions/download.gif",
-				Main.i18n("general.menu.file.download.document")));
-		downloadPdf.setHTML(Util.menuHTML("img/icon/actions/download_pdf.gif",
-				Main.i18n("general.menu.file.download.document.pdf")));
-		sendDocumentLink.setHTML(Util.menuHTML("img/icon/actions/send_document_link.gif",
-				Main.i18n("general.menu.file.send.link")));
+		findFolder.setHTML(Util.menuHTML("img/icon/actions/folder_find.gif", Main.i18n("general.menu.file.find.folder")));
+		findDocument.setHTML(Util.menuHTML("img/icon/actions/document_find.png", Main.i18n("general.menu.file.find.document")));
+		findSimilarDocument
+				.setHTML(Util.menuHTML("img/icon/actions/similar_find.png", Main.i18n("general.menu.file.find.similar.document")));
+		createFolder.setHTML(Util.menuHTML("img/icon/actions/add_folder.gif", Main.i18n("general.menu.file.create.directory")));
+		download.setHTML(Util.menuHTML("img/icon/actions/download.gif", Main.i18n("general.menu.file.download.document")));
+		downloadPdf.setHTML(Util.menuHTML("img/icon/actions/download_pdf.gif", Main.i18n("general.menu.file.download.document.pdf")));
+		sendDocumentLink.setHTML(Util.menuHTML("img/icon/actions/send_document_link.gif", Main.i18n("general.menu.file.send.link")));
 		sendDocumentAttachment.setHTML(Util.menuHTML("img/icon/actions/send_document_attachment.gif",
 				Main.i18n("general.menu.file.send.attachment")));
+		forwardMail.setHTML(Util.menuHTML("img/email_forward.png", Main.i18n("general.menu.file.send.forward.mail")));
 		createFromTemplate.setHTML(Util.menuHTML("img/icon/actions/create_from_template.gif",
 				Main.i18n("general.menu.file.create.from.template")));
 		export.setHTML(Util.menuHTML("img/icon/actions/export.gif", Main.i18n("general.menu.file.export")));
-		startWorkflow.setHTML(Util.menuHTML("img/icon/actions/start_workflow.gif",
-				Main.i18n("general.menu.file.start.workflow")));
+		startWorkflow.setHTML(Util.menuHTML("img/icon/actions/start_workflow.gif", Main.i18n("general.menu.file.start.workflow")));
 		refresh.setHTML(Util.menuHTML("img/icon/actions/refresh.gif", Main.i18n("general.menu.file.refresh")));
 		scanner.setHTML(Util.menuHTML("img/icon/actions/scanner.gif", Main.i18n("general.menu.file.scanner")));
 		uploader.setHTML(Util.menuHTML("img/icon/actions/upload.gif", Main.i18n("general.menu.file.uploader")));
 		restore.setHTML(Util.menuHTML("img/icon/actions/restore.gif", Main.i18n("general.menu.file.restore")));
 		purge.setHTML(Util.menuHTML("img/icon/actions/purge.gif", Main.i18n("general.menu.file.purge")));
-		purgeTrash
-				.setHTML(Util.menuHTML("img/icon/actions/purge_trash.gif", Main.i18n("general.menu.file.purge.trash")));
+		purgeTrash.setHTML(Util.menuHTML("img/icon/actions/purge_trash.gif", Main.i18n("general.menu.file.purge.trash")));
 		exit.setHTML(Util.menuHTML("img/icon/menu/exit.gif", Main.i18n("general.menu.file.exit")));
 		menuEdit.setText(Main.i18n("general.menu.edit"));
 		lock.setHTML(Util.menuHTML("img/icon/actions/lock.gif", Main.i18n("general.menu.edit.lock")));
 		unlock.setHTML(Util.menuHTML("img/icon/actions/unlock.gif", Main.i18n("general.menu.edit.unlock")));
-		addDocument.setHTML(Util.menuHTML("img/icon/actions/add_document.gif",
-				Main.i18n("general.menu.file.add.document")));
+		addDocument.setHTML(Util.menuHTML("img/icon/actions/add_document.gif", Main.i18n("general.menu.file.add.document")));
 		checkout.setHTML(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.edit.checkout")));
 		checkin.setHTML(Util.menuHTML("img/icon/actions/checkin.gif", Main.i18n("general.menu.edit.checkin")));
-		cancelCheckout.setHTML(Util.menuHTML("img/icon/actions/cancel_checkout.gif",
-				Main.i18n("general.menu.edit.cancel.checkout")));
+		cancelCheckout.setHTML(Util.menuHTML("img/icon/actions/cancel_checkout.gif", Main.i18n("general.menu.edit.cancel.checkout")));
 		delete.setHTML(Util.menuHTML("img/icon/actions/delete.gif", Main.i18n("general.menu.edit.delete")));
 		move.setHTML(Util.menuHTML("img/icon/actions/move_document.gif", Main.i18n("general.menu.edit.move")));
 		copy.setHTML(Util.menuHTML("img/icon/actions/copy.gif", Main.i18n("general.menu.edit.copy")));
@@ -655,37 +646,32 @@ public class MainMenu extends Composite {
 		note.setHTML(Util.menuHTML("img/icon/actions/add_note.png", Main.i18n("general.menu.edit.add.note")));
 		category.setHTML(Util.menuHTML("img/icon/stackpanel/table_key.gif", Main.i18n("category.add")));
 		keyword.setHTML(Util.menuHTML("img/icon/actions/book_add.png", Main.i18n("keyword.add")));
-		addPropertyGroup.setHTML(Util.menuHTML("img/icon/actions/add_property_group.gif",
-				Main.i18n("general.menu.edit.add.property.group")));
+		merge.setHTML(Util.menuHTML("img/icon/actions/merge_pdf.png", Main.i18n("general.menu.edit.merge.pdf")));
+		addPropertyGroup
+				.setHTML(Util.menuHTML("img/icon/actions/add_property_group.gif", Main.i18n("general.menu.edit.add.property.group")));
+		updatePropertyGroup.setHTML(Util.menuHTML("img/icon/actions/update_property_group.png",
+				Main.i18n("general.menu.edit.update.property.group")));
 		removePropertyGroup.setHTML(Util.menuHTML("img/icon/actions/remove_property_group.gif",
 				Main.i18n("general.menu.edit.remove.property.group")));
-		addSubscription.setHTML(Util.menuHTML("img/icon/actions/add_subscription.gif",
-				Main.i18n("general.menu.edit.add.subscription")));
+		addSubscription.setHTML(Util.menuHTML("img/icon/actions/add_subscription.gif", Main.i18n("general.menu.edit.add.subscription")));
 		removeSubscription.setHTML(Util.menuHTML("img/icon/actions/remove_subscription.gif",
 				Main.i18n("general.menu.edit.remove.subscription")));
 		menuTools.setText(Main.i18n("general.menu.tools"));
 		language.setHTML(Util.menuHTML("img/icon/menu/language.gif", Main.i18n("general.menu.tools.languages")));
 		skin.setHTML(Util.menuHTML("img/icon/menu/skin.gif", Main.i18n("general.menu.tools.skin")));
-		skinDefault.setHTML(Util.menuHTML("img/icon/menu/skin_default.gif",
-				Main.i18n("general.menu.tools.skin.default")));
-		skinMediumFont.setHTML(Util.menuHTML("img/icon/menu/skin_test.gif",
-				Main.i18n("general.menu.tools.skin.mediumfont")));
+		skinDefault.setHTML(Util.menuHTML("img/icon/menu/skin_default.gif", Main.i18n("general.menu.tools.skin.default")));
+		skinMediumFont.setHTML(Util.menuHTML("img/icon/menu/skin_test.gif", Main.i18n("general.menu.tools.skin.mediumfont")));
 		skinBigFont.setHTML(Util.menuHTML("img/icon/menu/skin_test.gif", Main.i18n("general.menu.tools.skin.bigfont")));
 		debugConsole.setHTML(Util.menuHTML("img/icon/menu/console.gif", Main.i18n("general.menu.tools.debug.console")));
-		administration.setHTML(Util.menuHTML("img/icon/menu/administration.gif",
-				Main.i18n("general.menu.tools.administration")));
-		preferences
-				.setHTML(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.tools.preferences")));
-		userPreferences.setHTML(Util.menuHTML("img/icon/menu/user_preferences.gif",
-				Main.i18n("general.menu.tools.user.preferences")));
-		signTool.setHTML(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.sign.tool")));
+		administration.setHTML(Util.menuHTML("img/icon/menu/administration.gif", Main.i18n("general.menu.tools.administration")));
+		preferences.setHTML(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.tools.preferences")));
+		userPreferences.setHTML(Util.menuHTML("img/icon/menu/user_preferences.gif", Main.i18n("general.menu.tools.user.preferences")));
+		convert.setHTML(Util.menuHTML("img/icon/menu/convert.png", Main.i18n("general.menu.tools.convert")));
 		menuBookmark.setText(Main.i18n("general.menu.bookmark"));
 		home.setHTML(Util.menuHTML("img/icon/actions/bookmark_go.gif", Main.i18n("general.menu.bookmark.home")));
-		defaultHome.setHTML(Util.menuHTML("img/icon/actions/bookmark.gif",
-				Main.i18n("general.menu.bookmark.default.home")));
+		defaultHome.setHTML(Util.menuHTML("img/icon/actions/bookmark.gif", Main.i18n("general.menu.bookmark.default.home")));
 		addBookmark.setHTML(Util.menuHTML("img/icon/actions/add_bookmark.gif", Main.i18n("general.menu.bookmark.add")));
-		manageBookmark.setHTML(Util.menuHTML("img/icon/actions/bookmark_edit.gif",
-				Main.i18n("general.menu.bookmark.edit")));
+		manageBookmark.setHTML(Util.menuHTML("img/icon/actions/bookmark_edit.gif", Main.i18n("general.menu.bookmark.edit")));
 		menuReports.setText(Main.i18n("general.menu.report"));
 		reportFormat.setHTML(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.report.format")));
 		refreshReportFormatMenu();
@@ -713,36 +699,27 @@ public class MainMenu extends Composite {
 	private void refreshReportFormatMenu() {
 		switch (reportOutput) {
 			case OUTPUT_PDF:
-				reportFormatPdf.setHTML(Util.menuHTML("img/icon/security/yes.gif",
-						Main.i18n("general.menu.report.format.pdf")));
-				reportFormatRtf.setHTML(Util.menuHTML("img/icon/security/no.gif",
-						Main.i18n("general.menu.report.format.rtf")));
-				reportFormatCsv.setHTML(Util.menuHTML("img/icon/security/no.gif",
-						Main.i18n("general.menu.report.format.csv")));
+				reportFormatPdf.setHTML(Util.menuHTML("img/icon/security/yes.gif", Main.i18n("general.menu.report.format.pdf")));
+				reportFormatRtf.setHTML(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.rtf")));
+				reportFormatCsv.setHTML(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.csv")));
 				enable(reportFormatPdf);
 				disable(reportFormatRtf);
 				disable(reportFormatCsv);
 				break;
 			
 			case OUTPUT_RTF:
-				reportFormatPdf.setHTML(Util.menuHTML("img/icon/security/no.gif",
-						Main.i18n("general.menu.report.format.pdf")));
-				reportFormatRtf.setHTML(Util.menuHTML("img/icon/security/yes.gif",
-						Main.i18n("general.menu.report.format.rtf")));
-				reportFormatCsv.setHTML(Util.menuHTML("img/icon/security/no.gif",
-						Main.i18n("general.menu.report.format.csv")));
+				reportFormatPdf.setHTML(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.pdf")));
+				reportFormatRtf.setHTML(Util.menuHTML("img/icon/security/yes.gif", Main.i18n("general.menu.report.format.rtf")));
+				reportFormatCsv.setHTML(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.csv")));
 				disable(reportFormatPdf);
 				enable(reportFormatRtf);
 				disable(reportFormatCsv);
 				break;
 			
 			case OUTPUT_CSV:
-				reportFormatPdf.setHTML(Util.menuHTML("img/icon/security/no.gif",
-						Main.i18n("general.menu.report.format.pdf")));
-				reportFormatRtf.setHTML(Util.menuHTML("img/icon/security/no.gif",
-						Main.i18n("general.menu.report.format.rtf")));
-				reportFormatCsv.setHTML(Util.menuHTML("img/icon/security/yes.gif",
-						Main.i18n("general.menu.report.format.csv")));
+				reportFormatPdf.setHTML(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.pdf")));
+				reportFormatRtf.setHTML(Util.menuHTML("img/icon/security/no.gif", Main.i18n("general.menu.report.format.rtf")));
+				reportFormatCsv.setHTML(Util.menuHTML("img/icon/security/yes.gif", Main.i18n("general.menu.report.format.csv")));
 				disable(reportFormatPdf);
 				disable(reportFormatRtf);
 				enable(reportFormatCsv);
@@ -790,6 +767,12 @@ public class MainMenu extends Composite {
 			disable(findDocument);
 		}
 		
+		if (mainMenuOption.findSimilarDocumentOption) {
+			enable(findSimilarDocument);
+		} else {
+			disable(findSimilarDocument);
+		}
+		
 		if (mainMenuOption.downloadOption) {
 			enable(download);
 		} else {
@@ -812,6 +795,12 @@ public class MainMenu extends Composite {
 			enable(sendDocumentAttachment);
 		} else {
 			disable(sendDocumentAttachment);
+		}
+		
+		if (mainMenuOption.mailForwardOption) {
+			enable(forwardMail);
+		} else {
+			disable(forwardMail);
 		}
 		
 		if (mainMenuOption.createFromTemplateOption) {
@@ -934,6 +923,12 @@ public class MainMenu extends Composite {
 			disable(keyword);
 		}
 		
+		if (mainMenuOption.mergePdfOption) {
+			enable(merge);
+		} else {
+			disable(merge);
+		}
+		
 		if (mainMenuOption.renameOption) {
 			enable(rename);
 		} else {
@@ -946,6 +941,12 @@ public class MainMenu extends Composite {
 			disable(addPropertyGroup);
 		}
 		
+		if (mainMenuOption.updatePropertyGroupOption) {
+			enable(updatePropertyGroup);
+		} else {
+			disable(updatePropertyGroup);
+		}
+		
 		if (mainMenuOption.addSubscription) {
 			enable(addSubscription);
 		} else {
@@ -956,6 +957,12 @@ public class MainMenu extends Composite {
 			enable(removeSubscription);
 		} else {
 			disable(removeSubscription);
+		}
+		
+		if (mainMenuOption.convertOption) {
+			enable(convert);
+		} else {
+			disable(convert);
 		}
 		
 		// Property group is evaluated in toolbar getAllGroups()
@@ -996,6 +1003,46 @@ public class MainMenu extends Composite {
 			mainMenuOption.addPropertyGroupOption = false;
 		}
 		disable(addPropertyGroup);
+	}
+	
+	/**
+	 * enableUpdatePropertyGroup
+	 */
+	public void enableUpdatePropertyGroup() {
+		if (mainMenuOption != null) { // Condition caused by loading case
+			mainMenuOption.updatePropertyGroupOption = true;
+		}
+		enable(updatePropertyGroup);
+	}
+	
+	/**
+	 * disableAddPropertyGroup
+	 */
+	public void disableUpdatePropertyGroup() {
+		if (mainMenuOption != null) { // Condition caused by loading case
+			mainMenuOption.updatePropertyGroupOption = false;
+		}
+		disable(updatePropertyGroup);
+	}
+	
+	/**
+	 * enablePdfMerge
+	 */
+	public void enablePdfMerge() {
+		if (mainMenuOption != null) { // Condition caused by loading case
+			mainMenuOption.mergePdfOption = true;
+		}
+		enable(merge);
+	}
+	
+	/**
+	 * disablePdfMerge
+	 */
+	public void disablePdfMerge() {
+		if (mainMenuOption != null) { // Condition caused by loading case
+			mainMenuOption.mergePdfOption = false;
+		}
+		disable(merge);
 	}
 	
 	/**
@@ -1089,6 +1136,15 @@ public class MainMenu extends Composite {
 		}
 	};
 	
+	// Command menu to find similar document
+	Command findSimilarDocumentOKM = new Command() {
+		public void execute() {
+			if (mainMenuOption.findSimilarDocumentOption) {
+				Main.get().mainPanel.topPanel.toolBar.executeFindSimilarDocument();
+			}
+		}
+	};
+	
 	// Command menu to download
 	Command downloadOKM = new Command() {
 		public void execute() {
@@ -1121,6 +1177,15 @@ public class MainMenu extends Composite {
 		public void execute() {
 			if (mainMenuOption.sendDocumentAttachmentOption) {
 				Main.get().notifyPopup.executeSendDocument(NotifyPopup.NOTIFY_WITH_ATTACHMENT);
+			}
+		}
+	};
+	
+	// Command menu to forward mail
+	Command sendMailForwardOKM = new Command() {
+		public void execute() {
+			if (mainMenuOption.mailForwardOption) {
+				Main.get().notifyPopup.executeForwardMail();
 			}
 		}
 	};
@@ -1276,11 +1341,29 @@ public class MainMenu extends Composite {
 		}
 	};
 	
+	// Command menu to mergePdf
+	Command mergePdf = new Command() {
+		public void execute() {
+			if (mainMenuOption.mergePdfOption) {
+				Main.get().mainPanel.topPanel.toolBar.mergePdf();
+			}
+		}
+	};
+	
 	// Command menu to add property group
 	Command addPropertyGroupOKM = new Command() {
 		public void execute() {
 			if (mainMenuOption.addPropertyGroupOption) {
 				Main.get().mainPanel.topPanel.toolBar.addPropertyGroup();
+			}
+		}
+	};
+	
+	// Command menu to update property group
+	Command updatePropertyGroupOKM = new Command() {
+		public void execute() {
+			if (mainMenuOption.updatePropertyGroupOption) {
+				Main.get().mainPanel.topPanel.toolBar.updatePropertyGroup();
 			}
 		}
 	};
@@ -1396,7 +1479,16 @@ public class MainMenu extends Composite {
 	// Command menu to go to set user preferences
 	Command setUserPreferences = new Command() {
 		public void execute() {
-			Main.get().userPopup.show();
+			Main.get().userPopup.reset();
+		}
+	};
+	
+	// Command menu to convert
+	Command showConvert = new Command() {
+		public void execute() {
+			if (mainMenuOption.convertOption) {
+				Main.get().mainPanel.topPanel.toolBar.executeConvert();
+			}
 		}
 	};
 	
@@ -1464,13 +1556,6 @@ public class MainMenu extends Composite {
 		}
 	};
 	
-	// Command download sign tool that executes void
-	Command downloadSignTool = new Command() {
-		public void execute() {
-			Util.downloadFile("", "signTool");
-		}
-	};
-	
 	// Command menu that executes void
 	Command nullExecute = new Command() {
 		public void execute() {
@@ -1499,17 +1584,18 @@ public class MainMenu extends Composite {
 		addDocument.setVisible(option.isAddDocumentOption());
 		findFolder.setVisible(option.isFindFolderOption());
 		findDocument.setVisible(option.isFindDocumentOption());
+		findSimilarDocument.setVisible(option.isSimilarDocumentVisible());
 		download.setVisible(option.isDownloadOption());
 		downloadPdf.setVisible(option.isDownloadPdfOption());
 		sendDocumentLink.setVisible(option.isSendDocumentLinkOption());
 		sendDocumentAttachment.setVisible(option.isSendDocumentAttachmentOption());
+		forwardMail.setVisible(option.isForwardMailOption());
 		createFromTemplate.setVisible(option.isCreateFromTemplateOption());
 		export.setVisible(option.isExportOption());
-		horizontalLineFile1.setVisible(option.isCreateFolderOption() || option.isFindFolderOption()
-				|| option.isFindDocumentOption() || option.isAddDocumentOption() || option.isDownloadOption()
-				|| option.isDownloadPdfOption() || option.isSendDocumentLinkOption()
-				|| option.isSendDocumentAttachmentOption() || option.isExportOption()
-				|| option.isCreateFromTemplateOption());
+		horizontalLineFile1.setVisible(option.isCreateFolderOption() || option.isFindFolderOption() || option.isFindDocumentOption()
+				|| option.isSimilarDocumentVisible() || option.isAddDocumentOption() || option.isDownloadOption()
+				|| option.isDownloadPdfOption() || option.isSendDocumentLinkOption() || option.isSendDocumentAttachmentOption()
+				|| option.isExportOption() || option.isCreateFromTemplateOption());
 		startWorkflow.setVisible(option.isWorkflowOption());
 		horizontalLineFile2.setVisible(option.isWorkflowOption());
 		refresh.setVisible(option.isRefreshOption());
@@ -1520,8 +1606,7 @@ public class MainMenu extends Composite {
 		restore.setVisible(option.isRestoreOption());
 		purge.setVisible(option.isPurgeOption());
 		purgeTrash.setVisible(option.isPurgeTrashOption());
-		horizontalLineFile5.setVisible(option.isPurgeTrashOption() || option.isPurgeOption()
-				|| option.isRestoreOption());
+		horizontalLineFile5.setVisible(option.isPurgeTrashOption() || option.isPurgeOption() || option.isRestoreOption());
 		
 		// EDIT MENU
 		lock.setVisible(option.isLockOption());
@@ -1530,8 +1615,7 @@ public class MainMenu extends Composite {
 		checkout.setVisible(option.isCheckoutOption());
 		checkin.setVisible(option.isCheckinOption());
 		cancelCheckout.setVisible(option.isCancelCheckoutOption());
-		horizontalLineEdit2.setVisible(option.isCheckoutOption() || option.isCheckinOption()
-				|| option.isCancelCheckoutOption());
+		horizontalLineEdit2.setVisible(option.isCheckoutOption() || option.isCheckinOption() || option.isCancelCheckoutOption());
 		delete.setVisible(option.isDeleteOption());
 		copy.setVisible(option.isCopyOption());
 		move.setVisible(option.isMoveOption());
@@ -1539,12 +1623,14 @@ public class MainMenu extends Composite {
 		note.setVisible(option.isAddNoteOption());
 		category.setVisible(option.isAddCategoryOption());
 		keyword.setVisible(option.isAddKeywordOption());
-		horizontalLineEdit3.setVisible(option.isDeleteOption() || option.isCopyOption() || option.isMoveOption()
-				|| option.isRenameOption() || option.isAddNoteOption() || option.isAddCategoryOption()
-				|| option.isAddKeywordOption() || option.isMergePdfOption());
+		merge.setVisible(option.isMergePdfOption());
+		horizontalLineEdit3.setVisible(option.isDeleteOption() || option.isCopyOption() || option.isMoveOption() || option.isRenameOption()
+				|| option.isAddNoteOption() || option.isAddCategoryOption() || option.isAddKeywordOption() || option.isMergePdfOption());
 		addPropertyGroup.setVisible(option.isAddPropertyGroupOption());
+		updatePropertyGroup.setVisible(option.isUpdatePropertyGroupOption());
 		removePropertyGroup.setVisible(option.isRemovePropertyGroupOption());
-		horizontalLineEdit4.setVisible(option.isAddPropertyGroupOption() || option.isRemovePropertyGroupOption());
+		horizontalLineEdit4.setVisible(option.isAddPropertyGroupOption() || option.isUpdatePropertyGroupOption()
+				|| option.isRemovePropertyGroupOption());
 		addSubscription.setVisible(option.isAddSubscriptionOption());
 		removeSubscription.setVisible(option.isRemoveSubscriptionOption());
 		
@@ -1560,33 +1646,32 @@ public class MainMenu extends Composite {
 		if (!option.isPreferencesOption()) {
 			subMenuTools.removeItem(preferences);
 		}
+		convert.setVisible(option.isConvertOption());
 		
 		// MENU BOOKMARKS
 		home.setVisible(option.isHomeOption());
 		defaultHome.setVisible(option.isAddBookmarkOption());
 		addBookmark.setVisible(option.isAddBookmarkOption());
 		manageBookmark.setVisible(option.isManageBookmarkOption());
-		horizontalLineBookmark1.setVisible(option.isHomeOption() || option.isAddBookmarkOption()
-				|| option.isAddBookmarkOption());
+		horizontalLineBookmark1.setVisible(option.isHomeOption() || option.isAddBookmarkOption() || option.isAddBookmarkOption());
 		
 		// MENU REPORTS
 		if (workspace.getReports().size() > 0) {
 			menuReports.setVisible(true);
 			for (final GWTReport report : workspace.getReports()) {
-				MenuItem reportMenuItem = new MenuItem(Util.menuHTML("img/icon/menu/report.png", report.getName()),
-						true, new Command() {
-							@Override
-							public void execute() {
-								if (report.getFormElements().size() > 0) {
-									Main.get().reportPopup.setReport(report);
-									Main.get().reportPopup.center();
-								} else {
-									Map<String, String> parameters = new HashMap<String, String>();
-									parameters.put("format", String.valueOf(reportOutput));
-									Util.executeReport(report.getId(), parameters);
-								}
-							}
-						});
+				MenuItem reportMenuItem = new MenuItem(Util.menuHTML("img/icon/menu/report.png", report.getName()), true, new Command() {
+					@Override
+					public void execute() {
+						if (report.getFormElements().size() > 0) {
+							Main.get().reportPopup.setReport(report);
+							Main.get().reportPopup.center();
+						} else {
+							Map<String, String> parameters = new HashMap<String, String>();
+							parameters.put("format", String.valueOf(reportOutput));
+							Util.executeReport(report.getId(), parameters);
+						}
+					}
+				});
 				reportMenuItem.addStyleName("okm-MainMenuItem");
 				subMenuReports.addItem(reportMenuItem);
 			}
@@ -1739,17 +1824,15 @@ public class MainMenu extends Composite {
 							actualPath += "/" + paths[i];
 						}
 						
-						MenuItem docItem = new MenuItem(Util.menuHTML("../mime/" + doc.getMimeType(), doc.getName()),
-								true, new Command() {
-									@Override
-									public void execute() {
-										if (mainMenuOption.createFromTemplateOption) {
-											Main.get().templatePopup.reset(doc,
-													Main.get().activeFolderTree.getActualPath(), false);
-											Main.get().templatePopup.center();
-										}
-									}
-								});
+						MenuItem docItem = new MenuItem(Util.menuHTML("../mime/" + doc.getMimeType(), doc.getName()), true, new Command() {
+							@Override
+							public void execute() {
+								if (mainMenuOption.createFromTemplateOption) {
+									Main.get().templatePopup.reset(doc, Main.get().activeFolderTree.getActualPath(), false);
+									Main.get().templatePopup.center();
+								}
+							}
+						});
 						docItem.addStyleName("okm-MainMenuItem");
 						fldMenus.get(actualPath).addItem(docItem);
 						templateMenuItems.add(docItem);

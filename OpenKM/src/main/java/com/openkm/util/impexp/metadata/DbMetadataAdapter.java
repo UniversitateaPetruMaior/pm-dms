@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.openkm.bean.form.Input;
 import com.openkm.bean.form.Select;
+import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.ItemExistsException;
 import com.openkm.core.MimeTypeConfig;
@@ -52,7 +53,6 @@ import com.openkm.dao.bean.NodeDocumentVersion;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeMail;
 import com.openkm.dao.bean.NodeNote;
-import com.openkm.dao.bean.NodeSignature;
 import com.openkm.dao.bean.NodeProperty;
 import com.openkm.module.db.stuff.FsDataStore;
 import com.openkm.spring.PrincipalUtils;
@@ -73,6 +73,7 @@ public class DbMetadataAdapter extends MetadataAdapter {
 	public void importWithMetadata(DocumentMetadata dmd, InputStream is) throws ItemExistsException,
 			RepositoryException, DatabaseException, IOException {
 		log.debug("importWithMetadata({}, {})", new Object[] { dmd, is });
+		long begin = System.currentTimeMillis();
 		NodeDocumentVersion nDocVer = new NodeDocumentVersion();
 		NodeDocument nDoc = new NodeDocument();
 		Session session = null;
@@ -136,6 +137,11 @@ public class DbMetadataAdapter extends MetadataAdapter {
 			
 			if (dmd.getDescription() != null) {
 				nDoc.setDescription(dmd.getDescription());
+			}
+			
+			// Document path
+			if (Config.STORE_NODE_PATH) {
+				nDoc.setPath(parentPath + "/" + nDoc.getName());
 			}
 			
 			// Keywords & categories
@@ -224,19 +230,6 @@ public class DbMetadataAdapter extends MetadataAdapter {
 					session.save(nNote);
 				}
 			}
-
-			// TODO Signatures
-//			if (!dmd.getNotes().isEmpty()) {
-//				for (NoteMetadata nmd : dmd.getNotes()) {
-//					NodeNote nNote = new NodeNote();
-//					nNote.setUuid(UUID.randomUUID().toString());
-//					nNote.setParent(nDoc.getUuid());
-//					nNote.setAuthor(nmd.getUser());
-//					nNote.setCreated(nmd.getDate());
-//					nNote.setText(nmd.getText());
-//					session.save(nNote);
-//				}
-//			}
 			
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
@@ -255,12 +248,15 @@ public class DbMetadataAdapter extends MetadataAdapter {
 		
 		// Activity log
 		UserActivity.log(PrincipalUtils.getUser(), "CREATE_DOCUMENT", nDoc.getUuid(), dmd.getPath(), "Imported with metadata");
+		
+		log.trace("importWithMetadata.Time: {}", System.currentTimeMillis() - begin);
 	}
 	
 	@Override
 	public void importWithMetadata(String parentPath, VersionMetadata vmd, InputStream is) throws ItemExistsException,
 			RepositoryException, DatabaseException, IOException {
 		log.debug("importWithMetadata({}, {})", vmd, is);
+		long begin = System.currentTimeMillis();
 		VersionNumerationAdapter verNumAdapter = VersionNumerationFactory.getVersionNumerationAdapter();
 		NodeDocumentVersion nDocVer = new NodeDocumentVersion();
 		Session session = null;
@@ -315,7 +311,7 @@ public class DbMetadataAdapter extends MetadataAdapter {
 			if (vmd.getName() != null && !vmd.getName().equals("")) {
 				nDocVer.setName(vmd.getName());
 			} else {
-				nDocVer.setName(verNumAdapter.getNextVersionNumber(session, parentNode, nDocVer));
+				nDocVer.setName(verNumAdapter.getNextVersionNumber(session, parentNode, nDocVer, 0));
 			}
 			
 			// Persist file in datastore
@@ -339,12 +335,15 @@ public class DbMetadataAdapter extends MetadataAdapter {
 		} finally {
 			HibernateUtil.close(session);
 		}
+		
+		log.trace("importWithMetadata.Time: {}", System.currentTimeMillis() - begin);
 	}
 
 	@Override
 	public void importWithMetadata(FolderMetadata fmd) throws ItemExistsException, RepositoryException,
 			DatabaseException {
 		log.debug("importWithMetadata({})", fmd);
+		long begin = System.currentTimeMillis();
 		NodeFolder nFld = new NodeFolder();
 		Session session = null;
 		Transaction tx = null;
@@ -395,6 +394,11 @@ public class DbMetadataAdapter extends MetadataAdapter {
 				nFld.setDescription(fmd.getDescription());
 			}
 			
+			// Folder path
+			if (Config.STORE_NODE_PATH) {
+				nFld.setPath(parentPath + "/" + nFld.getName());
+			}
+			
 			// Keywords & categories
 			nFld.setKeywords(fmd.getKeywords());
 			nFld.setCategories(getValues(fmd.getCategories()));
@@ -432,19 +436,6 @@ public class DbMetadataAdapter extends MetadataAdapter {
 				}
 			}
 			
-			// TODO Signatures
-//			if (!fmd.getNotes().isEmpty()) {
-//				for (NoteMetadata nmd : fmd.getNotes()) {
-//					NodeNote nNote = new NodeNote();
-//					nNote.setUuid(UUID.randomUUID().toString());
-//					nNote.setParent(nFld.getUuid());
-//					nNote.setAuthor(nmd.getUser());
-//					nNote.setCreated(nmd.getDate());
-//					nNote.setText(nmd.getText());
-//					session.save(nNote);
-//				}
-//			}
-			
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);
@@ -458,11 +449,14 @@ public class DbMetadataAdapter extends MetadataAdapter {
 		
 		// Activity log
 		UserActivity.log(PrincipalUtils.getUser(), "CREATE_FOLDER", nFld.getUuid(), fmd.getPath(), "Imported with metadata");
+		
+		log.trace("importWithMetadata.Time: {}", System.currentTimeMillis() - begin);
 	}
 	
 	@Override
 	public void importWithMetadata(MailMetadata mmd) throws ItemExistsException, RepositoryException, DatabaseException {
 		log.debug("importWithMetadata({})", new Object[] { mmd });
+		long begin = System.currentTimeMillis();
 		NodeMail nMail = new NodeMail();
 		Session session = null;
 		Transaction tx = null;
@@ -529,6 +523,11 @@ public class DbMetadataAdapter extends MetadataAdapter {
 				nMail.setContent(mmd.getContent());
 			}
 			
+			// Document path
+			if (Config.STORE_NODE_PATH) {
+				nMail.setPath(parentPath + "/" + nMail.getName());
+			}
+			
 			// Keywords & categories
 			nMail.setKeywords(mmd.getKeywords());
 			nMail.setCategories(getValues(mmd.getCategories()));
@@ -561,19 +560,6 @@ public class DbMetadataAdapter extends MetadataAdapter {
 				}
 			}
 			
-			// TODO Signatures
-//			if (!mmd.getNotes().isEmpty()) {
-//				for (NoteMetadata nmd : mmd.getNotes()) {
-//					NodeNote nNote = new NodeNote();
-//					nNote.setUuid(UUID.randomUUID().toString());
-//					nNote.setParent(nMail.getUuid());
-//					nNote.setAuthor(nmd.getUser());
-//					nNote.setCreated(nmd.getDate());
-//					nNote.setText(nmd.getText());
-//					session.save(nNote);
-//				}
-//			}
-			
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);
@@ -587,6 +573,8 @@ public class DbMetadataAdapter extends MetadataAdapter {
 		
 		// Activity log
 		UserActivity.log(PrincipalUtils.getUser(), "CREATE_MAIL", nMail.getUuid(), mmd.getPath(), "Imported with metadata");
+		
+		log.trace("importWithMetadata.Time: {}", System.currentTimeMillis() - begin);
 	}
 	
 	/**

@@ -74,8 +74,7 @@ import com.openkm.frontend.client.widget.notify.NotifyPanel;
  */
 public class FancyFileUpload extends Composite implements HasText, HasChangeHandlers {
 	private final OKMGeneralServiceAsync generalService = (OKMGeneralServiceAsync) GWT.create(OKMGeneralService.class);
-	private final OKMRepositoryServiceAsync repositoryService = (OKMRepositoryServiceAsync) GWT
-			.create(OKMRepositoryService.class);
+	private final OKMRepositoryServiceAsync repositoryService = (OKMRepositoryServiceAsync) GWT.create(OKMRepositoryService.class);
 	
 	/**
 	 * State definitions
@@ -105,6 +104,9 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 	
 	private VerticalPanel mainPanel = new VerticalPanel();
 	public CheckBox notifyToUser = new CheckBox();
+	private HorizontalPanel hIncreaseVersionPanel = new HorizontalPanel();
+	private CheckBox increaseMajorVersion = new CheckBox();
+	private CheckBox increaseMinorVersion = new CheckBox();
 	private CheckBox importZip = new CheckBox();
 	private HTML versionCommentText = new HTML();
 	private HorizontalPanel hNotifyPanel = new HorizontalPanel();
@@ -113,6 +115,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 	private HTML versionHTMLBR;
 	private TextArea versionComment;
 	private ScrollPanel versionCommentScrollPanel;
+	public TextBox mails;
 	public TextBox users;
 	public TextBox roles;
 	private TextArea message;
@@ -242,7 +245,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 			
 			pendingPanel.setCellHorizontalAlignment(hPBPanel, HasAlignment.ALIGN_CENTER);
 			
-			diclousureFilesPanel = new DisclosurePanel("Cola de pendientes");
+			diclousureFilesPanel = new DisclosurePanel(Main.i18n("fileupload.label.pending.queue"));
 			pendingFilePanel = new VerticalPanel();
 			diclousureFilesPanel.add(pendingFilePanel);
 			diclousureFilesPanel.setVisible(false);
@@ -367,12 +370,17 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 			fireChange();
 			
 			// Reseting values
+			increaseMajorVersion.setValue(false);
+			increaseMinorVersion.setValue(false);
+			increaseMajorVersion.setHTML(Main.i18n("fileupload.increment.major.version"));
+			increaseMinorVersion.setHTML(Main.i18n("fileupload.increment.minor.version"));
 			fileName = "";
 			status.setText("");
 			statusZipNotify.setText("");
 			statusZipNotifyScroll.setVisible(false);
 			message.setText("");
 			versionComment.setText("");
+			mails.setText("");
 			users.setText("");
 			roles.setText("");
 			notifyPanel.reset();
@@ -392,6 +400,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 			hFileUpload.setVisible(true);
 			pendingPanel.setVisible(false);
 			hUnzipPanel.setVisible(enableImport);
+			hIncreaseVersionPanel.setVisible(action == UIFileUploadConstants.ACTION_UPDATE);
 			
 			resetProgressBar();
 		}
@@ -401,6 +410,8 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 		 */
 		public void resetWhileUploading(boolean enableImport, boolean enableNotifyButton) {
 			// Reseting values
+			increaseMajorVersion.setValue(false);
+			increaseMinorVersion.setValue(false);
 			statusZipNotify.setText("");
 			statusZipNotifyScroll.setVisible(false);
 			message.setText("");
@@ -422,6 +433,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 			importZip.setValue(false);
 			hFileUpload.setVisible(true);
 			hUnzipPanel.setVisible(enableImport);
+			hIncreaseVersionPanel.setVisible(action == UIFileUploadConstants.ACTION_UPDATE);
 		}
 		
 		/**
@@ -453,9 +465,19 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 		uploadForm.setNotifyToUser(notifyToUser.getValue());
 		uploadForm.setImportZip(importZip.getValue());
 		uploadForm.setVersionCommnent(versionComment.getText());
+		uploadForm.setMails(mails.getText());
 		uploadForm.setUsers(users.getText());
 		uploadForm.setRoles(roles.getText());
 		uploadForm.setMessage(message.getText());
+		
+		if (increaseMajorVersion.getValue()) {
+			uploadForm.setIncreaseVersion(1);
+		} else if (increaseMinorVersion.getValue()) {
+			uploadForm.setIncreaseVersion(2);
+		} else {
+			uploadForm.setIncreaseVersion(0);
+		}
+		
 		uploadForm.setVisible(false);
 		enqueueFileToUpload(new ArrayList<FileToUpload>(Arrays.asList(pendingFileToUpload.remove(0))));
 		
@@ -463,6 +485,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 		versionComment.setVisible(false);
 		versionCommentText.setVisible(false);
 		versionHTMLBR.setVisible(false);
+		hIncreaseVersionPanel.setVisible(false);
 	}
 	
 	/**
@@ -510,14 +533,33 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 		vVersionCommentPanel.add(versionCommentScrollPanel);
 		mainPanel.add(vVersionCommentPanel);
 		
-		// Adds unzip file
+		// Increase version
+		increaseMajorVersion.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				increaseMinorVersion.setValue(false);
+			}
+		});
+		increaseMinorVersion.addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				increaseMajorVersion.setValue(false);
+			}
+		});
+		hIncreaseVersionPanel = new HorizontalPanel();
+		hIncreaseVersionPanel.add(increaseMajorVersion);
+		hIncreaseVersionPanel.add(Util.hSpace("5"));
+		hIncreaseVersionPanel.add(increaseMinorVersion);
+		mainPanel.add(hIncreaseVersionPanel);
+		
+		// Ads unzip file
 		importZip = new CheckBox(Main.i18n("fileupload.label.importZip"));
 		importZip.addClickHandler(new ClickHandler() {
 			@Override
 			public void onClick(ClickEvent event) {
 				if (importZip.getValue()) {
 					notifyToUser.setValue(false);
-					vNotifyPanel.setVisible(false);
+					vNotifyPanel.setVisible(false);					
 				}
 			}
 		});
@@ -529,6 +571,9 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 		mainPanel.add(hUnzipPanel);
 		
 		// Adds the notify checkbox
+		mails = new TextBox();
+		mails.setName("mails");
+		mails.setVisible(false);
 		users = new TextBox();
 		users.setName("users");
 		users.setVisible(false);
@@ -582,6 +627,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 		vNotifyPanel.add(notifyPanel);
 		vNotifyPanel.add(new HTML("<br/>"));
 		
+		mainPanel.add(mails);
 		mainPanel.add(users);
 		mainPanel.add(roles);
 		mainPanel.add(vNotifyPanel);
@@ -679,12 +725,14 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 				versionComment.setVisible(false);
 				versionCommentText.setVisible(false);
 				versionHTMLBR.setVisible(false);
+				hIncreaseVersionPanel.setVisible(false);
 				break;
 			
 			case UIFileUploadConstants.ACTION_UPDATE:
 				versionComment.setVisible(true);
 				versionCommentText.setVisible(true);
 				versionHTMLBR.setVisible(true);
+				hIncreaseVersionPanel.setVisible(true);
 				break;
 		}
 	}
@@ -694,9 +742,12 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 	 */
 	public void langRefresh() {
 		notifyToUser.setText(Main.i18n("fileupload.label.users.notify"));
+		increaseMajorVersion.setHTML(Main.i18n("fileupload.increment.major.version"));
+		increaseMinorVersion.setHTML(Main.i18n("fileupload.increment.minor.version"));
 		importZip.setText(Main.i18n("fileupload.label.importZip"));
 		versionCommentText.setHTML(Main.i18n("fileupload.label.comment"));
 		commentTXT.setHTML(Main.i18n("fileupload.label.notify.comment"));
+		diclousureFilesPanel.getHeaderTextAccessor().setText(Main.i18n("fileupload.label.pending.queue"));
 		notifyPanel.langRefresh();
 	}
 	
@@ -789,6 +840,24 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 	}
 	
 	/**
+	 * enableNotifyExternalUsers
+	 */
+	public void enableNotifyExternalUsers() {
+		notifyPanel.enableNotifyExternalUsers();
+	}
+	
+	/**
+	 * setIncrementalVersion
+	 */
+	public void setIncreaseVersion(int incrementVersion) {
+		if (incrementVersion==0) {
+			mainPanel.remove(hIncreaseVersionPanel);
+		} else if (incrementVersion==1) {
+			hIncreaseVersionPanel.remove(increaseMinorVersion);
+		}
+	}
+	
+	/**
 	 * getFileName
 	 */
 	public String getFilename() {
@@ -839,6 +908,12 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 	 * addFileNameToPendingPanel
 	 */
 	private void addFileNameToPendingPanel(String fileName) {
+		// Get name from linux or windows path
+		if (fileName.contains("/")) {
+			fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+		} else if (fileName.contains("\\")) {
+			fileName = fileName.substring(fileName.lastIndexOf('\\') + 1);
+		}
 		if (fileName.length() > MAX_FILENAME_LENGHT) {
 			pendingFilePanel.add(new HTML(fileName.substring(0, MAX_FILENAME_LENGHT) + " ..."));
 		} else {
@@ -1012,6 +1087,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 	public void resetOnlyShowUploading() {
 		hNotifyPanel.setVisible(false);
 		hUnzipPanel.setVisible(false);
+		hIncreaseVersionPanel.setVisible(false);
 	}
 	
 	/**
@@ -1058,9 +1134,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 											|| Main.get().workspaceUserProperties.getWorkspace().isWizardCategories() || Main
 											.get().workspaceUserProperties.getWorkspace().isWizardKeywords())) {
 								wizard = true;
-							} else if (uploadForm.isImportZip()) {
-								// Nothing to to here
-							}
+							} 
 							
 							if (wizard && docPath != null) {
 								Main.get().wizardPopup.start(docPath, false);
@@ -1164,6 +1238,7 @@ public class FancyFileUpload extends Composite implements HasText, HasChangeHand
 	public native void initJavaScriptApi(FancyFileUpload ffu) /*-{
 		$wnd.jsWizard = function(docPath, result) {
 			ffu.@com.openkm.frontend.client.widget.upload.FancyFileUpload::jsWizard(Ljava/lang/String;Ljava/lang/String;)(docPath, result);
+			return true;
 		}
 	}-*/;
 }

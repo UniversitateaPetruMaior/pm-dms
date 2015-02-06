@@ -21,6 +21,9 @@
 
 package com.openkm.bean;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "appVersion")
 public class AppVersion {
 	public static final String EXTENSION_COM = "Community";
 	

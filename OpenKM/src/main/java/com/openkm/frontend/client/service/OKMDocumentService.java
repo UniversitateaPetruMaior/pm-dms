@@ -26,40 +26,66 @@ import java.util.Map;
 
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+
 import com.openkm.frontend.client.OKMException;
 import com.openkm.frontend.client.bean.GWTDocument;
+import com.openkm.frontend.client.bean.GWTExtendedAttributes;
 import com.openkm.frontend.client.bean.GWTVersion;
 import com.openkm.frontend.client.bean.form.GWTFormElement;
+import com.openkm.frontend.client.widget.filebrowser.GWTFilter;
 
 /**
  * @author jllort
- *
  */
 @RemoteServiceRelativePath("Document")
 public interface OKMDocumentService extends RemoteService {
-	public List<GWTDocument> getChilds(String fldId) throws OKMException;
+	public List<GWTDocument> getChilds(String fldId, Map<String, GWTFilter> mapFilter) throws OKMException;
+	
 	public List<GWTVersion> getVersionHistory(String docPath) throws OKMException;
+	
 	public void delete(String docPath) throws OKMException;
+	
 	public void checkout(String docPath) throws OKMException;
-	public void cancelCheckout (String docPath) throws OKMException;
+	
+	public void cancelCheckout(String docPath) throws OKMException;
+	
 	public void lock(String docPath) throws OKMException;
+	
 	public void unlock(String docPath) throws OKMException;
+	
 	public GWTDocument rename(String docPath, String newName) throws OKMException;
+	
 	public void move(String docPath, String destPath) throws OKMException;
+	
 	public void purge(String docPath) throws OKMException;
+	
 	public void restoreVersion(String docPath, String versionId) throws OKMException;
+	
 	public GWTDocument get(String docPath) throws OKMException;
+	
 	public void copy(String docPath, String fldPath) throws OKMException;
+	
 	public Boolean isValid(String docPath) throws OKMException;
+	
 	public Long getVersionHistorySize(String docPath) throws OKMException;
+	
 	public void purgeVersionHistory(String docPath) throws OKMException;
+	
 	public void forceUnlock(String docPath) throws OKMException;
+	
 	public void forceCancelCheckout(String docPath) throws OKMException;
+	
 	public GWTDocument createFromTemplate(String docPath, String destinationPath, List<GWTFormElement> formProperties,
-			Map<String, List<Map<String,String>>> tableProperties) throws OKMException;
+			Map<String, List<Map<String, String>>> tableProperties) throws OKMException;
+	
 	public String updateFromTemplate(String docPath, String destinationPath, List<GWTFormElement> formProperties,
-			Map<String, List<Map<String,String>>> tableProperties) throws OKMException;
+			Map<String, List<Map<String, String>>> tableProperties) throws OKMException;
+	
 	public String convertToPdf(String docPath) throws OKMException;
+	
+	public void mergePdf(String docName, List<String> paths) throws OKMException;
+	
 	public List<GWTDocument> getAllTemplates() throws OKMException;
-	public GWTDocument createFromTemplate(String tplPath, String fldPath, String newName) throws OKMException;
+	
+	public void createFromTemplate(String docPath, String fldPath, String name, GWTExtendedAttributes attributes) throws OKMException;
 }

@@ -30,6 +30,8 @@ public class ProfileMenuTool implements Serializable {
 	private boolean debugVisible;
 	private boolean administrationVisible;
 	private boolean preferencesVisible;
+	private boolean omrVisible;
+	private boolean convertVisible;
 
 	public boolean isLanguagesVisible() {
 		return languagesVisible;
@@ -70,7 +72,23 @@ public class ProfileMenuTool implements Serializable {
 	public void setPreferencesVisible(boolean preferencesVisible) {
 		this.preferencesVisible = preferencesVisible;
 	}
-	
+
+	public boolean isOmrVisible() {
+		return omrVisible;
+	}
+
+	public void setOmrVisible(boolean omrVisible) {
+		this.omrVisible = omrVisible;
+	}
+
+	public boolean isConvertVisible() {
+		return convertVisible;
+	}
+
+	public void setConvertVisible(boolean convertVisible) {
+		this.convertVisible = convertVisible;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
@@ -79,6 +97,8 @@ public class ProfileMenuTool implements Serializable {
 		sb.append(", debugVisible="); sb.append(debugVisible);
 		sb.append(", administrationVisible="); sb.append(administrationVisible);
 		sb.append(", preferencesVisible="); sb.append(preferencesVisible);
+		sb.append(", omrVisible="); sb.append(omrVisible);
+		sb.append(", convertVisible="); sb.append(convertVisible);
 		sb.append("}");
 		return sb.toString();
 	}

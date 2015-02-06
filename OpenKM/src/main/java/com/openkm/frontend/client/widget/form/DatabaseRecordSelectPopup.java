@@ -48,7 +48,7 @@ import com.openkm.frontend.client.service.OKMKeyValueService;
 import com.openkm.frontend.client.service.OKMKeyValueServiceAsync;
 import com.openkm.frontend.client.util.MessageFormat;
 import com.openkm.frontend.client.util.Util;
-import com.openkm.frontend.client.widget.searchin.HasSearch;
+import com.openkm.frontend.client.widget.searchin.HasPropertyHandler;
 
 /**
  * DatabaseRecordSelectPopup
@@ -74,7 +74,7 @@ public class DatabaseRecordSelectPopup extends DialogBox {
 	/**
 	 * DatabaseRecordSelectPopup
 	 */
-	public DatabaseRecordSelectPopup(final GWTSuggestBox suggestBox, final HasDatabaseRecord databaseRecord, final HasSearch search) {
+	public DatabaseRecordSelectPopup(final GWTSuggestBox suggestBox, final HasDatabaseRecord databaseRecord, final HasPropertyHandler propertyHandler) {
 		// Establishes auto-close when click outside
 		super(false,true);
 		this.suggestBox = suggestBox;
@@ -133,8 +133,8 @@ public class DatabaseRecordSelectPopup extends DialogBox {
 					// Updating suggestbox values ( for when value will be update )
 					suggestBox.setValue(rowKeyValueMap.get(selectedRow).getKey());
 					suggestBox.setText(rowKeyValueMap.get(selectedRow).getValue());
-					if (search!=null) {
-						search.metadataValueChanged();
+					if (propertyHandler!=null) {
+						propertyHandler.metadataValueChanged();
 					}
 				}
 				hide();

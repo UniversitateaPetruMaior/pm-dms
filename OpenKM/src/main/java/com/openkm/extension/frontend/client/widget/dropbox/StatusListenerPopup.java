@@ -31,6 +31,8 @@ import com.google.gwt.user.client.ui.HasAlignment;
 import com.google.gwt.user.client.ui.ScrollPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.openkm.extension.frontend.client.bean.GWTDropboxStatusListener;
+import com.openkm.frontend.client.bean.GWTFolder;
+import com.openkm.frontend.client.bean.GWTPermission;
 import com.openkm.frontend.client.extension.comunicator.GeneralComunicator;
 import com.openkm.frontend.client.extension.comunicator.UtilComunicator;
 import com.openkm.frontend.client.util.Util;
@@ -113,12 +115,10 @@ public class StatusListenerPopup extends DialogBox {
 		int row = table.getRowCount();
 		
 		if (dsl.getFolder() != null) {
-			if (dsl.getFolder().isHasChildren()) {
-				table.setHTML(row, 0, Util.imageItemHTML("img/menuitem_childs.gif"));
-			} else {
-				table.setHTML(row, 0, Util.imageItemHTML("img/menuitem_empty.gif"));
-			}
-			
+			GWTFolder folder = new GWTFolder();
+			folder.setPermissions(GWTPermission.READ | GWTPermission.WRITE);
+			folder.setHasChildren(dsl.getFolder().isHasChildren());
+			table.setHTML(row, 0, Util.imageItemHTML(GeneralComunicator.getFolderIcon(folder)));
 			HTML name = new HTML(dsl.getFolder().getPath());
 			table.setWidget(row, 1, name);
 			table.getFlexCellFormatter().setWidth(row, 0, "20");

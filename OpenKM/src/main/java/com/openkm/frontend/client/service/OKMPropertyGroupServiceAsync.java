@@ -36,8 +36,9 @@ public interface OKMPropertyGroupServiceAsync {
 	public void getAllGroups(String path, AsyncCallback<List<GWTPropertyGroup>> callback);
 	public void addGroup(String path, String grpName, AsyncCallback<?> callback);
 	public void getGroups(String path, AsyncCallback<List<GWTPropertyGroup>> callback);
-	public void getProperties(String path, String grpName, AsyncCallback<List<GWTFormElement>> callback);
+	public void getProperties(String path, String grpName, boolean suggestion, AsyncCallback<List<GWTFormElement>> callback);
 	public void setProperties(String path, String grpName, List<GWTFormElement> formProperties, AsyncCallback<?> callback);
 	public void removeGroup( String path, String grpName, AsyncCallback<?> callback);
 	public void getPropertyGroupForm(String grpName, AsyncCallback<List<GWTFormElement>> callback);
+	public void getPropertyGroupForm(String grpName, String path, boolean suggestion, AsyncCallback<List<GWTFormElement>> callback);
 }

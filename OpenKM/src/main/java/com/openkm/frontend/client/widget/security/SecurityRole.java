@@ -66,7 +66,7 @@ public class SecurityRole extends Composite implements HasWidgets {
 	private SimplePanel spHeight;
 	private HTML addButton;
 	private HTML removeButton;
-	private String path = "";
+	private String uuid = "";
 	private int width = 612;
 	private Map<String, Integer> actualGrants;
 	private Map<String, Integer> changedGrants;
@@ -116,6 +116,16 @@ public class SecurityRole extends Composite implements HasWidgets {
 		panel.setSize(String.valueOf(width), "365");
 		
 		initWidget(panel);
+	}
+	
+	/**
+	 * initSecurity
+	 */
+	public void initSecurity() {		
+		assignedRole.initSecurity();
+		unassignedRole.initSecurity();
+		
+		panel.setSize(String.valueOf(width), "365");
 	}
 	
 	/**
@@ -172,10 +182,10 @@ public class SecurityRole extends Composite implements HasWidgets {
 	 * Gets the granted roles
 	 */
 	public void getGrantedRoles() {
-		if (path != null) {
+		if (uuid != null) {
 			actualGrants = new HashMap<String, Integer>();
 			changedGrants = new HashMap<String, Integer>();
-			authService.getGrantedRoles(path, new AsyncCallback<Map<String, Integer>>() {
+			authService.getGrantedRoles(uuid, new AsyncCallback<Map<String, Integer>>() {
 				public void onSuccess(Map<String, Integer> result) {
 					List<String> rolesList = new ArrayList<String>();
 					
@@ -205,8 +215,8 @@ public class SecurityRole extends Composite implements HasWidgets {
 	 * Gets the granted roles
 	 */
 	public void getUngrantedRoles() {
-		if (path != null) {
-			authService.getUngrantedRoles(path, new AsyncCallback<List<String>>() {
+		if (uuid != null) {
+			authService.getUngrantedRoles(uuid, new AsyncCallback<List<String>>() {
 				public void onSuccess(List<String> result) {
 					for (String role : result) {
 						unassignedRole.addRow(role, false);
@@ -224,9 +234,9 @@ public class SecurityRole extends Composite implements HasWidgets {
 	 * Gets the granted roles by filter
 	 */
 	public void getFilteredUngrantedRoles(String filter) {
-		if (path != null) {
+		if (uuid != null) {
 			resetUnassigned();
-			authService.getFilteredUngrantedRoles(path, filter, new AsyncCallback<List<String>>() {
+			authService.getFilteredUngrantedRoles(uuid, filter, new AsyncCallback<List<String>>() {
 				public void onSuccess(List<String> result) {
 					for (String role : result) {
 						unassignedRole.addRow(role, false);
@@ -244,10 +254,10 @@ public class SecurityRole extends Composite implements HasWidgets {
 	 * Grant the role
 	 */
 	public void addRole(final String role) {
-		if (path != null) {
+		if (uuid != null) {
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.grantRole(path, role, GWTPermission.READ, Main.get().securityPopup.recursive.getValue(),
+				authService.grantRole(uuid, role, GWTPermission.READ, Main.get().securityPopup.recursive.getValue(),
 						new AsyncCallback<Object>() {
 							public void onSuccess(Object result) {
 								assignedRole.addRow(role, new Integer(GWTPermission.READ), false);
@@ -283,10 +293,10 @@ public class SecurityRole extends Composite implements HasWidgets {
 	 * @param user The role
 	 */
 	public void revokeRole(final String role) {
-		if (path != null) {
+		if (uuid != null) {
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.revokeRole(path, role, Main.get().securityPopup.recursive.getValue(),
+				authService.revokeRole(uuid, role, Main.get().securityPopup.recursive.getValue(),
 						new AsyncCallback<Object>() {
 							public void onSuccess(Object result) {
 								unassignedRole.addRow(role, false);
@@ -325,12 +335,12 @@ public class SecurityRole extends Composite implements HasWidgets {
 	 * @param permissions The permissions value
 	 */
 	public void grant(String role, int permissions, boolean recursive, final int flag_property) {
-		if (path != null) {
+		if (uuid != null) {
 			Log.debug("RoleScrollTable.grant(" + role + ", " + permissions + ", " + recursive + ")");
 			
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.grantRole(path, role, permissions, recursive, new AsyncCallback<Object>() {
+				authService.grantRole(uuid, role, permissions, recursive, new AsyncCallback<Object>() {
 					public void onSuccess(Object result) {
 						Log.debug("RoleScrollTable.callbackGrantRole.onSuccess(" + result + ")");
 						Main.get().securityPopup.status.unsetFlag_update();
@@ -414,12 +424,12 @@ public class SecurityRole extends Composite implements HasWidgets {
 	 * @param permissions The permissions value
 	 */
 	public void revoke(String role, int permissions, boolean recursive, final int flag_property) {
-		if (path != null) {
+		if (uuid != null) {
 			Log.debug("RoleScrollTable.revoke(" + role + ", " + permissions + ", " + recursive + ")");
 			
 			if (!Main.get().workspaceUserProperties.getWorkspace().isSecurityModeMultiple()) {
 				Main.get().securityPopup.status.setFlag_update();
-				authService.revokeRole(path, role, permissions, recursive, new AsyncCallback<Object>() {
+				authService.revokeRole(uuid, role, permissions, recursive, new AsyncCallback<Object>() {
 					public void onSuccess(Object result) {
 						Log.debug("RoleScrollTable.callbackRevokeRole.onSuccess(" + result + ")");
 						FixedWidthGrid dataTable = assignedRole.getDataTable();
@@ -535,13 +545,13 @@ public class SecurityRole extends Composite implements HasWidgets {
 	}
 	
 	/**
-	 * Sets the path
+	 * Sets the uuid
 	 * 
-	 * @param path The path
+	 * @param uuid The uuid
 	 */
-	public void setPath(String path) {
-		assignedRole.setPath(path);
-		this.path = path;
+	public void setUuid(String uuid) {
+		assignedRole.setUuid(uuid);
+		this.uuid = uuid;
 	}
 	
 	/**

@@ -304,9 +304,6 @@ public class DropboxServlet extends OKMRemoteServiceServlet implements OKMDropbo
 		} catch (ItemExistsException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_ItemExists), e.getMessage());
-		} catch (ExtensionException e) {
-			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_Extension), e.getMessage());
 		} catch (AutomationException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_Automation), e.getMessage());
@@ -319,6 +316,9 @@ public class DropboxServlet extends OKMRemoteServiceServlet implements OKMDropbo
 		} catch (NoSuchGroupException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_NoSuchGroup), e.getMessage());
+		} catch (ExtensionException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_Extension), e.getMessage());
 		} finally {
 			IOUtils.closeQuietly(fos);
 			IOUtils.closeQuietly(is);
@@ -353,9 +353,6 @@ public class DropboxServlet extends OKMRemoteServiceServlet implements OKMDropbo
 		} catch (RepositoryException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_Repository), e.getMessage());
-		} catch (ExtensionException e) {
-			log.error(e.getMessage(), e);
-			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_Extension), e.getMessage());
 		} catch (DropboxUnlinkedException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_Dropbox), e.getMessage());
@@ -380,6 +377,9 @@ public class DropboxServlet extends OKMRemoteServiceServlet implements OKMDropbo
 		} catch (NoSuchGroupException e) {
 			log.error(e.getMessage(), e);
 			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_NoSuchGroup), e.getMessage());
+		} catch (ExtensionException e) {
+			log.error(e.getMessage(), e);
+			throw new OKMException(ErrorCode.get(ErrorCode.ORIGIN_OKMDropboxService, ErrorCode.CAUSE_Extension), e.getMessage());
 		}
 	}
 	
@@ -504,9 +504,9 @@ public class DropboxServlet extends OKMRemoteServiceServlet implements OKMDropbo
 	 * importFolderToDropbox
 	 */
 	private void importFolderToDropbox(GWTDropboxEntry gwtDropboxEntry, String path) throws PathNotFoundException,
-			ItemExistsException, AccessDeniedException, RepositoryException, DatabaseException, ExtensionException,
+			ItemExistsException, AccessDeniedException, RepositoryException, DatabaseException,
 			AutomationException, OKMException, DropboxUnlinkedException, DropboxServerException, DropboxIOException,
-			DropboxException, PrincipalAdapterException, IOException, ParseException, NoSuchGroupException {
+			DropboxException, PrincipalAdapterException, IOException, ParseException, NoSuchGroupException, ExtensionException {
 		Folder folder = new Folder();
 		folder.setPath(path + "/" + gwtDropboxEntry.getFileName());
 		folder = OKMFolder.getInstance().create(null, folder);

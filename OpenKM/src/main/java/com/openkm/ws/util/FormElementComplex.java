@@ -160,27 +160,32 @@ public class FormElementComplex implements Serializable {
 			Input i = (Input) fe;
 			fec.setType(i.getType());
 			fec.setValue(i.getValue());
+			fec.setValidators(i.getValidators());
 			fec.setReadonly(i.isReadonly());
 			fec.setObjClass(i.getClass().getName());
 		} else if (fe instanceof SuggestBox) {
 			SuggestBox sb = (SuggestBox) fe;
 			fec.setValue(sb.getValue());
+			fec.setValidators(sb.getValidators());
 			fec.setReadonly(sb.isReadonly());
 			fec.setObjClass(sb.getClass().getName());
 		} else if (fe instanceof TextArea) {
 			TextArea ta = (TextArea) fe;
 			fec.setValue(ta.getValue());
+			fec.setValidators(ta.getValidators());
 			fec.setReadonly(ta.isReadonly());
 			fec.setObjClass(ta.getClass().getName());
 		} else if (fe instanceof CheckBox) {
 			CheckBox cb = (CheckBox) fe;
 			fec.setValue(Boolean.toString(cb.getValue()));
+			fec.setValidators(cb.getValidators());
 			fec.setReadonly(cb.isReadonly());
 			fec.setObjClass(cb.getClass().getName());
 		} else if (fe instanceof Select) {
 			Select s = (Select) fe;
 			fec.setType(s.getType());
 			fec.setOptions(s.getOptions());
+			fec.setValidators(s.getValidators());
 			fec.setReadonly(s.isReadonly());
 			fec.setObjClass(s.getClass().getName());
 		} else if (fe instanceof Button) {

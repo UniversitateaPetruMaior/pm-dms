@@ -36,35 +36,37 @@ import com.openkm.frontend.client.util.Util;
  * Search result menu
  * 
  * @author jllort
+ *
  */
 public class Menu extends Composite {
 	
-	private boolean downloadOption = false;
-	private boolean goOption = false;
+	private boolean downloadOption 				= false;
+	private boolean goOption 					= false;
+	private boolean findSimilarDocumentOption 	= false;
 	
 	private MenuBar searchMenu;
 	private MenuItem download;
 	private MenuItem go;
+	private MenuItem findSimilarDocument;
 	
 	/**
 	 * Browser menu
 	 */
 	public Menu() {
-		// The item selected must be called on style.css : .okm-MenuBar
-		// .gwt-MenuItem-selected
+		// The item selected must be called on style.css : .okm-MenuBar .gwt-MenuItem-selected
 		
 		// First initialize language values
 		searchMenu = new MenuBar(true);
-		download = new MenuItem(
-				Util.menuHTML("img/icon/actions/download.gif", Main.i18n("search.result.menu.download")), true,
-				downloadFile);
+		download = new MenuItem(Util.menuHTML("img/icon/actions/download.gif", Main.i18n("search.result.menu.download")), true, downloadFile);
 		download.addStyleName("okm-MenuItem");
-		go = new MenuItem(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")),
-				true, goDirectory);
+		go = new MenuItem(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")), true, goDirectory);
 		go.addStyleName("okm-MenuItem");
+		findSimilarDocument = new MenuItem(Util.menuHTML("img/icon/actions/similar_find.png", Main.i18n("general.menu.file.find.similar.document")), true, findSimilarOKM);
+		findSimilarDocument.addStyleName("okm-MenuItem");
 		
 		searchMenu.addItem(download);
 		searchMenu.addItem(go);
+		searchMenu.addItem(findSimilarDocument);
 		searchMenu.setStyleName("okm-MenuBar");
 		
 		initWidget(searchMenu);
@@ -90,12 +92,23 @@ public class Menu extends Composite {
 		}
 	};
 	
+	// Command menu to find similardocument
+	Command findSimilarOKM = new Command() {
+		public void execute() {
+			if (findSimilarDocumentOption) {
+				Main.get().mainPanel.topPanel.toolBar.executeFindSimilarDocument();
+				hide();
+			}
+		}
+	};
+
 	/**
-	 * Refresh language values
+	 *  Refresh language values
 	 */
 	public void langRefresh() {
 		download.setHTML(Util.menuHTML("img/icon/actions/download.gif", Main.i18n("search.result.menu.download")));
 		go.setHTML(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")));
+		findSimilarDocument.setHTML(Util.menuHTML("img/icon/actions/similar_find.png", Main.i18n("general.menu.file.find.similar.document")));
 	}
 	
 	/**
@@ -111,8 +124,9 @@ public class Menu extends Composite {
 	 * @param folder
 	 */
 	public void checkMenuOptionPermissions(GWTFolder folder) {
-		downloadOption = false;
-		goOption = true;
+		downloadOption 				= false;
+		goOption 					= true;
+		findSimilarDocumentOption 	= false;
 	}
 	
 	/**
@@ -121,8 +135,9 @@ public class Menu extends Composite {
 	 * @param doc
 	 */
 	public void checkMenuOptionPermissions(GWTDocument doc) {
-		downloadOption = true;
-		goOption = true;
+		downloadOption				= true;
+		goOption 					= true;
+		findSimilarDocumentOption 	= true;
 	}
 	
 	/**
@@ -131,25 +146,19 @@ public class Menu extends Composite {
 	 * @param mail
 	 */
 	public void checkMenuOptionPermissions(GWTMail mail) {
-		downloadOption = true;
-		goOption = true;
+		downloadOption 				= true;
+		goOption 					= true;
+		findSimilarDocumentOption 	= false;
 	}
 	
 	/**
 	 * Evaluates menu options
 	 */
 	public void evaluateMenuOptions() {
-		if (downloadOption) {
-			enable(download);
-		} else {
-			disable(download);
-		}
-		if (goOption) {
-			enable(go);
-		} else {
-			disable(go);
-		}
-		if (Main.get().mainPanel.search.searchBrowser.searchResult.searchCompactResult.table.isFolderSelected()) {
+		if (downloadOption){enable(download);} else {disable(download);}
+		if (goOption){enable(go);} else {disable(go);}
+		if (findSimilarDocumentOption){enable(findSimilarDocument);} else {disable(findSimilarDocument);}
+		if (Main.get().mainPanel.search.searchBrowser.searchResult.searchCompactResult.table.isFolderSelected() ) {
 			go.setHTML(Util.menuHTML("img/icon/actions/goto_folder.gif", Main.i18n("search.result.menu.go.folder")));
 		} else {
 			go.setHTML(Util.menuHTML("img/icon/actions/goto_document.gif", Main.i18n("search.result.menu.go.document")));
@@ -187,6 +196,9 @@ public class Menu extends Composite {
 		}
 		if (!option.isGotoFolderOption()) {
 			searchMenu.removeItem(go);
+		}
+		if (!option.isSimilarDocumentVisible()) {
+			searchMenu.removeItem(findSimilarDocument);
 		}
 	}
 }

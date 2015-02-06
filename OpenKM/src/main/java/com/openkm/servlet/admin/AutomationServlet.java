@@ -24,7 +24,9 @@ package com.openkm.servlet.admin;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -54,10 +56,21 @@ public class AutomationServlet extends BaseServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger log = LoggerFactory.getLogger(AutomationServlet.class);
 	private static String ats[] = { AutomationRule.AT_PRE, AutomationRule.AT_POST };
-	private static String events[] = { AutomationRule.EVENT_DOCUMENT_CREATE, AutomationRule.EVENT_DOCUMENT_MOVE,
-		AutomationRule.EVENT_FOLDER_CREATE, AutomationRule.EVENT_PROPERTY_GROUP_ADD, 
-		AutomationRule.EVENT_PROPERTY_GROUP_SET, AutomationRule.EVENT_TEXT_EXTRACTOR,
-		AutomationRule.EVENT_CONVERSION_PDF, AutomationRule.EVENT_CONVERSION_SWF };
+	private static final Map<String, String> events = new LinkedHashMap<String, String>() {
+		private static final long serialVersionUID = 1L;
+		{
+            put(AutomationRule.EVENT_DOCUMENT_CREATE, "Document creation");
+            put(AutomationRule.EVENT_DOCUMENT_UPDATE, "Document update");
+            put(AutomationRule.EVENT_DOCUMENT_MOVE, "Document move");
+            put(AutomationRule.EVENT_FOLDER_CREATE, "Folder creation");
+            put(AutomationRule.EVENT_MAIL_CREATE, "Mail creation");
+            put(AutomationRule.EVENT_PROPERTY_GROUP_ADD, "Add property group");
+            put(AutomationRule.EVENT_PROPERTY_GROUP_SET, "Set property group");
+            put(AutomationRule.EVENT_TEXT_EXTRACTOR, "Text extraction");
+            put(AutomationRule.EVENT_CONVERSION_PDF, "Convert to PDF");
+            put(AutomationRule.EVENT_CONVERSION_SWF, "Convert to SWF");
+        }
+    };
 	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		log.debug("doGet({}, {})", request, response);
@@ -121,6 +134,7 @@ public class AutomationServlet extends BaseServlet {
 		log.debug("ruleList({}, {}, {})", new Object[] { userId, request, response });
 		ServletContext sc = getServletContext();
 		sc.setAttribute("automationRules", AutomationDAO.getInstance().findAll());
+		sc.setAttribute("events", events);
 		sc.getRequestDispatcher("/admin/automation_rule_list.jsp").forward(request, response);
 		
 		// Activity log
@@ -141,6 +155,12 @@ public class AutomationServlet extends BaseServlet {
 		for (AutomationValidation av : aRule.getValidations()) {
 			for (int i = 0; i < av.getParams().size(); i++) {
 				av.getParams().set(i, convertToHumanValue(av.getParams().get(i), av.getType(), i));
+			}
+		}
+		
+		for (AutomationAction aa : aRule.getActions()) {
+			for (int i = 0; i < aa.getParams().size(); i++) {
+				aa.getParams().set(i, convertToHumanValue(aa.getParams().get(i), aa.getType(), i));
 			}
 		}
 		
@@ -206,9 +226,11 @@ public class AutomationServlet extends BaseServlet {
 	
 	/**
 	 * New metadata action
+	 * @throws RepositoryException 
+	 * @throws PathNotFoundException 
 	 */
 	private void createAction(String userId, HttpServletRequest request, HttpServletResponse response) throws ServletException,
-			IOException, DatabaseException {
+			IOException, DatabaseException, PathNotFoundException, RepositoryException {
 		long arId = WebUtils.getLong(request, "ar_id");
 		AutomationAction aa = new AutomationAction();
 		aa.setType(WebUtils.getLong(request, "am_id"));
@@ -219,13 +241,15 @@ public class AutomationServlet extends BaseServlet {
 		String am_param01 = WebUtils.getString(request, "am_param01");
 		
 		if (!am_param00.equals("")) {
-			params.add(am_param00);
+			am_param00 = convertToInternalValue(am_param00, aa.getType(), 0);
 		}
 		
 		if (!am_param01.equals("")) {
-			params.add(am_param01);
+			am_param01 = convertToInternalValue(am_param01, aa.getType(), 1);
 		}
 		
+		params.add(am_param00);
+		params.add(am_param01);
 		aa.setParams(params);
 		AutomationDAO.getInstance().createAction(aa);
 		AutomationRule ar = AutomationDAO.getInstance().findByPk(arId);
@@ -261,9 +285,11 @@ public class AutomationServlet extends BaseServlet {
 	
 	/**
 	 * Edit action
+	 * @throws RepositoryException 
+	 * @throws PathNotFoundException 
 	 */
 	private void editAction(String userId, HttpServletRequest request, HttpServletResponse response) throws ServletException,
-			IOException, DatabaseException {
+			IOException, DatabaseException, PathNotFoundException, RepositoryException {
 		long aaId = WebUtils.getLong(request, "aa_id");
 		AutomationAction aa = AutomationDAO.getInstance().findActionByPk(aaId);
 		aa.setOrder(WebUtils.getInt(request, "am_order"));
@@ -273,13 +299,13 @@ public class AutomationServlet extends BaseServlet {
 		String am_param01 = WebUtils.getString(request, "am_param01");
 		
 		if (!am_param00.equals("")) {
-			params.add(am_param00);
+			am_param00 = convertToInternalValue(am_param00, aa.getType(), 0);
 		}
-		
 		if (!am_param01.equals("")) {
-			params.add(am_param01);
+			am_param01 = convertToInternalValue(am_param01, aa.getType(), 1);
 		}
-		
+		params.add(am_param00);
+		params.add(am_param01);		
 		aa.setParams(params);
 		AutomationDAO.getInstance().updateAction(aa);
 		
@@ -301,13 +327,14 @@ public class AutomationServlet extends BaseServlet {
 		String am_param01 = WebUtils.getString(request, "am_param01");
 		
 		if (!am_param00.equals("")) {
-			params.add(convertToInternalValue(am_param00, av.getType(), 0));
+			am_param00 = convertToInternalValue(am_param00, av.getType(), 0);
 		}
-		
 		if (!am_param01.equals("")) {
-			params.add(convertToInternalValue(am_param01, av.getType(), 1));
+			am_param01 = convertToInternalValue(am_param01, av.getType(), 1);
 		}
 		
+		params.add(am_param00);
+		params.add(am_param01);
 		av.setParams(params);
 		AutomationDAO.getInstance().updateValidation(av);
 		
@@ -330,13 +357,14 @@ public class AutomationServlet extends BaseServlet {
 		String am_param01 = WebUtils.getString(request, "am_param01");
 		
 		if (!am_param00.equals("")) {
-			params.add(convertToInternalValue(am_param00, av.getType(), 0));
+			am_param00 = convertToInternalValue(am_param00, av.getType(), 0);
 		}
-		
 		if (!am_param01.equals("")) {
-			params.add(convertToInternalValue(am_param01, av.getType(), 1));
+			am_param01 = convertToInternalValue(am_param01, av.getType(), 1);
 		}
 		
+		params.add(am_param00);
+		params.add(am_param01);
 		av.setParams(params);
 		AutomationDAO.getInstance().createValidation(av);
 		AutomationRule ar = AutomationDAO.getInstance().findByPk(arId);
@@ -432,10 +460,18 @@ public class AutomationServlet extends BaseServlet {
 			for (int i = 0; i < aa.getParams().size(); i++) {
 				switch (i) {
 					case 0:
-						sc.setAttribute("am_param00", aa.getParams().get(0));
+						if (aa.getParams().get(0)!=null && !aa.getParams().get(0).equals("")) {
+							sc.setAttribute("am_param00", convertToHumanValue(aa.getParams().get(0), aa.getType(), 0));
+						} else {
+							sc.setAttribute("am_param00", "");
+						}
 						break;
 					case 1:
-						sc.setAttribute("am_param01", aa.getParams().get(1));
+						if (aa.getParams().get(1)!=null && !aa.getParams().get(1).equals("")) {
+							sc.setAttribute("am_param01", convertToHumanValue(aa.getParams().get(1), aa.getType(), 1));
+						} else {
+							sc.setAttribute("am_param01", "");
+						}
 						break;
 				}
 			}
@@ -453,10 +489,18 @@ public class AutomationServlet extends BaseServlet {
 			for (int i = 0; i < av.getParams().size(); i++) {
 				switch (i) {
 					case 0:
-						sc.setAttribute("am_param00", convertToHumanValue(av.getParams().get(0), av.getType(), 0));
+						if (av.getParams().get(0)!=null && !av.getParams().get(0).equals("")) {
+							sc.setAttribute("am_param00", convertToHumanValue(av.getParams().get(0), av.getType(), 0));
+						} else {
+							sc.setAttribute("am_param00", "");
+						}
 						break;
 					case 1:
-						sc.setAttribute("am_param01", convertToHumanValue(av.getParams().get(1), av.getType(), 1));
+						if (av.getParams().get(1)!=null && !av.getParams().get(1).equals("")) {
+							sc.setAttribute("am_param01", convertToHumanValue(av.getParams().get(1), av.getType(), 1));
+						} else {
+							sc.setAttribute("am_param01", "");
+						}
 						break;
 				}
 			}
@@ -504,15 +548,17 @@ public class AutomationServlet extends BaseServlet {
 		AutomationMetadata am = AutomationDAO.getInstance().findMetadataByPk(amId);
 		
 		// Convert folder path to UUID
-		switch (param) {
-			case 0:
-				if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource00())) {
-					value = OKMRepository.getInstance().getNodeUuid(null, value);
-				}
-			case 1:
-				if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource01())) {
-					return value = OKMRepository.getInstance().getNodeUuid(null, value);
-				}
+		if (value!=null && !value.equals("")) {
+			switch (param) {
+				case 0:
+					if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource00())) {
+						value = OKMRepository.getInstance().getNodeUuid(null, value);
+					}
+				case 1:
+					if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource01())) {
+						value = OKMRepository.getInstance().getNodeUuid(null, value);
+					}
+			}
 		}
 		
 		return value;
@@ -526,15 +572,17 @@ public class AutomationServlet extends BaseServlet {
 		AutomationMetadata am = AutomationDAO.getInstance().findMetadataByPk(amId);
 		
 		// Convert folder path to UUID
-		switch (param) {
-			case 0:
-				if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource00())) {
-					value = OKMRepository.getInstance().getNodePath(null, value);
-				}
-			case 1:
-				if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource01())) {
-					return value = OKMRepository.getInstance().getNodePath(null, value);
-				}
+		if (value!=null && !value.equals("")) {
+			switch (param) {
+				case 0:
+					if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource00())) {
+						value = OKMRepository.getInstance().getNodePath(null, value);
+					}
+				case 1:
+					if (AutomationMetadata.SOURCE_FOLDER.equals(am.getSource01())) {
+						value = OKMRepository.getInstance().getNodePath(null, value);
+					}
+			}
 		}
 		
 		return value;

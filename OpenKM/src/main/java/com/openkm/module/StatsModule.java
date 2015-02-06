@@ -38,7 +38,12 @@ public interface StatsModule {
 	public StatsInfo getFoldersByContext(String token) throws RepositoryException, DatabaseException;
 	
 	/**
-	 * Get sizer of documents per context
+	 * Get number of mails per context
+	 */
+	public StatsInfo getMailsByContext(String token) throws RepositoryException, DatabaseException;
+	
+	/**
+	 * Get size of documents per context
 	 */
 	public StatsInfo getDocumentsSizeByContext(String token) throws RepositoryException, DatabaseException;
 }

@@ -38,9 +38,11 @@ import com.openkm.frontend.client.bean.GWTFolder;
 import com.openkm.frontend.client.bean.GWTMail;
 import com.openkm.frontend.client.bean.GWTObjectToOrder;
 import com.openkm.frontend.client.bean.GWTProfileFileBrowser;
+import com.openkm.frontend.client.bean.form.GWTFormElement;
 import com.openkm.frontend.client.constants.ui.UIDesktopConstants;
 import com.openkm.frontend.client.util.ColumnComparatorDate;
 import com.openkm.frontend.client.util.ColumnComparatorDouble;
+import com.openkm.frontend.client.util.ColumnComparatorGWTFormElement;
 import com.openkm.frontend.client.util.ColumnComparatorText;
 
 /**
@@ -53,9 +55,9 @@ public class ExtendedColumnSorter extends ColumnSorter {
 	
 	private String selectedRowDataID = "";
 	private int colDataIndex = 0;
-	private GWTProfileFileBrowser profileFileBrowser;
 	private int column = -1;
 	boolean ascending = false;
+	private GWTProfileFileBrowser profileFileBrowser;
 
 	/* (non-Javadoc)
 	 * @see com.google.gwt.widgetideas.table.client.SortableGrid$ColumnSorter#onSortColumn(com.google.gwt.widgetideas.table.client.SortableGrid, com.google.gwt.widgetideas.table.client.TableModel.ColumnSortList, com.google.gwt.widgetideas.table.client.SortableGrid.ColumnSorterCallback)
@@ -93,7 +95,7 @@ public class ExtendedColumnSorter extends ColumnSorter {
 	 */
 	public void sort(int column, boolean ascending) {
 		Main.get().mainPanel.desktop.browser.fileBrowser.status.setFlagOrdering();
-	    int rows = Main.get().mainPanel.desktop.browser.fileBrowser.table.getDataTable().getRowCount();
+		int rows = Main.get().mainPanel.desktop.browser.fileBrowser.table.getDataTable().getRowCount();
 	    int columns = Main.get().mainPanel.desktop.browser.fileBrowser.table.getDataTable().getColumnCount();
 	    int selectedRow = Main.get().mainPanel.desktop.browser.fileBrowser.table.getSelectedRow();
 	    Map<Integer,Object> data = new HashMap<Integer,Object>(Main.get().mainPanel.desktop.browser.fileBrowser.table.data);
@@ -101,9 +103,9 @@ public class ExtendedColumnSorter extends ColumnSorter {
 	    List<String[]> elementList = new ArrayList<String[]>(); 					// List with all data
 	    List<GWTObjectToOrder> elementToOrder = new ArrayList<GWTObjectToOrder>(); 	// List with column data, and actual position
 	    
-	    int correctedColumnIndex = correctedColumnIndex(column);
-    	if (correctedColumnIndex<=7) {
-		    // Gets the data values and set on a list of String arrays ( element by column )
+	    // Gets the data values and set on a list of String arrays ( element by column )
+	    int correctedColumn = correctedColumnIndex(column);
+	    if (correctedColumn<=17) {
 		    for (int i=0; i<rows;i++) {
 		    	String[] rowI= new String[columns];
 		    	GWTObjectToOrder rowToOrder = new GWTObjectToOrder();
@@ -112,7 +114,7 @@ public class ExtendedColumnSorter extends ColumnSorter {
 		    	}
 		    	elementList.add(i,rowI);
 		    	
-		    	switch(correctedColumnIndex) {
+		    	switch(correctedColumn) {
 			    	case 0 :
 			    	case 1 :
 			    	case 2 :
@@ -190,6 +192,34 @@ public class ExtendedColumnSorter extends ColumnSorter {
 				    		elementToOrder.add(rowToOrder);
 			    		}		    		
 			    		break;
+			    		
+			    	case 8 :
+			    	case 9 :
+			    	case 10 :
+			    	case 11 :
+			    	case 12 :
+			    	case 13 :
+			    	case 14 :
+			    	case 15 :
+			    	case 16 :
+			    	case 17 :
+			    		if (data.get(Integer.parseInt(rowI[colDataIndex])) instanceof GWTFolder) {
+			    			rowToOrder.setObject(getExtraColumn((GWTFolder) data.get(Integer.parseInt(rowI[colDataIndex])),correctedColumn)); 	// Extra column 
+					    	rowToOrder.setDataId(""+ i);														// Actual position value
+					    	elementToOrder.add(rowToOrder);
+			    		} else if (data.get(Integer.parseInt(rowI[colDataIndex])) instanceof GWTMail) {  
+			    			rowToOrder.setObject(getExtraColumn((GWTMail) data.get(Integer.parseInt(rowI[colDataIndex])), correctedColumn)); 	// Extra column
+					    	rowToOrder.setDataId(""+ i);														// Actual position value
+					    	elementToOrder.add(rowToOrder);
+			    		} else if (data.get(Integer.parseInt(rowI[colDataIndex])) instanceof GWTDocument) {  
+			    			rowToOrder.setObject(getExtraColumn((GWTDocument) data.get(Integer.parseInt(rowI[colDataIndex])), correctedColumn)); // Extra column
+					    	rowToOrder.setDataId(""+ i);														// Actual position value
+					    	elementToOrder.add(rowToOrder);
+			    		}
+			    		
+			    		
+			    		
+			    		break;
 		    	}
 		    	
 		    	// Saves the selected row
@@ -198,7 +228,7 @@ public class ExtendedColumnSorter extends ColumnSorter {
 		    	}
 		    }
 		    
-		    switch(correctedColumnIndex(column)) {
+		    switch(correctedColumn) {
 		    	case 0 :
 		    	case 1 :	
 		    	case 2 :
@@ -218,6 +248,21 @@ public class ExtendedColumnSorter extends ColumnSorter {
 		    		// Date
 		    		Collections.sort(elementToOrder, ColumnComparatorDate.getInstance());
 		    		break;
+		    		
+		    		// Extra columns
+		    	case 8 :
+		    	case 9 :
+		    	case 10 :
+		    	case 11 :
+		    	case 12 :	   
+		    	case 13 :
+		    	case 14 :
+		    	case 15 :
+		    	case 16 :
+		    	case 17 :
+		    		// FormElement sort
+		    		Collections.sort(elementToOrder, ColumnComparatorGWTFormElement.getInstance());
+		    		break;
 		    }
 		    
 		    // Reversing if needed
@@ -226,7 +271,7 @@ public class ExtendedColumnSorter extends ColumnSorter {
 			}
 		    
 		    applySort(elementList, elementToOrder);
-    	}
+	    }
 	    Main.get().mainPanel.desktop.browser.fileBrowser.status.unsetFlagOrdering();
 	}
     
@@ -267,7 +312,104 @@ public class ExtendedColumnSorter extends ColumnSorter {
     	}
 	}
 	
-	
+	/**
+	 * getExtraColumn
+	 * 
+	 * @param obj
+	 * @param column
+	 * @return
+	 */
+	private GWTFormElement getExtraColumn(Object obj, int column) {
+		GWTFormElement formElement = null;
+		switch (column) {
+			case 8 :
+				if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn0();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn0();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn0();
+				}
+				break;
+	    	case 9 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn1();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn1();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn1();
+				}
+				break;
+	    	case 10 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn2();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn2();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn2();
+				}
+				break;
+	    	case 11 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn3();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn3();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn3();
+				}
+				break;
+	    	case 12 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn4();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn4();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn4();
+				}
+	    	case 13 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn5();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn5();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn5();
+				}
+				break;
+	    	case 14 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn6();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn6();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn6();
+				}
+	    	case 15 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn7();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn7();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn7();
+				}
+	    	case 16 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn8();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn8();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn8();
+				}
+	    	case 17 :
+	    		if (obj instanceof GWTFolder) {
+					return ((GWTFolder) obj).getColumn9();
+				} else if (obj instanceof GWTMail) {
+					return ((GWTMail) obj).getColumn9();
+				} if (obj instanceof GWTDocument) {
+					return ((GWTDocument) obj).getColumn9();
+				}
+		}
+		return formElement;
+	}
 	
 	/**
 	 * correctedColumnIndex

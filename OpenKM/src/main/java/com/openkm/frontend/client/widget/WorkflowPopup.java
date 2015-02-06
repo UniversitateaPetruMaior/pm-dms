@@ -57,7 +57,7 @@ public class WorkflowPopup extends DialogBox implements WorkflowWidgetToFire {
 	
 	private VerticalPanel vPanel;
 	private HorizontalPanel hPanel;
-	private Button button;
+	private Button closeButton;
 	private Button addButton;
 	private ListBox listBox;
 	private SimplePanel sp;
@@ -75,7 +75,7 @@ public class WorkflowPopup extends DialogBox implements WorkflowWidgetToFire {
 		hPanel = new HorizontalPanel();
 		sp = new SimplePanel();
 		
-		button = new Button(Main.i18n("button.close"), new ClickHandler() { 
+		closeButton = new Button(Main.i18n("button.close"), new ClickHandler() { 
 			@Override
 			public void onClick(ClickEvent event) {
 				hide();
@@ -108,15 +108,15 @@ public class WorkflowPopup extends DialogBox implements WorkflowWidgetToFire {
 		
 		vPanel.setWidth("300px");
 		vPanel.setHeight("50px");
-		button.setStyleName("okm-YesButton");
-		addButton.setStyleName("okm-AddButton");
+		closeButton.setStyleName("okm-NoButton");
+		addButton.setStyleName("okm-YesButton");
 		addButton.setEnabled(false);
 		
-		hPanel.add(button);
+		hPanel.add(closeButton);
 		hPanel.add(new HTML("&nbsp;&nbsp;"));
 		hPanel.add(addButton);
 		
-		hPanel.setCellHorizontalAlignment(button,VerticalPanel.ALIGN_CENTER);
+		hPanel.setCellHorizontalAlignment(closeButton,VerticalPanel.ALIGN_CENTER);
 		hPanel.setCellHorizontalAlignment(addButton,VerticalPanel.ALIGN_CENTER);
 		
 		vPanel.add(new HTML("<br>"));
@@ -172,7 +172,7 @@ public class WorkflowPopup extends DialogBox implements WorkflowWidgetToFire {
 	 * Enables close button
 	 */
 	public void enableClose() {
-		button.setEnabled(true);
+		closeButton.setEnabled(true);
 		Main.get().mainPanel.setVisible(true); // Shows main panel when all widgets are loaded
 	}
 	
@@ -181,7 +181,7 @@ public class WorkflowPopup extends DialogBox implements WorkflowWidgetToFire {
 	 */
 	public void langRefresh() {
 		setText(Main.i18n("workflow.label"));
-		button.setText(Main.i18n("button.close"));
+		closeButton.setText(Main.i18n("button.close"));
 		addButton.setText(Main.i18n("button.start"));
 	}
 	

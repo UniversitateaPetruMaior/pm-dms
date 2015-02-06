@@ -36,6 +36,7 @@ public class GWTProfileToolbar implements IsSerializable {
 	private boolean similarDocumentVisible; 
 	private boolean downloadVisible;
 	private boolean downloadPdfVisible;
+	private boolean printVisible;
 	private boolean lockVisible;
 	private boolean unlockVisible;
 	private boolean addDocumentVisible;
@@ -52,7 +53,7 @@ public class GWTProfileToolbar implements IsSerializable {
 	private boolean homeVisible;
 	private boolean scannerVisible;
 	private boolean uploaderVisible;
-	private boolean omrVisible;
+	private boolean splitterResizeVisible;
 
 	public boolean isCreateFolderVisible() {
 		return createFolderVisible;
@@ -100,6 +101,14 @@ public class GWTProfileToolbar implements IsSerializable {
 
 	public void setDownloadPdfVisible(boolean downloadPdfVisible) {
 		this.downloadPdfVisible = downloadPdfVisible;
+	}
+
+	public boolean isPrintVisible() {
+		return printVisible;
+	}
+
+	public void setPrintVisible(boolean printVisible) {
+		this.printVisible = printVisible;
 	}
 
 	public boolean isLockVisible() {
@@ -230,14 +239,14 @@ public class GWTProfileToolbar implements IsSerializable {
 		this.uploaderVisible = uploaderVisible;
 	}
 	
-	public boolean isOmrVisible() {
-		return omrVisible;
+	public boolean isSplitterResizeVisible() {
+		return splitterResizeVisible;
 	}
 
-	public void setOmrVisible(boolean omrVisible) {
-		this.omrVisible = omrVisible;
+	public void setSplitterResizeVisible(boolean splitterResizeVisible) {
+		this.splitterResizeVisible = splitterResizeVisible;
 	}
-
+	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
@@ -246,6 +255,7 @@ public class GWTProfileToolbar implements IsSerializable {
 		sb.append(", findDocumentVisible="); sb.append(findDocumentVisible);
 		sb.append(", downloadVisible="); sb.append(downloadVisible);
 		sb.append(", downloadPdfVisible="); sb.append(downloadPdfVisible);
+		sb.append(", printVisible="); sb.append(printVisible);
 		sb.append(", addDocumentVisible="); sb.append(addDocumentVisible);
 		sb.append(", lockVisible="); sb.append(lockVisible);
 		sb.append(", unlockVisible="); sb.append(unlockVisible);
@@ -262,7 +272,7 @@ public class GWTProfileToolbar implements IsSerializable {
 		sb.append(", refreshVisible="); sb.append(refreshVisible);
 		sb.append(", scannerVisible="); sb.append(scannerVisible);
 		sb.append(", uploaderVisible="); sb.append(uploaderVisible);
-		sb.append(", omrVisible="); sb.append(omrVisible);
+		sb.append(", splitterResizeVisible="); sb.append(splitterResizeVisible);
 		sb.append("}");
 		return sb.toString();
 	}

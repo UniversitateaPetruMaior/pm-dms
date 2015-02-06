@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
@@ -32,6 +33,8 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.constants.service.RPCService;
+import com.openkm.frontend.client.service.OKMGeneralService;
+import com.openkm.frontend.client.service.OKMGeneralServiceAsync;
 
 /**
  * Util
@@ -40,6 +43,8 @@ import com.openkm.frontend.client.constants.service.RPCService;
  * 
  */
 public class Util {
+	private static final OKMGeneralServiceAsync generalService = (OKMGeneralServiceAsync) GWT.create(OKMGeneralService.class);
+	
 	/**
 	 * Generates HTML for item with an attached icon.
 	 * 
@@ -98,8 +103,7 @@ public class Util {
 	 * @return the resultant HTML
 	 */
 	public static String imageHTML(String imageUrl, String alt) {
-		return "<img border=\"0\" align=\"absmidle\" alt=\"" + alt + "\" title=\"" + alt + "\" src='" + imageUrl.toLowerCase()
-				+ "'>";
+		return "<img border=\"0\" align=\"absmidle\" alt=\"" + alt + "\" title=\"" + alt + "\" src='" + imageUrl.toLowerCase() + "'>";
 	}
 	
 	/**
@@ -129,8 +133,8 @@ public class Util {
 	 * @param text The text value
 	 */
 	public static String flagMenuHTML(String flag, String text) {
-		return "<img style='margin-right:8px; margin-left:2px; vertical-align:middle;' " + "src=\"" + Main.CONTEXT + "/flag/"
-				+ flag + "\"'>" + text;
+		return "<img style='margin-right:8px; margin-left:2px; vertical-align:middle;' " + "src=\"" + Main.CONTEXT + "/flag/" + flag
+				+ "\"'>" + text;
 	}
 	
 	/**
@@ -250,20 +254,6 @@ public class Util {
 	}
 	
 	/**
-	 * Download sign file
-	 * 
-	 * @param path
-	 * @param params
-	 */
-	public static void downloadFileSignature(String signUuid, String signName) {
-		final Element downloadIframe = RootPanel.get("__download").getElement(); 
-		String url = RPCService.DownloadServlet + "?signOnly=true&signUuid=" + URL.encodeQueryString(signUuid) + "&signFileName=" + URL.encodeQueryString(signName);
-		DOM.setElementAttribute(downloadIframe, "src", url); 
-	}
-	
-
-	
-	/**
 	 * downloadFilesByUUID
 	 */
 	public static void downloadFilesByUUID(List<String> uuidList, String params) {
@@ -330,6 +320,24 @@ public class Util {
 	}
 	
 	/**
+	 * print file
+	 */
+	public static void print(String uuid) {
+		final Element printIframe = RootPanel.get("__print").getElement();
+		String url = RPCService.ConverterServlet + "?inline=true&print=true&toPdf=true&uuid=" + URL.encodeQueryString(uuid);
+		DOM.setElementAttribute(printIframe, "src", url);
+	}
+	
+	/**
+	 * Download CSV file
+	 */
+	public static void downloadCSVFile(String params) {
+		final Element downloadIframe = RootPanel.get("__download").getElement();
+		String url = RPCService.CSVExporterServlet + "?" + params;
+		DOM.setElementAttribute(downloadIframe, "src", url);
+	}
+	
+	/**
 	 * markHTMLTextAsBold
 	 */
 	public static String getTextAsBoldHTML(String text, boolean mark) {
@@ -371,10 +379,19 @@ public class Util {
 		String ret = "";
 		
 		for (int i = 1; i < eltos.length; i++) {
-			ret = ret.concat("/").concat(URL.encodeQueryString(URL.encodeQueryString(eltos[i])));
+			ret = ret.concat("/").concat(URL.encodePathSegment(eltos[i]));
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * Generate selectable widget text
+	 */
+	public static HTML createSelectable(String html) {
+		HTML widget = new HTML(html);
+		widget.addStyleName("okm-EnableSelect");
+		return widget;
 	}
 	
 	/**
@@ -382,7 +399,7 @@ public class Util {
 	 */
 	public static boolean isRoot(String fldPath) {
 		boolean isRoot = false;
-
+		
 		if (Main.get().workspaceUserProperties.getWorkspace().isStackTaxonomy()) {
 			isRoot = isRoot || Main.get().taxonomyRootFolder.getPath().equals(fldPath);
 		}
@@ -412,6 +429,14 @@ public class Util {
 		}
 		
 		return isRoot;
+	}
+	
+	/**
+	 * isSearchableKey
+	 */
+	public static boolean isSearchableKey(KeyUpEvent event) {
+		return (!EventUtils.isNavigationKey(event.getNativeKeyCode()) && !EventUtils.isModifierKey(event.getNativeKeyCode())
+				&& !EventUtils.isArrowKey(event.getNativeKeyCode()));
 	}
 	
 	/**
@@ -518,6 +543,16 @@ public class Util {
 		obj.height = height;
 	}-*/;
 	
+	public static native void createSwfViewer(String swfUrl, String width, String height) /*-{
+		$wnd.swfobject.embedSWF(swfUrl, "swfviewercontainer", width, height, "9.0.0", "../js/mediaplayer/expressinstall.swf", {width:width,height:height}, {}, {id:"jswfviewer",name:"jswfviewer"});
+	}-*/;
+	
+	public static native void resizeSwfViewer(String width, String height) /*-{
+		obj = $wnd.swfobject.getObjectById('jswfviewer');
+		obj.width = width;
+		obj.height = height;
+	}-*/;
+	
 	public static native void createPDFViewerZviewer(String pdfUrl, String width, String height) /*-{
 		pdfUrl = encodeURIComponent(pdfUrl);
 		$wnd.swfobject.embedSWF("../js/zviewer/zviewer.swf", "pdfviewercontainer", width, height, "9.0.0", "../js/mediaplayer/expressinstall.swf", {doc_url:pdfUrl}, {allowFullScreen:"true",menu:"false",bgcolor:"#efefef"}, {id:"jspdfviewer",name:"jspdfviewer"});
@@ -529,13 +564,8 @@ public class Util {
 		obj.height = height;
 	}-*/;
 	
-	public static native void createPDFViewerFlexPaper(String pdfUrl, String width, String height, String printEnabled) /*-{
-		if (printEnabled == 'true') {
-			fpViewer = "../js/flexpaper/FlexPaperViewer.swf";
-		} else {
-			fpViewer = "../js/flexpaper/FlexPaperViewerRO.swf";
-		}
-		
+	public static native void createPDFViewerFlexPaper(String pdfUrl, String width, String height) /*-{
+		fpViewer = "../js/flexpaper/FlexPaperViewer.swf";
 		pdfUrl = encodeURIComponent(pdfUrl);
 		$wnd.swfobject.embedSWF(fpViewer, "pdfviewercontainer", width, height, "10.0.0", "playerProductInstall.swf",
 			{
@@ -546,11 +576,8 @@ public class Util {
 				ZoomInterval : 0.1,
 				FitPageOnLoad : false,
 				FitWidthOnLoad : true,
-				PrintEnabled : printEnabled,
 				FullScreenAsMaxWindow : false,
 				ProgressiveLoading : true,
-				
-				// PrintToolsVisible : printEnabled,
 				ViewModeToolsVisible : true,
 				ZoomToolsVisible : true,
 				FullScreenVisible : true,
@@ -577,31 +604,21 @@ public class Util {
 		obj.height = height;
 	}-*/;
 	
+	public static native void resizeEmbededPDF(String width, String height, String pdfId) /*-{
+		obj = $wnd.document.getElementById(pdfId);
+		obj.width = width;
+		obj.height = height;
+	}-*/;
+	
 	public static native String[] getJREs() /*-{
 		return $wnd.deployJava.getJREs();
-	}-*/;  
-    
-    public static native void createLinkClipboardButton(String textToCopy, String containerName) /*-{
-		$wnd.swfobject.embedSWF("../clippy.swf", containerName, 14, 14, "9.0.0", "../clippy.swf", {text:textToCopy}, {quality:"high",scale:"noscale",bgcolor:"#FFFFFF"}, {id:"clippy",name:"clippy"});
 	}-*/;
-    
-    public static native void createURLClipboardButton(String textToCopy) /*-{
-		$wnd.swfobject.embedSWF("../clippy.swf", "urlclipboardcontainer", 14, 14, "9.0.0", "../clippy.swf", {text:textToCopy}, {quality:"high",scale:"noscale",bgcolor:"#FFFFFF"}, {id:"clippy",name:"clippy"});
+	
+	public static native void createClipboardButton(String divId, String textToCopy) /*-{
+		$wnd.swfobject.embedSWF("../clippy.swf", divId, 14, 14, "9.0.0", "../clippy.swf", {text:textToCopy}, {quality:"high",scale:"noscale",bgcolor:"#FFFFFF"}, {id:"clippy",name:"clippy"});
 	}-*/;
-    
-    public static native void createWebDavClipboardButton(String textToCopy) /*-{
-		$wnd.swfobject.embedSWF("../clippy.swf", "webdavclipboardcontainer", 14, 14, "9.0.0", "../clippy.swf", {text:textToCopy}, {quality:"high",scale:"noscale",bgcolor:"#FFFFFF"}, {id:"clippy",name:"clippy"});
+	
+	public static native String escape(String text) /*-{
+		return escape(text);
 	}-*/;
-    
-    public static native void createFolderURLClipboardButton(String textToCopy) /*-{
-		$wnd.swfobject.embedSWF("../clippy.swf", "folderurlclipboardcontainer", 14, 14, "9.0.0", "../clippy.swf", {text:textToCopy}, {quality:"high",scale:"noscale",bgcolor:"#FFFFFF"}, {id:"clippy",name:"clippy"});
-	}-*/;
-    
-    public static native void createFolderWebDavClipboardButton(String textToCopy) /*-{
-		$wnd.swfobject.embedSWF("../clippy.swf", "folderwebdavclipboardcontainer", 14, 14, "9.0.0", "../clippy.swf", {text:textToCopy}, {quality:"high",scale:"noscale",bgcolor:"#FFFFFF"}, {id:"clippy",name:"clippy"});
-	}-*/;
-    
-    public static native String escape(String text) /*-{
-    	return escape(text);
-  	}-*/;
 }

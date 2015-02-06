@@ -1,30 +1,31 @@
 /**
- *  OpenKM, Open Document Management System (http://www.openkm.com)
- *  Copyright (c) 2006-2014  Paco Avila & Josep Llort
- *
- *  No bytes were intentionally harmed during the development of this application.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * OpenKM, Open Document Management System (http://www.openkm.com)
+ * Copyright (c) 2006-2014 Paco Avila & Josep Llort
+ * 
+ * No bytes were intentionally harmed during the development of this application.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 package com.openkm.module.common;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -62,20 +63,43 @@ public class CommonNotificationModule {
 	/**
 	 * Clean preview cache for this document
 	 */
-	public static void sendNotification(String user, String nodePath, String from, List<String> to, String message,
-			boolean attachment) throws TemplateException, MessagingException, PathNotFoundException,
-			AccessDeniedException, RepositoryException, DatabaseException, IOException {
-		log.debug("sendNotification({}, {}, {}, {}, {}, {})", new Object[] { user, nodePath, from, to, message, attachment});
+	public static void sendNotification(String user, String nodeUuid, String nodePath, String from, List<String> to, String message,
+			boolean attachment) throws TemplateException, MessagingException, PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException, IOException {
+		log.debug("sendNotification({}, {}, {}, {}, {}, {}, {})", new Object[] { user, nodeUuid, nodePath, from, to, message, attachment });
+		ArrayList<CommonNotificationModule.NodeInfo> nodesInfo = new ArrayList<CommonNotificationModule.NodeInfo>();
+		CommonNotificationModule.NodeInfo nodeInfo = new NodeInfo();
+		nodeInfo.setUuid(nodeUuid);
+		nodeInfo.setPath(nodePath);
+		nodesInfo.add(nodeInfo);
+		sendNotification(user, nodesInfo, from, to, message, attachment);
+	}
+	
+	public static void sendNotification(String user, ArrayList<CommonNotificationModule.NodeInfo> nodesInfo, String from, List<String> to,
+			String message, boolean attachment) throws TemplateException, MessagingException, PathNotFoundException, AccessDeniedException,
+			RepositoryException, DatabaseException, IOException {
+		log.debug("sendNotification({}, {}, {}, {}, {}, {})", new Object[] { user, nodesInfo, from, to, message, attachment });
 		StringWriter swSubject = new StringWriter();
 		StringWriter swBody = new StringWriter();
 		Configuration cfg = TemplateUtils.getConfig();
+		List<String> docsPath = new ArrayList<String>();
+		Collection<Map<String, String>> col = new ArrayList<Map<String, String>>();
 		
-		Map<String, String> model = new HashMap<String, String>();
-		model.put("documentUrl", Config.APPLICATION_URL + "?docPath=" + URLEncoder.encode(nodePath, "UTF-8"));
-		model.put("documentPath", nodePath);
-		model.put("documentName", PathUtils.getName(nodePath));
+		for (CommonNotificationModule.NodeInfo ni : nodesInfo) {
+			Map<String, String> docInfo = new HashMap<String, String>();
+			docInfo.put("url", Config.APPLICATION_URL + "?uuid=" + ni.getUuid());
+			docInfo.put("path", ni.getPath());
+			docInfo.put("name", PathUtils.getName(ni.getPath()));
+			col.add(docInfo);
+			
+			// Used to send attachments
+			docsPath.add(ni.getPath());
+		}
+		
+		Map<String, Object> model = new HashMap<String, Object>();
 		model.put("userId", user);
 		model.put("notificationMessage", message);
+		model.put("documentList", col);
 		
 		if (TemplateUtils.templateExists(Config.NOTIFICATION_MESSAGE_SUBJECT)) {
 			Template tpl = cfg.getTemplate(Config.NOTIFICATION_MESSAGE_SUBJECT);
@@ -98,7 +122,7 @@ public class CommonNotificationModule {
 		}
 		
 		if (attachment) {
-			MailUtils.sendDocument((String) from, to, swSubject.toString(), swBody.toString(), nodePath);
+			MailUtils.sendDocuments((String) from, to, swSubject.toString(), swBody.toString(), docsPath);
 		} else {
 			MailUtils.sendMessage((String) from, to, swSubject.toString(), swBody.toString());
 		}
@@ -107,9 +131,9 @@ public class CommonNotificationModule {
 	/**
 	 * Send mail subscription message
 	 */
-	public static void sendMailSubscription(String user, String nodePath, String eventType, String comment,
+	public static void sendMailSubscription(String user, String nodeUuid, String nodePath, String eventType, String comment,
 			Set<String> mails) throws TemplateException, MessagingException, IOException {
-		log.debug("sendMailSubscription({}, {}, {}, {}, {})", new Object[] { user, nodePath, eventType, comment, mails });
+		log.debug("sendMailSubscription({}, {}, {}, {}, {}, {})", new Object[] { user, nodeUuid, nodePath, eventType, comment, mails });
 		
 		if (comment == null) {
 			comment = "";
@@ -120,7 +144,7 @@ public class CommonNotificationModule {
 		Configuration cfg = TemplateUtils.getConfig();
 		
 		Map<String, String> model = new HashMap<String, String>();
-		model.put("documentUrl", Config.APPLICATION_URL + "?docPath=" + URLEncoder.encode(nodePath, "UTF-8"));
+		model.put("documentUrl", Config.APPLICATION_URL + "?uuid=" + nodeUuid);
 		model.put("documentPath", nodePath);
 		model.put("documentName", PathUtils.getName(nodePath));
 		model.put("userId", user);
@@ -153,9 +177,8 @@ public class CommonNotificationModule {
 	/**
 	 * Send twitter subscription message
 	 */
-	public static void sendTwitterSubscription(String user, String nodePath, String eventType, String comment,
-			Set<String> users) throws TemplateException, TwitterException, DatabaseException, HttpException,
-			IOException {
+	public static void sendTwitterSubscription(String user, String nodePath, String eventType, String comment, Set<String> users)
+			throws TemplateException, TwitterException, DatabaseException, HttpException, IOException {
 		log.debug("sendTwitterSubscription({}, {}, {}, {}, {})", new Object[] { user, nodePath, eventType, comment, users });
 		Twitter twitter = new Twitter(Config.SUBSCRIPTION_TWITTER_USER, Config.SUBSCRIPTION_TWITTER_PASSWORD);
 		StringWriter swStatus = new StringWriter();
@@ -185,10 +208,32 @@ public class CommonNotificationModule {
 			
 			for (Iterator<TwitterAccount> itTwitter = twitterAccounts.iterator(); itTwitter.hasNext();) {
 				TwitterAccount ta = itTwitter.next();
-				log.info("Twitter Notify from {} to {} ({}) - {}",
-						new Object[] { twitter.getUserId(), ta.getTwitterUser(), itUser, swStatus.toString() });
+				log.info("Twitter Notify from {} to {} ({}) - {}", new Object[] { twitter.getUserId(), ta.getTwitterUser(), itUser,
+						swStatus.toString() });
 				twitter.sendDirectMessage(ta.getTwitterUser(), swStatus.toString());
 			}
+		}
+	}
+	
+	public static final class NodeInfo implements Serializable {
+		private static final long serialVersionUID = 1L;
+		private String uuid;
+		private String path;
+		
+		public String getUuid() {
+			return uuid;
+		}
+		
+		public void setUuid(String uuid) {
+			this.uuid = uuid;
+		}
+		
+		public String getPath() {
+			return path;
+		}
+		
+		public void setPath(String path) {
+			this.path = path;
 		}
 	}
 }

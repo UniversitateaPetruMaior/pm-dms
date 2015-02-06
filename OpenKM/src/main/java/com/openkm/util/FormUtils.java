@@ -79,6 +79,7 @@ public class FormUtils {
 	 */
 	public static Map<String, List<FormElement>> parseWorkflowForms(InputStream is) throws ParseException {
 		log.debug("parseWorkflowForms({})", is);
+		long begin = System.currentTimeMillis();
 		Map<String, List<FormElement>> forms = new HashMap<String, List<FormElement>>();
 
 		try {
@@ -115,6 +116,7 @@ public class FormUtils {
 			throw new ParseException(e.getMessage(), e);
 		}
 		
+		log.trace("parseWorkflowForms.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("parseWorkflowForms: {}", forms);
 		return forms;
 	}
@@ -126,6 +128,7 @@ public class FormUtils {
 	 */
 	public static List<FormElement> parseReportParameters(InputStream is) throws ParseException {
 		log.debug("parseReportParameters({})", is);
+		long begin = System.currentTimeMillis();
 		List<FormElement> params = new ArrayList<FormElement>();
 
 		try {
@@ -160,6 +163,7 @@ public class FormUtils {
 			throw new ParseException(e.getMessage(), e);
 		}
 		
+		log.trace("parseReportParameters.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("parseReportParameters: {}", params);
 		return params;
 	}
@@ -167,13 +171,15 @@ public class FormUtils {
 	/**
 	 * Parse PropertyGroups.xml definitions
 	 * 
+	 * @param pgDefFile Path to file where is the Property Groups definition.
 	 * @return A Map with all the forms and its form elements.
 	 */
-	public static synchronized Map<PropertyGroup, List<FormElement>> parsePropertyGroupsForms(String pgForm) 
+	public static synchronized Map<PropertyGroup, List<FormElement>> parsePropertyGroupsForms(String pgDefFile) 
 			throws IOException,	ParseException {
-		log.debug("parsePropertyGroupsForms({})", pgForm);
+		log.debug("parsePropertyGroupsForms({})", pgDefFile);
 		
 		if (pGroups == null) {
+			long begin = System.currentTimeMillis();
 			pGroups = new HashMap<PropertyGroup, List<FormElement>>();
 			FileInputStream fis = null;
 			
@@ -186,7 +192,7 @@ public class FormUtils {
 				DocumentBuilder db = dbf.newDocumentBuilder();
 				db.setErrorHandler(handler);
 				db.setEntityResolver(resolver);
-				fis = new FileInputStream(pgForm);
+				fis = new FileInputStream(pgDefFile);
 				
 				if (fis != null) {
 					Document doc = db.parse(fis);
@@ -223,6 +229,8 @@ public class FormUtils {
 			} finally {
 				IOUtils.closeQuietly(fis);
 			}
+			
+			log.trace("parsePropertyGroupsForms.Time: {}", System.currentTimeMillis() - begin);
 		}
 		
 		log.debug("parsePropertyGroupsForms: {}", pGroups);
@@ -539,6 +547,10 @@ public class FormUtils {
 					if (item != null) select.setTable(item.getNodeValue());
 					item = nField.getAttributes().getNamedItem("optionsQuery");
 					if (item != null) select.setOptionsQuery(item.getNodeValue());
+					item = nField.getAttributes().getNamedItem("suggestion");
+					if (item != null) select.setSuggestion(item.getNodeValue());
+					item = nField.getAttributes().getNamedItem("className");
+                    if(item != null) select.setClassName(item.getNodeValue());
 					
 					NodeList nlOptions = nField.getChildNodes();
 					for (int k = 0; k < nlOptions.getLength(); k++) {
@@ -735,6 +747,18 @@ public class FormUtils {
 			if (select.getOptionsQuery() != null && !select.getOptionsQuery().isEmpty()) {
 				sb.append("<i>FilterQuery:</i> ");
 				sb.append(select.getOptionsQuery());
+				sb.append("<br/>");
+			}
+			
+			if (select.getSuggestion() != null && !select.getSuggestion().isEmpty()) {
+				sb.append("<i>Suggestion:</i> ");
+				sb.append(select.getSuggestion());
+				sb.append("<br/>");
+			}
+			
+			if (select.getClassName() != null && !select.getClassName().isEmpty()) {
+				sb.append("<i>ClassName:</i> ");
+				sb.append(select.getClassName());
 				sb.append("<br/>");
 			}
 			

@@ -43,10 +43,10 @@ import com.openkm.frontend.client.Main;
 import com.openkm.frontend.client.bean.GWTDocument;
 import com.openkm.frontend.client.bean.GWTFileUploadResponse;
 import com.openkm.frontend.client.bean.GWTPropertyGroup;
-import com.openkm.frontend.client.service.OKMDocumentService;
-import com.openkm.frontend.client.service.OKMDocumentServiceAsync;
 import com.openkm.frontend.client.service.OKMPropertyGroupService;
 import com.openkm.frontend.client.service.OKMPropertyGroupServiceAsync;
+import com.openkm.frontend.client.service.OKMRepositoryService;
+import com.openkm.frontend.client.service.OKMRepositoryServiceAsync;
 import com.openkm.frontend.client.util.Util;
 import com.openkm.frontend.client.widget.propertygroup.PropertyGroupWidget;
 import com.openkm.frontend.client.widget.propertygroup.PropertyGroupWidgetToFire;
@@ -56,13 +56,10 @@ import com.openkm.frontend.client.widget.upload.FancyFileUpload;
  * WizardPopup
  * 
  * @author jllort
- * 
  */
 public class WizardPopup extends DialogBox {
-	private final OKMPropertyGroupServiceAsync propertyGroupService = (OKMPropertyGroupServiceAsync) GWT
-			.create(OKMPropertyGroupService.class);
-	private final OKMDocumentServiceAsync documentService = (OKMDocumentServiceAsync) GWT
-			.create(OKMDocumentService.class);
+	private final OKMPropertyGroupServiceAsync propertyGroupService = (OKMPropertyGroupServiceAsync) GWT.create(OKMPropertyGroupService.class);
+	private final OKMRepositoryServiceAsync repositoryService = (OKMRepositoryServiceAsync) GWT.create(OKMRepositoryService.class);
 	
 	private static final int STATUS_NONE = -1;
 	private static final int STATUS_ADD_PROPERTY_GROUPS = 0;
@@ -70,7 +67,7 @@ public class WizardPopup extends DialogBox {
 	private static final int STATUS_WORKFLOWS = 2;
 	private static final int STATUS_CATEGORIES = 3;
 	private static final int STATUS_KEYWORDS = 4;
-	private static final int STATUS_FINISH = 5;
+	private static final int STATUS_FINISH = 6;
 	
 	private FiredVerticalPanel vPanelFired;
 	private String docPath = "";
@@ -119,8 +116,8 @@ public class WizardPopup extends DialogBox {
 		this.jsWizard = jsWizard;
 		String fileName = Util.getName(docPath);
 		if (fileName.length() > FancyFileUpload.MAX_FILENAME_LENGHT - 35) {
-			setText(Main.i18n("wizard.document.uploading") + ": "
-					+ fileName.substring(0, (FancyFileUpload.MAX_FILENAME_LENGHT - 35)) + "...");
+			setText(Main.i18n("wizard.document.uploading") + ": " + fileName.substring(0, (FancyFileUpload.MAX_FILENAME_LENGHT - 35))
+					+ "...");
 		} else {
 			setText(Main.i18n("wizard.document.uploading") + ": " + fileName);
 		}
@@ -145,16 +142,16 @@ public class WizardPopup extends DialogBox {
 		hasWorkflows = Main.get().workspaceUserProperties.getWorkspace().isWizardWorkflows();
 		
 		// getting uuid
-		documentService.get(docPath, new AsyncCallback<GWTDocument>() {
+		repositoryService.getUUIDByPath(docPath, new AsyncCallback<String>() {
 			@Override
-			public void onSuccess(GWTDocument result) {
-				uuid = result.getUuid();
+			public void onSuccess(String result) {
+				uuid = result;
 				addPropertyGroups(); // Continue adding property groups
 			}
 			
 			@Override
 			public void onFailure(Throwable caught) {
-				Main.get().showError("getDocument", caught);
+				Main.get().showError("getUUIDByPath", caught);
 			}
 		});
 	}
@@ -166,8 +163,8 @@ public class WizardPopup extends DialogBox {
 		this.jsWizard = jsWizard;
 		String fileName = Util.getName(docPath);
 		if (fileName.length() > FancyFileUpload.MAX_FILENAME_LENGHT - 35) {
-			setText(Main.i18n("wizard.document.uploading") + ": "
-					+ fileName.substring(0, (FancyFileUpload.MAX_FILENAME_LENGHT - 35)) + "...");
+			setText(Main.i18n("wizard.document.uploading") + ": " + fileName.substring(0, (FancyFileUpload.MAX_FILENAME_LENGHT - 35))
+					+ "...");
 		} else {
 			setText(Main.i18n("wizard.document.uploading") + ": " + fileName);
 		}
@@ -194,19 +191,19 @@ public class WizardPopup extends DialogBox {
 		// Setting parameters
 		hasKeywords = fuResponse.isShowWizardKeywords();
 		hasCategories = fuResponse.isShowWizardCategories();
-		hasWorkflows = (fuResponse.getWorkflowList().size()>0);
+		hasWorkflows = (fuResponse.getWorkflowList().size() > 0);
 		
 		// getting uuid
-		documentService.get(docPath, new AsyncCallback<GWTDocument>() {
+		repositoryService.getUUIDByPath(docPath, new AsyncCallback<String>() {
 			@Override
-			public void onSuccess(GWTDocument result) {
-				uuid = result.getUuid();
+			public void onSuccess(String result) {
+				uuid = result;
 				addPropertyGroups(); // Continue adding property groups
 			}
 			
 			@Override
 			public void onFailure(Throwable caught) {
-				Main.get().showError("getDocument", caught);
+				Main.get().showError("getUUIDByPath", caught);
 			}
 		});
 	}
@@ -257,8 +254,8 @@ public class WizardPopup extends DialogBox {
 		hPanel.add(actualButton);
 		hPanel.add(space);
 		hPanel.setCellWidth(space, "3");
-		propertyGroupWidget = new PropertyGroupWidget(docPath, groupsList.get(groupIndex), new HTML(groupsList.get(
-				groupIndex).getLabel()), vPanelFired);
+		propertyGroupWidget = new PropertyGroupWidget(docPath, groupsList.get(groupIndex), new HTML(groupsList.get(groupIndex).getLabel()),
+				vPanelFired);
 		vPanelFired.clear();
 		vPanelFired.add(propertyGroupWidget);
 		vPanelFired.add(hPanel);
@@ -267,7 +264,7 @@ public class WizardPopup extends DialogBox {
 		vPanelFired.setCellVerticalAlignment(propertyGroupWidget, HasAlignment.ALIGN_TOP);
 		vPanelFired.setCellHorizontalAlignment(hPanel, HasAlignment.ALIGN_RIGHT);
 		vPanelFired.setCellHeight(space2, "5");
-		propertyGroupWidget.getProperties();
+		propertyGroupWidget.getProperties(true);
 	}
 	
 	/**
@@ -279,8 +276,7 @@ public class WizardPopup extends DialogBox {
 		hPanel.add(actualButton);
 		hPanel.add(space);
 		hPanel.setCellWidth(space, "3");
-		workflowWidget = new WorkflowWidget(workflowsList.get(workflowIndex), uuid, vPanelFired,
-				new HashMap<String, Object>());
+		workflowWidget = new WorkflowWidget(workflowsList.get(workflowIndex), uuid, vPanelFired, new HashMap<String, Object>());
 		vPanelFired.clear();
 		vPanelFired.add(workflowWidget);
 		vPanelFired.add(hPanel);
@@ -372,7 +368,8 @@ public class WizardPopup extends DialogBox {
 					}
 					Main.get().mainPanel.desktop.browser.fileBrowser.refresh(Main.get().activeFolderTree.getActualPath());
 				} else {
-					Main.get().fileUpload.resetAfterWizardFinished(); // Restoring wizard
+					Main.get().fileUpload.resetAfterWizardFinished(); // Restoring
+																		// wizard
 				}
 				break;
 		}
@@ -494,9 +491,7 @@ public class WizardPopup extends DialogBox {
 	}
 	
 	/**
-	 * changeView
-	 * 
-	 * Ensures fileupload is hiden and panel is centered
+	 * changeView Ensures fileupload is hiden and panel is centered
 	 */
 	public void changeView() {
 		Main.get().fileUpload.hide();
@@ -507,7 +502,6 @@ public class WizardPopup extends DialogBox {
 	 * FiredVerticalPanel
 	 * 
 	 * @author jllort
-	 * 
 	 */
 	private class FiredVerticalPanel extends Composite implements PropertyGroupWidgetToFire, WorkflowWidgetToFire {
 		private VerticalPanel vPanel;

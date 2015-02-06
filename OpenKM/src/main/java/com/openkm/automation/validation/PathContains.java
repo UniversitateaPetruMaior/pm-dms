@@ -42,10 +42,9 @@ public class PathContains implements Validation {
 	
 	@Override
 	public boolean isValid(HashMap<String, Object> env, Object... params) {
-		String uuid = AutomationUtils.getString(0, params);
-		String parentPath = AutomationUtils.getParentPath(env);
-		
 		try {
+			String uuid = AutomationUtils.getString(0, params);
+			String parentPath = AutomationUtils.getParentPath(env);
 			String path = OKMRepository.getInstance().getNodePath(null, uuid);
 			
 			if (parentPath.startsWith(path)) {

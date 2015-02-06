@@ -41,7 +41,6 @@ import com.openkm.frontend.client.Main;
  *
  */
 public class ErrorPopup extends DialogBox implements ClickHandler {
-	
 	private VerticalPanel vPanel;
 	private HTML text;
 	private Button button;

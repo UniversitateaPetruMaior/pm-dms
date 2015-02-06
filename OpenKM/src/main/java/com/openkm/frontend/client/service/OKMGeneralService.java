@@ -26,9 +26,10 @@ import java.util.List;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 import com.openkm.frontend.client.OKMException;
+import com.openkm.frontend.client.bean.GWTConfig;
 import com.openkm.frontend.client.bean.GWTConverterStatus;
 import com.openkm.frontend.client.bean.GWTFileUploadingStatus;
-import com.openkm.frontend.client.bean.GWTTestImap;
+import com.openkm.frontend.client.bean.GWTTestMail;
 
 /**
  * @author jllort
@@ -38,6 +39,7 @@ import com.openkm.frontend.client.bean.GWTTestImap;
 public interface OKMGeneralService extends RemoteService {
 	public GWTFileUploadingStatus getFileUploadStatus();
 	public GWTConverterStatus getConversionStatus();
-	public GWTTestImap testImapConnection(String host, String user, String password, String imapFolder);
+	public GWTTestMail testMailConnection(String protocol, String host, String user, String password, String mailFolder);
 	public List<String> getEnabledExtensions() throws OKMException;
+	public GWTConfig getConfigValue(String key) throws OKMException;
 }

@@ -154,6 +154,7 @@ public class FolderResource implements MakeCollectionableResource, PutableResour
 	@Override
 	public List<? extends Resource> getChildren() {
 		log.debug("getChildren()");
+		long begin = System.currentTimeMillis();
 		List<Resource> resources = new ArrayList<Resource>();
 		
 		if (fldChilds != null) {
@@ -174,6 +175,7 @@ public class FolderResource implements MakeCollectionableResource, PutableResour
 			}
 		}
 		
+		log.trace("getChildren.Time: {}", System.currentTimeMillis() - begin);
 		return resources;
 	}
 	

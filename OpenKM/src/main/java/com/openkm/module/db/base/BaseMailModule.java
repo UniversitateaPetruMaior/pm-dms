@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.openkm.automation.AutomationException;
+import com.openkm.automation.AutomationManager;
+import com.openkm.automation.AutomationUtils;
 import com.openkm.bean.Document;
+import com.openkm.bean.ExtendedAttributes;
+import com.openkm.bean.FileUploadResponse;
 import com.openkm.bean.Folder;
 import com.openkm.bean.Mail;
 import com.openkm.bean.Note;
@@ -45,6 +50,7 @@ import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.ItemExistsException;
 import com.openkm.core.PathNotFoundException;
+import com.openkm.core.Ref;
 import com.openkm.core.RepositoryException;
 import com.openkm.core.UserQuotaExceededException;
 import com.openkm.dao.NodeBaseDAO;
@@ -52,6 +58,7 @@ import com.openkm.dao.NodeDocumentDAO;
 import com.openkm.dao.NodeFolderDAO;
 import com.openkm.dao.NodeMailDAO;
 import com.openkm.dao.NodeNoteDAO;
+import com.openkm.dao.bean.AutomationRule;
 import com.openkm.dao.bean.NodeDocument;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeMail;
@@ -66,10 +73,26 @@ public class BaseMailModule {
 	/**
 	 * Create a new mail
 	 */
-	public static NodeMail create(String user, NodeFolder parentFolder, String name, long size, String from,
-			String[] reply, String[] to, String[] cc, String[] bcc, Calendar sentDate, Calendar receivedDate,
-			String subject, String content, String mimeType) throws PathNotFoundException, AccessDeniedException,
-			ItemExistsException, DatabaseException {
+	@SuppressWarnings("unchecked")
+	public static NodeMail create(String user, String parentPath, NodeFolder parentFolder, String name, long size, String from,
+			String[] reply, String[] to, String[] cc, String[] bcc, Calendar sentDate, Calendar receivedDate, String subject,
+			String content, String mimeType, Set<String> keywords, Set<String> categories, Ref<FileUploadResponse> fuResponse)
+			throws PathNotFoundException, AccessDeniedException, ItemExistsException, AutomationException, DatabaseException {
+		// AUTOMATION - PRE
+		Map<String, Object> env = new HashMap<String, Object>();
+		env.put(AutomationUtils.PARENT_UUID, parentFolder.getUuid());
+		env.put(AutomationUtils.PARENT_PATH, parentPath);
+		env.put(AutomationUtils.PARENT_NODE, parentFolder);
+		env.put(AutomationUtils.MAIL_NAME, name);
+		env.put(AutomationUtils.MAIL_MIME_TYPE, mimeType);
+		env.put(AutomationUtils.MAIL_KEYWORDS, keywords);
+		
+		AutomationManager.getInstance().fireEvent(AutomationRule.EVENT_MAIL_CREATE, AutomationRule.AT_PRE, env);
+		parentFolder = (NodeFolder) env.get(AutomationUtils.PARENT_NODE);
+		name = (String) env.get(AutomationUtils.MAIL_NAME);
+		mimeType = (String) env.get(AutomationUtils.MAIL_MIME_TYPE);
+		keywords = (Set<String>) env.get(AutomationUtils.MAIL_KEYWORDS);
+		
 		// Create and add a new folder node
 		NodeMail mailNode = new NodeMail();
 		mailNode.setUuid(UUID.randomUUID().toString());
@@ -90,13 +113,22 @@ public class BaseMailModule {
 		mailNode.setMimeType(mimeType);
 		mailNode.setCreated(Calendar.getInstance());
 		
+		if (Config.STORE_NODE_PATH) {
+			mailNode.setPath(parentFolder.getPath() + "/" + name);
+		}
+		
+		// Extended Copy Attributes
+		mailNode.setKeywords(CloneUtils.clone(keywords));
+		mailNode.setCategories(CloneUtils.clone(categories));
+		
 		// Get parent node auth info
 		Map<String, Integer> userPerms = parentFolder.getUserPermissions();
 		Map<String, Integer> rolePerms = parentFolder.getRolePermissions();
 		
 		// Always assign all grants to creator
 		if (Config.USER_ASSIGN_DOCUMENT_CREATION) {
-			userPerms.put(user, Permission.ALL_GRANTS);
+			int allGrants = Permission.ALL_GRANTS;
+			userPerms.put(user, allGrants);
 		}
 		
 		// Set auth info
@@ -106,10 +138,12 @@ public class BaseMailModule {
 		
 		NodeMailDAO.getInstance().create(mailNode);
 		
-		// if (Config.USER_ITEM_CACHE) {
-			// Update user items size
-			// UserItemsManager.incFolders(user, 1);
-		// }
+		// AUTOMATION - POST
+		env.put(AutomationUtils.MAIL_NODE, mailNode);
+		AutomationManager.getInstance().fireEvent(AutomationRule.EVENT_MAIL_CREATE, AutomationRule.AT_POST, env);
+		
+		// Setting wizard properties
+		fuResponse.set((FileUploadResponse) env.get(AutomationUtils.UPLOAD_RESPONSE));
 		
 		return mailNode;
 	}
@@ -119,6 +153,7 @@ public class BaseMailModule {
 	 */
 	public static Mail getProperties(String user, NodeMail nMail) throws PathNotFoundException, DatabaseException {
 		log.debug("getProperties({}, {})", user, nMail);
+		long begin = System.currentTimeMillis();
 		Mail mail = new Mail();
 		
 		// Properties
@@ -149,27 +184,7 @@ public class BaseMailModule {
 		mail.setAttachments(attachments);
 		
 		// Get permissions
-		if (Config.SYSTEM_READONLY) {
-			mail.setPermissions(Permission.NONE);
-		} else {
-			DbAccessManager am = SecurityHelper.getAccessManager();
-			
-			if (am.isGranted(nMail, Permission.READ)) {
-				mail.setPermissions(Permission.READ);
-			}
-			
-			if (am.isGranted(nMail, Permission.WRITE)) {
-				mail.setPermissions(mail.getPermissions() | Permission.WRITE);
-			}
-			
-			if (am.isGranted(nMail, Permission.DELETE)) {
-				mail.setPermissions(mail.getPermissions() | Permission.DELETE);
-			}
-			
-			if (am.isGranted(nMail, Permission.SECURITY)) {
-				mail.setPermissions(mail.getPermissions() | Permission.SECURITY);
-			}
-		}
+		BaseModule.setPermissions(nMail, mail);
 		
 		// Get user subscription & keywords
 		// mail.setSubscriptors(nMail.getSubscriptors());
@@ -197,17 +212,18 @@ public class BaseMailModule {
 		
 		mail.setNotes(notes);
 		
+		log.trace("getProperties.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getProperties: {}", mail);
 		return mail;
 	}
 	
 	/**
-	 * Is invoked from DbDocumentNode and DbFolderNode.
+	 * Is invoked from DbMailNode and DbFolderNode.
 	 */
-	public static NodeMail copy(String user, NodeMail srcMailNode, NodeFolder dstFldNode) throws
-			ItemExistsException, UserQuotaExceededException, PathNotFoundException, AccessDeniedException,
-			AutomationException, DatabaseException, IOException {
-		log.debug("copy({}, {}, {}, {})", new Object[] { user, srcMailNode, dstFldNode });
+	public static NodeMail copy(String user, NodeMail srcMailNode, String dstPath, NodeFolder dstFldNode, ExtendedAttributes extAttr)
+			throws ItemExistsException, UserQuotaExceededException, PathNotFoundException, AccessDeniedException, AutomationException,
+			DatabaseException, IOException {
+		log.debug("copy({}, {}, {}, {})", new Object[] { user, srcMailNode, dstFldNode, extAttr });
 		NodeMail newMail = null;
 		
 		try {
@@ -216,14 +232,18 @@ public class BaseMailModule {
 			String[] cc = (String[]) srcMailNode.getCc().toArray(new String[srcMailNode.getCc().size()]);
 			String[] bcc = (String[]) srcMailNode.getBcc().toArray(new String[srcMailNode.getBcc().size()]);
 			
-			newMail = create(user, dstFldNode, srcMailNode.getName(), srcMailNode.getSize(), srcMailNode.getFrom(),
-					reply, to, cc, bcc, srcMailNode.getSentDate(), srcMailNode.getReceivedDate(),
-					srcMailNode.getSubject(), srcMailNode.getContent(), srcMailNode.getMimeType());
+			Set<String> keywords = new HashSet<String>();
+			Set<String> categories = new HashSet<String>();
+			Ref<FileUploadResponse> fuResponse = new Ref<FileUploadResponse>(new FileUploadResponse());
+			
+			newMail = create(user, dstPath, dstFldNode, srcMailNode.getName(), srcMailNode.getSize(), srcMailNode.getFrom(), reply, to, cc,
+					bcc, srcMailNode.getSentDate(), srcMailNode.getReceivedDate(), srcMailNode.getSubject(), srcMailNode.getContent(),
+					srcMailNode.getMimeType(), keywords, categories, fuResponse);
 			
 			// Add attachments
 			for (NodeDocument nDocument : NodeDocumentDAO.getInstance().findByParent(srcMailNode.getUuid())) {
 				String newPath = NodeBaseDAO.getInstance().getPathFromUuid(newMail.getUuid());
-				BaseDocumentModule.copy(user, nDocument, newPath, newMail, nDocument.getName());
+				BaseDocumentModule.copy(user, nDocument, newPath, newMail, nDocument.getName(), extAttr);
 			}
 		} finally {
 		}
@@ -235,8 +255,7 @@ public class BaseMailModule {
 	/**
 	 * Check recursively if the mail contains locked nodes
 	 */
-	public static boolean hasLockedNodes(String mailUuid) throws PathNotFoundException, DatabaseException,
-			RepositoryException {
+	public static boolean hasLockedNodes(String mailUuid) throws PathNotFoundException, DatabaseException, RepositoryException {
 		boolean hasLock = false;
 		
 		for (NodeDocument nDoc : NodeDocumentDAO.getInstance().findByParent(mailUuid)) {
@@ -250,8 +269,7 @@ public class BaseMailModule {
 	 * Check if a node has removable childs TODO: Is this necessary? The access manager should prevent this and make the
 	 * core thrown an exception.
 	 */
-	public static boolean hasWriteAccess(String mailUuid) throws PathNotFoundException, DatabaseException,
-			RepositoryException {
+	public static boolean hasWriteAccess(String mailUuid) throws PathNotFoundException, DatabaseException, RepositoryException {
 		log.debug("hasWriteAccess({})", mailUuid);
 		DbAccessManager am = SecurityHelper.getAccessManager();
 		boolean canWrite = true;
