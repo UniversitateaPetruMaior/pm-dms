@@ -58,6 +58,7 @@ import org.slf4j.LoggerFactory;
 
 import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
+import com.openkm.dao.bean.NodeSignature;
 import com.openkm.dao.bean.extension.DropboxToken;
 import com.openkm.extension.dao.bean.ZohoToken;
 import com.openkm.util.ConfigUtils;
@@ -128,6 +129,7 @@ public class HibernateUtil {
 		cfg.addAnnotatedClass(NodeFolder.class);
 		cfg.addAnnotatedClass(NodeMail.class);
 		cfg.addAnnotatedClass(NodeNote.class);
+		cfg.addAnnotatedClass(NodeSignature.class);
 		cfg.addAnnotatedClass(NodeLock.class);
 		cfg.addAnnotatedClass(NodeProperty.class);
 		cfg.addAnnotatedClass(RegisteredPropertyGroup.class);

@@ -872,6 +872,9 @@ public class NodeDocumentDAO {
 		// Delete children notes
 		NodeNoteDAO.getInstance().purgeHelper(session, nDocument.getUuid());
 		
+		// Delete children signatures
+		NodeSignatureDAO.getInstance().purgeHelper(session, nDocument.getUuid());
+		
 		// Delete bookmarks
 		BookmarkDAO.purgeBookmarksByNode(nDocument.getUuid());
 		

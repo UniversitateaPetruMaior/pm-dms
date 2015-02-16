@@ -23,6 +23,8 @@ package com.openkm.module.db.base;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -33,6 +35,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.JcrConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +49,7 @@ import com.openkm.bean.Folder;
 import com.openkm.bean.LockInfo;
 import com.openkm.bean.Note;
 import com.openkm.bean.Permission;
+import com.openkm.bean.Signature;
 import com.openkm.bean.workflow.ProcessDefinition;
 import com.openkm.bean.workflow.ProcessInstance;
 import com.openkm.core.AccessDeniedException;
@@ -61,6 +65,7 @@ import com.openkm.dao.NodeDocumentDAO;
 import com.openkm.dao.NodeDocumentVersionDAO;
 import com.openkm.dao.NodeFolderDAO;
 import com.openkm.dao.NodeNoteDAO;
+import com.openkm.dao.NodeSignatureDAO;
 import com.openkm.dao.UserConfigDAO;
 import com.openkm.dao.bean.AutomationRule;
 import com.openkm.dao.bean.NodeBase;
@@ -69,13 +74,17 @@ import com.openkm.dao.bean.NodeDocumentVersion;
 import com.openkm.dao.bean.NodeFolder;
 import com.openkm.dao.bean.NodeLock;
 import com.openkm.dao.bean.NodeNote;
+import com.openkm.dao.bean.NodeSignature;
 import com.openkm.dao.bean.NodeProperty;
 import com.openkm.dao.bean.ProfileMisc;
 import com.openkm.dao.bean.UserConfig;
+import com.openkm.module.DocumentModule;
+import com.openkm.module.ModuleManager;
 import com.openkm.module.common.CommonWorkflowModule;
 import com.openkm.module.db.stuff.DbUtils;
 import com.openkm.util.CloneUtils;
 import com.openkm.util.DocConverter;
+import com.openkm.util.SecureStore;
 import com.openkm.util.UserActivity;
 
 public class BaseDocumentModule {
@@ -240,6 +249,40 @@ public class BaseDocumentModule {
 		}
 		
 		doc.setNotes(notes);
+		
+		// Get signatures
+		List<Signature> signatures = new ArrayList<Signature>();
+		List<NodeSignature> nSignatureList = NodeSignatureDAO.getInstance().findByParent(nDocument.getUuid());
+		
+		if (nSignatureList !=null && nSignatureList.size() > 0 ) {
+			
+			// load file content digest value
+			// get the content of the node
+			String docUuid = NodeBaseDAO.getInstance().getUuidFromPath(docPath);
+			
+			MessageDigest md1 = null;
+			try {
+				InputStream docInputStream = NodeDocumentVersionDAO.getInstance().getCurrentContentByParent(docUuid, true);
+				byte[] docInBytes = IOUtils.toByteArray(docInputStream);
+				md1 = MessageDigest.getInstance("SHA1");
+				md1.update(docInBytes);
+			} catch (NoSuchAlgorithmException e) {
+				log.warn("Couldn't get Digest value for " + docPath + " because of error NoSuchAlgorithmException: " + e.getMessage());				
+			} catch (IOException e) {
+				log.warn("Couldn't get Digest value for " + docPath + " because of error IOException: " + e.getMessage());
+			} catch (AccessDeniedException e) {
+				log.warn("Couldn't get Digest value for " + docPath + " because of error AccessDeniedException: " + e.getMessage());
+			}
+			final String digestValue = md1!=null ? SecureStore.b64Encode(md1.digest()) : "";
+			
+			for (NodeSignature nSignature : nSignatureList) {
+				Signature sig = BaseSignatureModule.getProperties(nSignature, nSignature.getUuid());
+				sig.setValid(digestValue.equals(sig.getSignDigest()));
+				signatures.add(sig);
+			}
+		}
+				
+		doc.setSignatures(signatures);
 		
 		log.trace("getProperties.Time: {}", System.currentTimeMillis() - begin);
 		log.debug("getProperties: {}", doc);

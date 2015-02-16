@@ -13,7 +13,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="Shortcut icon"
-	href="<%=request.getContextPath() %>/logo/favicon" />
+	href="<%=request.getContextPath() %>/favicon.ico" />
 <link rel="stylesheet"
 	href="<%=request.getContextPath() %>/css/desktop.css" type="text/css" />
 <%

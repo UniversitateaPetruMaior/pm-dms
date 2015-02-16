@@ -231,6 +231,19 @@ public class DbMetadataAdapter extends MetadataAdapter {
 				}
 			}
 			
+			// Signatures may also be needed when importing
+//			if (!dmd.getNotes().isEmpty()) {
+//				for (NoteMetadata nmd : dmd.getNotes()) {
+//					NodeNote nNote = new NodeNote();
+//					nNote.setUuid(UUID.randomUUID().toString());
+//					nNote.setParent(nDoc.getUuid());
+//					nNote.setAuthor(nmd.getUser());
+//					nNote.setCreated(nmd.getDate());
+//					nNote.setText(nmd.getText());
+//					session.save(nNote);
+//				}
+//			}
+			
 			HibernateUtil.commit(tx);
 		} catch (HibernateException e) {
 			HibernateUtil.rollback(tx);

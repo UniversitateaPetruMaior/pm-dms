@@ -79,7 +79,7 @@
 					</tr>
 					<tr>
 						<td colspan="2" align="right"><input type="submit"
-							value="Seach" class="searchButton" /></td>
+							value="Search" class="searchButton" /></td>
 					</tr>
 				</table>
 			</form>
@@ -100,17 +100,18 @@
 						<th>Profile</th>
 						<th width="25px">Active</th>
 						<th width="25px">Chat</th>
-						<th width="160px"><c:url value="Auth" var="urlCreate">
+						<th width="200px">
+							<c:url value="Auth" var="urlCreate">
 								<c:param name="action" value="userCreate" />
-							</c:url> <c:url value="Auth" var="urlExport">
+							</c:url> 
+							<c:url value="Auth" var="urlExport">
 								<c:param name="action" value="userListExport" />
-							</c:url> <c:if test="${db}">
-								<a href="${urlCreate}"><img src="img/action/new.png"
-									alt="New user" title="New user" /></a>
-                &nbsp;
-              </c:if> <a href="${urlExport}"><img
-								src="img/action/export_csv.png" alt="CSV export"
-								title="CSV export" /></a></th>
+							</c:url> 
+							<c:if test="${db}">
+								<a href="${urlCreate}"><img src="img/action/new.png" alt="New user" title="New user" /></a>
+                			&nbsp;</c:if> 
+                			<a href="${urlExport}"><img src="img/action/export_csv.png" alt="CSV export" title="CSV export" /></a>
+                		</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -144,6 +145,9 @@
 						<c:url value="TwitterAccount" var="urlTwitter">
 							<c:param name="ta_user" value="${user.id}" />
 						</c:url>
+						<c:url value="UserCertificates" var="urlUserCertificates">
+             				<c:param name="uc_user" value="${user.id}"/>
+            			</c:url>
 						<c:url value="ActivityLog" var="urlLog">
 							<c:param name="user" value="${user.id}" />
 							<c:param name="dbegin" value="${date}" />
@@ -213,6 +217,10 @@
                   <a href="${urlLog}"><img
 										src="img/action/calendar.png" alt="Activity log"
 										title="Activity log" /></a>
+				  &nbsp;
+                  <a href="${urlUserCertificates}"><img 
+                  						src="img/action/certificate.png" alt="User Certificates" 
+                  						title="User Certificates"/></a>
 								</c:if></td>
 						</tr>
 					</c:forEach>

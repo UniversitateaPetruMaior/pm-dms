@@ -23,7 +23,10 @@
 package com.openkm.bean;
 
 import javax.xml.bind.annotation.XmlRootElement;
+
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 /**
  * @author pavila
@@ -55,6 +58,8 @@ public class Document extends Node {
 	private LockInfo lockInfo;
 	private boolean convertibleToPdf;
 	private boolean convertibleToSwf;
+	
+	private List<Signature> signatures = new ArrayList<Signature>();
 	
 	public LockInfo getLockInfo() {
 		return lockInfo;
@@ -144,6 +149,14 @@ public class Document extends Node {
 		this.convertibleToSwf = convertibleToSwf;
 	}
 	
+	public List<Signature> getSignatures() {
+		return signatures;
+	}
+
+	public void setSignatures(List<Signature> signatures) {
+		this.signatures = signatures;
+	}
+	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
@@ -166,6 +179,7 @@ public class Document extends Node {
 		sb.append(", convertibleToPdf=").append(convertibleToPdf);
 		sb.append(", convertibleToSwf=").append(convertibleToSwf);
 		sb.append(", notes=").append(notes);
+		sb.append(", signatures=").append(signatures);
 		sb.append("}");
 		return sb.toString();
 	}

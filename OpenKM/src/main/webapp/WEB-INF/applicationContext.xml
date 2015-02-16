@@ -77,6 +77,8 @@
 		address="/OKMTest">
 		<!-- <jaxws:inInterceptors> <beans:ref bean="WSS4JInInterceptor"/> </jaxws:inInterceptors> -->
 	</jaxws:endpoint>
+	
+	<jaxws:endpoint id="signService" implementor="com.openkm.ws.endpoint.OKMSignature" address="/OKMSignature"/>
 
 	<!-- OpenCMIS -->
 	<jaxws:endpoint id="cmisNavigationService"

@@ -145,6 +145,7 @@ public class MainMenu extends Composite {
 	private MenuItem debugConsole;
 	public MenuItem administration;
 	private MenuItem preferences;
+	private MenuItem signTool;
 	private MenuBar subMenuPreferences;
 	private MenuItem userPreferences;
 	private MenuItem convert;
@@ -433,7 +434,7 @@ public class MainMenu extends Composite {
 		administration.addStyleName("okm-MainMenuItem");
 		administration.setVisible(false);
 		
-		// Submenu preferences opions
+		// Submenu preferences options
 		subMenuPreferences = new MenuBar(true);
 		subMenuPreferences.setStyleName("okm-SubMenuBar");
 		userPreferences = new MenuItem(
@@ -441,6 +442,10 @@ public class MainMenu extends Composite {
 				setUserPreferences);
 		userPreferences.addStyleName("okm-MainMenuItem");
 		subMenuPreferences.addItem(userPreferences);
+		
+		// Sign tool menu
+		signTool = new MenuItem(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.sign.tool")), true, downloadSignTool);
+		signTool.addStyleName("okm-MainMenuItem");
 		
 		// Submenu preferences
 		preferences = new MenuItem(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.tools.preferences")), true,
@@ -461,6 +466,7 @@ public class MainMenu extends Composite {
 		subMenuTools.addItem(administration);
 		subMenuTools.addItem(preferences);
 		subMenuTools.addItem(convert);
+		subMenuTools.addItem(signTool);
 		
 		// Menu tools
 		menuTools = new MenuItem(Main.i18n("general.menu.tools"), subMenuTools);
@@ -667,6 +673,7 @@ public class MainMenu extends Composite {
 		preferences.setHTML(Util.menuHTML("img/icon/menu/preferences.gif", Main.i18n("general.menu.tools.preferences")));
 		userPreferences.setHTML(Util.menuHTML("img/icon/menu/user_preferences.gif", Main.i18n("general.menu.tools.user.preferences")));
 		convert.setHTML(Util.menuHTML("img/icon/menu/convert.png", Main.i18n("general.menu.tools.convert")));
+		signTool.setHTML(Util.menuHTML("img/icon/actions/checkout.gif", Main.i18n("general.menu.sign.tool")));
 		menuBookmark.setText(Main.i18n("general.menu.bookmark"));
 		home.setHTML(Util.menuHTML("img/icon/actions/bookmark_go.gif", Main.i18n("general.menu.bookmark.home")));
 		defaultHome.setHTML(Util.menuHTML("img/icon/actions/bookmark.gif", Main.i18n("general.menu.bookmark.default.home")));
@@ -1553,6 +1560,14 @@ public class MainMenu extends Composite {
 			if (mainMenuOption.homeOption) {
 				manageBookmarkPopup.showPopup();
 			}
+		}
+	};
+	
+	// Command download sign tool that executes void
+	Command downloadSignTool = new Command() {
+		@SuppressWarnings("deprecation")
+		public void execute() {
+			Util.downloadFile("", "signTool");
 		}
 	};
 	

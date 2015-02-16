@@ -47,11 +47,13 @@ import org.slf4j.LoggerFactory;
 import com.openkm.api.OKMDocument;
 import com.openkm.api.OKMMail;
 import com.openkm.api.OKMRepository;
+import com.openkm.api.OKMSignature;
 import com.openkm.api.OKMSearch;
 import com.openkm.bean.Document;
 import com.openkm.bean.Mail;
 import com.openkm.bean.Repository;
 import com.openkm.core.AccessDeniedException;
+import com.openkm.core.Config;
 import com.openkm.core.DatabaseException;
 import com.openkm.core.MimeTypeConfig;
 import com.openkm.core.NoSuchGroupException;
@@ -81,8 +83,12 @@ public class DownloadServlet extends OKMHttpServlet {
 		String[] pathList = request.getParameterValues("pathList");
 		String checkout = request.getParameter("checkout");
 		String ver = request.getParameter("ver");
+		String signFileName = request.getParameter("signFileName");
+		String signUuid = request.getParameter("signUuid");
 		boolean export = request.getParameter("export") != null;
 		boolean inline = request.getParameter("inline") != null;
+		boolean signOnly = request.getParameter("signOnly") != null;
+		boolean signTool = request.getParameter("signTool") != null;
 		File tmp = File.createTempFile("okm", ".tmp");
 		InputStream is = null;
 		updateSessionManager(request);
@@ -144,6 +150,17 @@ public class DownloadServlet extends OKMHttpServlet {
 					String fileName = PathUtils.getName(path) + ".jar";
 					WebUtils.sendFile(request, response, fileName, "application/x-java-archive", inline, is);
 				}
+				
+				} else if (signOnly) {
+					OKMSignature okmSign = OKMSignature.getInstance();
+					is = okmSign.getContent(null, signUuid);
+					WebUtils.sendFile(request, response, signFileName + ".sig.xml", "application/xml", inline, is);
+					is.close();
+				} else if (signTool) {
+					is = new FileInputStream(Config.SIGN_TOOL_LOCATION);
+					WebUtils.sendFile(request, response, "signtool.exe", "application/exe", inline, is);
+				
+				
 			} else {
 				if (OKMDocument.getInstance().isValid(null, path)) {
 					// Get document

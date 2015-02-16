@@ -47,7 +47,7 @@ div#box {
 }
 
 div#logo {
-	background-image: url('../logo/login');
+	background-image: url('../img/logo_login.gif');
 	background-repeat: no-repeat;
 	background-position: center center;
 	width: 316px;

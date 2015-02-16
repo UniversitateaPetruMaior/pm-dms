@@ -254,6 +254,18 @@ public class Util {
 	}
 	
 	/**
+	 * Download sign file
+	 * 
+	 * @param path
+	 * @param params
+	 */
+	public static void downloadFileSignature(String signUuid, String signName) {
+		final Element downloadIframe = RootPanel.get("__download").getElement(); 
+		String url = RPCService.DownloadServlet + "?signOnly=true&signUuid=" + URL.encodeQueryString(signUuid) + "&signFileName=" + URL.encodeQueryString(signName);
+		DOM.setElementAttribute(downloadIframe, "src", url); 
+	}
+	
+	/**
 	 * downloadFilesByUUID
 	 */
 	public static void downloadFilesByUUID(List<String> uuidList, String params) {

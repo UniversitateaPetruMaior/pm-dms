@@ -378,6 +378,10 @@
     <servlet-class>com.openkm.servlet.admin.TwitterAccountServlet</servlet-class>
   </servlet>
   <servlet>
+  	<servlet-name>UserCertificateServlet</servlet-name>
+    <servlet-class>com.openkm.servlet.admin.UserCertificateServlet</servlet-class>
+  </servlet>
+  <servlet>
     <servlet-name>WorkflowServlet</servlet-name>
     <servlet-class>com.openkm.servlet.admin.WorkflowServlet</servlet-class>
   </servlet>
@@ -774,6 +778,10 @@
   <servlet-mapping>
     <servlet-name>TwitterAccountServlet</servlet-name>
     <url-pattern>/admin/TwitterAccount</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>UserCertificateServlet</servlet-name>
+    <url-pattern>/admin/UserCertificates</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
     <servlet-name>WorkflowServlet</servlet-name>

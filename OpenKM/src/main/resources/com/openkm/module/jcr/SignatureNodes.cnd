@@ -1,0 +1,18 @@
+<nt = 'http://www.jcp.org/jcr/nt/1.0'>
+<jcr = 'http://www.jcp.org/jcr/1.0'>
+<mix = 'http://www.jcp.org/jcr/mix/1.0'>
+<okm = 'http://www.openkm.org/1.0'>
+
+[okm:sign] 
+- okm:user (string) mandatory
+- okm:date (date) mandatory
+- okm:signSHA1 (string) mandatory
+- okm:signDigest (string) mandatory
+- okm:signContent (string) mandatory
+- okm:size (long) mandatory
+
+[okm:signs] > nt:hierarchyNode
++ * (okm:sign)
+
+[mix:signs] mixin
++ okm:signs (okm:signs) = okm:signs autocreated mandatory

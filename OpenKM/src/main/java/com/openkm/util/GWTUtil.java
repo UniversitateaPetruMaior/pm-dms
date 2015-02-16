@@ -55,6 +55,7 @@ import com.openkm.bean.Mail;
 import com.openkm.bean.Note;
 import com.openkm.bean.PropertyGroup;
 import com.openkm.bean.QueryResult;
+import com.openkm.bean.Signature;
 import com.openkm.bean.Version;
 import com.openkm.bean.form.Button;
 import com.openkm.bean.form.CheckBox;
@@ -200,6 +201,15 @@ public class GWTUtil {
 		}
 		
 		doc.setCategories(categories);
+		
+		// from Util.java in OpenKM 5.0
+		List<Signature> signatures = new ArrayList<Signature>();
+		
+		for (Iterator<GWTSignature> it = gWTDoc.getSignatures().iterator(); it.hasNext();) {
+			signatures.add(copy(it.next()));
+		}
+		doc.setSignatures(signatures);
+		
 		gWTDoc.setActualVersion(copy(doc.getActualVersion()));
 		
 		log.debug("copy: {}", gWTDoc);
@@ -278,6 +288,28 @@ public class GWTUtil {
 		
 		log.debug("copy: {}", folder);
 		return folder;
+	}
+	
+	/**
+	 * Copy the GWTSignature data to Signature data.
+	 * 
+	 * @param doc The original GWTSignature object.
+	 * @return A Signature object with the data from the original Document.
+	 */
+	public static Signature copy(GWTSignature sig) {
+		log.debug("copy({})", sig);
+		Signature signature = new Signature();
+		Calendar created = Calendar.getInstance();
+		created.setTimeInMillis(sig.getDate().getTime());
+		signature.setDate(created);
+		signature.setUser(sig.getUser());
+		signature.setPath(sig.getPath());
+		signature.setSignSHA1(sig.getSha1());
+		signature.setValid(sig.isValid());
+		
+		
+		log.debug("copy: {}", signature);
+		return signature;
 	}
 	
 	/**
