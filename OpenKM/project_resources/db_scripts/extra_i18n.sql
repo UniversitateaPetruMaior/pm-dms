@@ -1,4 +1,16 @@
 INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'document.signatures.applied', 'Signed by', 'en-GB');
-INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'general.menu.sign.tool', 'Signing Tool', 'en-GB');
 INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'document.signatures.applied', 'Firmado por', 'es-ES');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'document.signatures.applied', 'Semnat de', 'ro-RO');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'document.signatures.applied', 'Aláíró', 'hu-HU');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'fileupload.digital.signature', 'Sign document', 'en-GB');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'fileupload.digital.signature', 'Firmar documento', 'es-ES');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'fileupload.digital.signature', 'Semnează document', 'ro-RO');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'fileupload.digital.signature', 'Dokumentum aláírása', 'hu-HU');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'general.menu.sign.tool', 'Signing Tool', 'en-GB');
 INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'general.menu.sign.tool', 'Firma utensilio', 'es-ES');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'general.menu.sign.tool', 'Aplicaţia de semnare', 'ro-RO');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'general.menu.sign.tool', 'Aláíró alkalmazás', 'hu-HU');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'sign.file.date.pattern', 'yyMMdd-HHmmss', 'en-GB');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'sign.file.date.pattern', 'yyMMdd-HHmmss', 'es-ES');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'sign.file.date.pattern', 'yyMMdd-HHmmss', 'ro-RO');
+INSERT INTO OKM_TRANSLATION (TR_MODULE, TR_KEY, TR_TEXT, TR_LANGUAGE) VALUES ('frontend', 'sign.file.date.pattern', 'yyMMdd-HHmmss', 'hu-HU');
