@@ -42,11 +42,11 @@
 		<div id="logo"></div>
 		<div id="error">
 			<c:if test="${not empty param.error}">
-         Eroare de autentificare / Authentication error 
-        <c:if
+		        Eroare de autentificare / Authentication error 
+		        <c:if
 					test="${Config.USER_PASSWORD_RESET && Config.PRINCIPAL_ADAPTER == 'com.openkm.principal.DatabasePrincipalAdapter'}">
-          (<a href="password_reset.jsp">Ati uitat parola? / Forgot your password?</a>)
-        </c:if>
+		          (<a href="password_reset.jsp">Aţi uitat parola? / Forgot your password?</a>)
+		        </c:if>
 			</c:if>
 		</div>
 		<div id="text">
@@ -55,11 +55,11 @@
 			</center>
 			<%--  <%=Config.TEXT_WELCOME %> --%>
 			
- 			<p>Bine ati venit! /<br /> Welcome to OpenKM!</p>
+ 			<p>Bine aţi venit! / <br /> Welcome to OpenKM!</p>
  			<p>
- 				Introduceti
- 				<br /> utilizatorul si parola /
- 				<br /> Use a valid username and password to access to OpenKM user Desktop.
+ 				Introduceţi
+ 				<br /> utilizatorul şi parola / 
+ 				<br /> Use a valid username and password to access the OpenKM user Desktop.
  			</p>
 		</div>
 		<div id="form">
@@ -70,7 +70,7 @@
 				<table border="0" cellpadding="2" cellspacing="0" align="center"
 					class="demo" style="width: 100%">
 					<tr>
-						<td class="demo_alert">Se lucreaza la sistem / System under maintenance</td>
+						<td class="demo_alert">Momentan se lucrează la sistem / System under maintenance</td>
 					</tr>
 				</table>
 				<input name="j_username" id="j_username" type="hidden"
