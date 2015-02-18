@@ -38,17 +38,18 @@
 <body onload="document.forms[0].elements[0].focus()">
 	<u:constantsMap className="com.openkm.core.Config" var="Config" />
 	<center style="margin-top: 40px;"><%=Config.TEXT_BANNER %></center>
-	<div id="box">
+	<div id="box" style="height: 305px;">
 		<div id="logo"></div>
 		<div id="error">
 			<c:if test="${not empty param.error}">
 		        Eroare de autentificare / Authentication error 
 		        <c:if
 					test="${Config.USER_PASSWORD_RESET && Config.PRINCIPAL_ADAPTER == 'com.openkm.principal.DatabasePrincipalAdapter'}">
-		          (<a href="password_reset.jsp">Aţi uitat parola? / Forgot your password?</a>)
+		          <br />(<a href="password_reset.jsp">Aţi uitat parola? / Forgot your password?</a>)
 		        </c:if>
 			</c:if>
 		</div>
+		<br />
 		<div id="text">
 			<center>
 				<img src="<%=request.getContextPath() %>/img/lock.png" height="24" />
@@ -62,8 +63,7 @@
  				<br /> Use a valid username and password to access the OpenKM user Desktop.
  			</p>
 		</div>
-		<div id="form">
-			<br />
+		<div id="form">			
 			<form name="loginform" method="post" action="j_spring_security_check"
 				onsubmit="setCookie()">
 				<% if (Config.SYSTEM_MAINTENANCE) { %>
