@@ -42,40 +42,48 @@
 		<div id="logo"></div>
 		<div id="error">
 			<c:if test="${not empty param.error}">
-         Authentication error
+         Eroare de autentificare / Authentication error 
         <c:if
 					test="${Config.USER_PASSWORD_RESET && Config.PRINCIPAL_ADAPTER == 'com.openkm.principal.DatabasePrincipalAdapter'}">
-          (<a href="password_reset.jsp">Forgot your password?</a>)
+          (<a href="password_reset.jsp">Ati uitat parola? / Forgot your password?</a>)
         </c:if>
 			</c:if>
 		</div>
 		<div id="text">
 			<center>
-				<img src="<%=request.getContextPath() %>/img/lock.png" />
+				<img src="<%=request.getContextPath() %>/img/lock.png" height="24" />
 			</center>
-			<%=Config.TEXT_WELCOME %>
+			<%--  <%=Config.TEXT_WELCOME %> --%>
+			
+ 			<p>Bine ati venit! /<br /> Welcome to OpenKM!</p>
+ 			<p>
+ 				Introduceti
+ 				<br /> utilizatorul si parola /
+ 				<br /> Use a valid username and password to access to OpenKM user Desktop.
+ 			</p>
 		</div>
 		<div id="form">
+			<br />
 			<form name="loginform" method="post" action="j_spring_security_check"
 				onsubmit="setCookie()">
 				<% if (Config.SYSTEM_MAINTENANCE) { %>
 				<table border="0" cellpadding="2" cellspacing="0" align="center"
 					class="demo" style="width: 100%">
 					<tr>
-						<td class="demo_alert">System under maintenance</td>
+						<td class="demo_alert">Se lucreaza la sistem / System under maintenance</td>
 					</tr>
 				</table>
 				<input name="j_username" id="j_username" type="hidden"
 					value="<%=Config.SYSTEM_LOGIN_LOWERCASE?Config.ADMIN_USER.toLowerCase():Config.ADMIN_USER%>" /><br />
 				<% } else { %>
-				<label for="j_username">User</label><br /> <input name="j_username"
+				<label for="j_username">Utilizator / User</label><br /> <input name="j_username"
 					id="j_username" type="text"
 					<%=Config.SYSTEM_LOGIN_LOWERCASE?"onchange=\"makeLowercase();\"":"" %> /><br />
 				<br />
 				<% } %>
-				<label for="j_password">Password</label><br /> <input
+				<label for="j_password">Parola / Password</label><br /> <input
 					name="j_password" id="j_password" type="password" /><br /> <br />
-				<label for="j_language">Language</label><br /> <select
+				<label for="j_language">Limba / Language</label><br /> <select
 					name="j_language" id="j_language">
 					<%
           List<Language> langs = LanguageDAO.findAll();
@@ -110,7 +118,7 @@
           }
         %>
 				</select> <input value="Login" name="submit" type="submit"
-					class="loginButton" /><br />
+					class="loginButton" /><br />					
 			</form>
 		</div>
 	</div>
