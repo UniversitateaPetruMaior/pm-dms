@@ -568,7 +568,7 @@ public class MailUtils {
 	 * You should create different local uidl list for different email account, because the uidl is only
 	 * unique for the same account.
 	 */
-	public static String importMessages(String token, MailAccount ma) throws PathNotFoundException, ItemExistsException,
+	public static String importMessages(String token, MailAccount ma, boolean isCheckingAll) throws PathNotFoundException, ItemExistsException,
 			VirusDetectedException, AccessDeniedException, RepositoryException, DatabaseException, UserQuotaExceededException,
 			ExtensionException, AutomationException {
 		log.debug("importMessages({}, {})", new Object[] { token, ma });
@@ -642,14 +642,47 @@ public class MailUtils {
 			folder.close(ma.isMailMarkDeleted());
 			store.close();
 		} catch (NoSuchProviderException e) {
-			log.error(e.getMessage(), e);
+			log.error("importMessages(): NoSuchProviderException: '" + e.getMessage() + "'\n for User '" + ma.getUser() + "', Mail host '" + ma.getMailHost() + "', Mail user '" + ma.getMailUser() + "', Mail protocol '" + ma.getMailProtocol() + "', Mail folder '" + ma.getMailFolder() + "'");
+			//log.error(e.getMessage(), e);
 			exceptionMessage = e.getMessage();
+			if (isCheckingAll) {
+				try {
+					ma.setActive(false);			
+					MailAccountDAO.update(ma);
+					log.error("importMessages(): Mail account ID " + ma.getId() + " of User '" + ma.getUser() + "' has been deactivated");
+				} catch (DatabaseException ex) {				
+				}
+			} else {
+				log.info("With a 'ROLE_ADMIN' user, use 'Administration' > 'Users' > 'Force user mail import' to deactivate all problematic mail accounts");
+			}
 		} catch (MessagingException e) {
-			log.error(e.getMessage(), e);
+			log.error("importMessages(): MessagingException: '" + e.getMessage() + "'\n for User '" + ma.getUser() + "', Mail host '" + ma.getMailHost() + "', Mail user '" + ma.getMailUser() + "', Mail protocol '" + ma.getMailProtocol() + "', Mail folder '" + ma.getMailFolder() + "'");
+			//log.error(e.getMessage(), e);
 			exceptionMessage = e.getMessage();
+			if (isCheckingAll) {
+				try {
+					ma.setActive(false);			
+					MailAccountDAO.update(ma);
+					log.error("importMessages(): Mail account ID " + ma.getId() + " of User '" + ma.getUser() + "' has been deactivated");
+				} catch (DatabaseException ex) {				
+				}
+			} else {
+				log.info("With a 'ROLE_ADMIN' user, use 'Administration' > 'Users' > 'Force user mail import' to deactivate all problematic mail accounts");
+			}
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			log.error("importMessages(): IOException: '" + e.getMessage() + "'\n for User '" + ma.getUser() + "', Mail host '" + ma.getMailHost() + "', Mail user '" + ma.getMailUser() + "', Mail protocol '" + ma.getMailProtocol() + "', Mail folder '" + ma.getMailFolder() + "'");
 			exceptionMessage = e.getMessage();
+			if (isCheckingAll) {
+				try {
+					ma.setActive(false);			
+					MailAccountDAO.update(ma);
+					log.error("importMessages(): Mail account ID " + ma.getId() + " of User '" + ma.getUser() + "' has been deactivated");
+				} catch (DatabaseException ex) {				
+				}
+			} else {
+				log.info("With a 'ROLE_ADMIN' user, use 'Administration' > 'Users' > 'Force user mail import' to deactivate all problematic mail accounts");
+			}
+			log.error("importMessages(): IOException: " + e.getMessage(), e);
 		}
 		
 		log.debug("importMessages: {}", exceptionMessage);
@@ -1095,8 +1128,10 @@ public class MailUtils {
 			folder.open(Folder.READ_WRITE);
 			folder.close(false);
 		} catch (NoSuchProviderException e) {
+			log.warn("testConnection(): NoSuchProviderException for Mail host '" + ma.getMailHost() + "', Mail user '" + ma.getMailUser() + "', Mail protocol '" + ma.getMailProtocol() + "', Mail folder '" + ma.getMailFolder() + "'");
 			throw new IOException(e.getMessage());
 		} catch (MessagingException e) {
+			log.warn("testConnection(): MessagingException for Mail host '" + ma.getMailHost() + "', Mail user '" + ma.getMailUser() + "', Mail protocol '" + ma.getMailProtocol() + "', Mail folder '" + ma.getMailFolder() + "'");
 			throw new IOException(e.getMessage());
 		} finally {
 			// Try to close folder

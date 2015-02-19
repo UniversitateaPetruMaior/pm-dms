@@ -67,6 +67,10 @@ public class UserMailImporter extends TimerTask {
 	}
 	
 	public void runAs(String token) {
+		runAs(token, false);
+	}
+	
+	public void runAs(String token, boolean isCheckingAll) {
 		if (running) {
 			log.warn("*** User mail importer already running ***");
 		} else {
@@ -92,7 +96,7 @@ public class UserMailImporter extends TimerTask {
 								exceptionMessages.add("Warning: System in read-only mode");
 								log.warn("*** System in read-only mode ***");
 							} else {
-								String exceptionMessage = MailUtils.importMessages(token, ma);
+								String exceptionMessage = MailUtils.importMessages(token, ma, isCheckingAll);
 								
 								if (exceptionMessage != null) {
 									exceptionMessages.add("Id: " + ma.getId() + ", User: " + ma.getUser() + 

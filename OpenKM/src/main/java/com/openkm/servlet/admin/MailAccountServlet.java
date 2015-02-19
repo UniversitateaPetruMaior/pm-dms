@@ -155,7 +155,11 @@ public class MailAccountServlet extends BaseServlet {
 				serverImport(pw, userId, request, response);
 			}
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			if ("check".equals(action)) {
+				log.error(e.getMessage());
+			} else {
+				log.error(e.getMessage(), e);
+			}
 			pw.print(e.getMessage());
 		} catch (RepositoryException e) {
 			log.error(e.getMessage(), e);
@@ -306,7 +310,7 @@ public class MailAccountServlet extends BaseServlet {
 		if (umi.isRunning()) {
 			pw.print("User mail import already running");
 		} else {
-			umi.runAs(null);
+			umi.runAs(null, true);
 			
 			if (umi.getExceptionMessages().isEmpty()) {
 				pw.print("Success!");
@@ -314,6 +318,7 @@ public class MailAccountServlet extends BaseServlet {
 				for (String em : umi.getExceptionMessages()) {
 					pw.print(em + "<br/>");
 				}
+				pw.print("All mail accounts that had errors were deactivated<br/>");
 			}
 		}
 		
